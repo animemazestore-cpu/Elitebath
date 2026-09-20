@@ -189,12 +189,17 @@ export const Admin: React.FC = () => {
         const customCats: Category[] = typeof window !== 'undefined'
           ? JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]')
           : [];
-        const mergedCats = [...customCats];
+        const mergedCats: Category[] = [];
         if (dbCats && dbCats.length > 0) {
           for (const c of dbCats) {
             if (!mergedCats.some((m) => m.id === c.id || m.name.toLowerCase() === c.name.toLowerCase())) {
               mergedCats.push(c);
             }
+          }
+        }
+        for (const c of customCats) {
+          if (!mergedCats.some((m) => m.id === c.id || m.name.toLowerCase() === c.name.toLowerCase())) {
+            mergedCats.push(c);
           }
         }
         for (const fb of FALLBACK_CATEGORIES) {
@@ -594,6 +599,28 @@ export const Admin: React.FC = () => {
         }
       }
 
+      // Ensure category_id is a valid UUID or match by category name
+      let validCategoryId: string | null = null;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (productForm.category_id && uuidRegex.test(productForm.category_id)) {
+        validCategoryId = productForm.category_id;
+      } else if (productForm.category_id) {
+        const matched = categories.find((c) => c.id === productForm.category_id);
+        const nameToFind = matched?.name || productForm.category_id;
+        try {
+          const { data: dbCat } = await supabase
+            .from('categories')
+            .select('id')
+            .ilike('name', nameToFind)
+            .maybeSingle();
+          if (dbCat?.id && uuidRegex.test(dbCat.id)) {
+            validCategoryId = dbCat.id;
+          }
+        } catch {
+          // fallback to null if not resolved
+        }
+      }
+
       const payload = {
         name: productForm.name.trim(),
         slug: finalSlug,
@@ -601,7 +628,7 @@ export const Admin: React.FC = () => {
         price: finalPrice,
         stock: finalStock,
         featured: Boolean(productForm.featured),
-        category_id: productForm.category_id || null,
+        category_id: validCategoryId,
         main_image_url: productForm.main_image_url.trim(),
         additional_images: addImgs,
         sku: productForm.sku.trim() || null,

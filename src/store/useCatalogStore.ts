@@ -68,9 +68,14 @@ async function fetchCategoriesFromNetwork(): Promise<Category[]> {
     if (error) throw error;
     const dbCats = (data && data.length > 0) ? (data as Category[]) : [];
     
-    // Merge: custom categories first, then DB categories, then fallback categories
-    const merged = [...localCustomCats];
+    // Merge: DB categories first (valid UUIDs), then custom, then fallback
+    const merged: Category[] = [];
     for (const c of dbCats) {
+      if (!merged.some((m) => m.id === c.id || m.name.toLowerCase() === c.name.toLowerCase())) {
+        merged.push(c);
+      }
+    }
+    for (const c of localCustomCats) {
       if (!merged.some((m) => m.id === c.id || m.name.toLowerCase() === c.name.toLowerCase())) {
         merged.push(c);
       }
