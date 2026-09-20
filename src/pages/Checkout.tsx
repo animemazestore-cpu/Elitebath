@@ -48,15 +48,16 @@ export const Checkout: React.FC = () => {
     }
   }
 
-  // Calculate shipping: use per-product shipping_fee when set, otherwise apply global rule
+  // Calculate shipping: use per-product shipping_fee when defined, otherwise apply global rule
   const shippingCharge = (() => {
     let totalShipping = 0;
     let hasProductShippingFees = false;
     for (const item of items) {
       const fee = item.product.shipping_fee;
-      if (fee !== undefined && fee !== null && fee > 0) {
+      // If shipping_fee is defined (even as 0), admin has set it — use it
+      if (fee !== undefined && fee !== null) {
         hasProductShippingFees = true;
-        totalShipping += fee * item.quantity;
+        totalShipping += Number(fee) * item.quantity;
       }
     }
     if (hasProductShippingFees) return totalShipping;

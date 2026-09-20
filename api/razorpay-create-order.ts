@@ -75,10 +75,11 @@ export default async function handler(req: Request) {
     let shippingCharge = 0;
     let hasProductShippingFees = false;
     for (const item of items) {
-      const fee = Number(item.product?.shipping_fee ?? 0);
-      if (fee > 0) {
+      const fee = item.product?.shipping_fee;
+      // If shipping_fee is defined (even as 0), admin has set it — use it
+      if (fee !== undefined && fee !== null) {
         hasProductShippingFees = true;
-        shippingCharge += fee * Math.max(1, Number(item.quantity ?? 1));
+        shippingCharge += Number(fee) * Math.max(1, Number(item.quantity ?? 1));
       }
     }
     if (!hasProductShippingFees) {
