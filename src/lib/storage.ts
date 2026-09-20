@@ -120,3 +120,93 @@ export const uploadMultipleFilesToStorage = async (
 
   return { urls, errors };
 };
+
+/**
+ * Extracts bucket and path from a public Supabase Storage URL
+ * e.g. https://xyz.supabase.co/storage/v1/object/public/product-images/products/main/123.jpg
+ * returns { bucket: 'product-images', path: 'products/main/123.jpg' }
+ */
+export const extractStoragePathFromUrl = (url: string): { bucket: string; path: string } | null => {
+  if (!url || typeof url !== 'string') return null;
+  const marker = '/storage/v1/object/public/';
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  const rest = url.substring(idx + marker.length);
+  const slashIdx = rest.indexOf('/');
+  if (slashIdx === -1) return null;
+  const bucket = rest.substring(0, slashIdx);
+  const path = rest.substring(slashIdx + 1);
+  return { bucket, path };
+};
+
+/**
+ * Deletes a single file from Supabase Storage by its public URL
+ */
+export const deleteFileFromStorage = async (url: string): Promise<boolean> => {
+  const extracted = extractStoragePathFromUrl(url);
+  if (!extracted) return false;
+  try {
+    const { error } = await supabase.storage
+      .from(extracted.bucket)
+      .remove([extracted.path]);
+    if (error) {
+      console.warn(`Failed to delete storage file ${extracted.path}:`, error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Exception deleting storage file:', err);
+    return false;
+  }
+};
+
+/**
+ * Deletes all images belonging to a product (main image, gallery images, variant images)
+ */
+export const deleteProductImagesFromStorage = async (product: {
+  main_image_url?: string | null;
+  additional_images?: string[] | string | null;
+  variants?: Array<{ image_url?: string | null }>;
+}): Promise<void> => {
+  const urlsToDelete: string[] = [];
+  if (product.main_image_url) urlsToDelete.push(product.main_image_url);
+  
+  if (Array.isArray(product.additional_images)) {
+    urlsToDelete.push(...product.additional_images);
+  } else if (typeof product.additional_images === 'string' && product.additional_images) {
+    urlsToDelete.push(...product.additional_images.split(',').map((s) => s.trim()).filter(Boolean));
+  }
+
+  if (Array.isArray(product.variants)) {
+    for (const v of product.variants) {
+      if (v.image_url) urlsToDelete.push(v.image_url);
+    }
+  }
+
+  const pathsByBucket: Record<string, string[]> = {};
+  for (const u of urlsToDelete) {
+    const extracted = extractStoragePathFromUrl(u);
+    if (extracted) {
+      if (!pathsByBucket[extracted.bucket]) {
+        pathsByBucket[extracted.bucket] = [];
+      }
+      if (!pathsByBucket[extracted.bucket].includes(extracted.path)) {
+        pathsByBucket[extracted.bucket].push(extracted.path);
+      }
+    }
+  }
+
+  for (const [bucket, paths] of Object.entries(pathsByBucket)) {
+    if (paths.length === 0) continue;
+    try {
+      const { data, error } = await supabase.storage.from(bucket).remove(paths);
+      if (error) {
+        console.warn(`Failed to remove images from bucket '${bucket}':`, error);
+      } else {
+        console.log(`Successfully removed ${paths.length} images from bucket '${bucket}':`, data);
+      }
+    } catch (err) {
+      console.warn(`Exception removing files from bucket '${bucket}':`, err);
+    }
+  }
+};

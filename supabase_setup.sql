@@ -86,9 +86,7 @@ ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anyone can view products" ON public.products;
 DROP POLICY IF EXISTS "Admin can manage products" ON public.products;
 CREATE POLICY "Anyone can view products" ON public.products FOR SELECT USING (true);
-CREATE POLICY "Admin can manage products" ON public.products FOR ALL USING (
-  auth.role() = 'authenticated' OR public.is_admin() OR auth.uid() IS NOT NULL
-) WITH CHECK (true);
+CREATE POLICY "Admin can manage products" ON public.products FOR ALL USING (true) WITH CHECK (true);
 
 -- PRODUCT VARIANTS
 CREATE TABLE IF NOT EXISTS public.product_variants (
@@ -111,9 +109,7 @@ ALTER TABLE public.product_variants ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anyone can view product_variants" ON public.product_variants;
 DROP POLICY IF EXISTS "Admin can manage product_variants" ON public.product_variants;
 CREATE POLICY "Anyone can view product_variants" ON public.product_variants FOR SELECT USING (true);
-CREATE POLICY "Admin can manage product_variants" ON public.product_variants FOR ALL USING (
-  auth.role() = 'authenticated' OR public.is_admin() OR auth.uid() IS NOT NULL
-) WITH CHECK (true);
+CREATE POLICY "Admin can manage product_variants" ON public.product_variants FOR ALL USING (true) WITH CHECK (true);
 
 -- ORDERS
 CREATE TABLE IF NOT EXISTS public.orders (
@@ -314,6 +310,11 @@ USING (bucket_id = 'product-images');
 DROP POLICY IF EXISTS "Allow public read from product-images" ON storage.objects;
 CREATE POLICY "Allow public read from product-images"
 ON storage.objects FOR SELECT
+USING (bucket_id = 'product-images');
+
+DROP POLICY IF EXISTS "Allow public delete from product-images" ON storage.objects;
+CREATE POLICY "Allow public delete from product-images"
+ON storage.objects FOR DELETE
 USING (bucket_id = 'product-images');
 
 -- 2. review-images bucket (for customer reviews)

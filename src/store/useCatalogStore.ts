@@ -102,6 +102,9 @@ async function fetchProductsFromNetwork(): Promise<Product[]> {
   const localCustomProds: Product[] = typeof window !== 'undefined'
     ? JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]')
     : [];
+  const deletedIds: string[] = typeof window !== 'undefined'
+    ? JSON.parse(localStorage.getItem('elitebath_deleted_product_ids') || '[]')
+    : [];
 
   try {
     const { data, error } = await withTimeout(
@@ -113,24 +116,24 @@ async function fetchProductsFromNetwork(): Promise<Product[]> {
     if (error) throw error;
     const parsed = parseProducts(data as Record<string, unknown>[] | null);
 
-    // Merge: custom local products first, then DB products, then fallback products
-    const merged = [...localCustomProds];
+    // Merge: custom local products first, then DB products, then fallback products (excluding deleted)
+    const merged = [...localCustomProds.filter((p) => !deletedIds.includes(p.id))];
     for (const p of parsed) {
-      if (!merged.some((m) => m.id === p.id || m.slug === p.slug)) {
+      if (!deletedIds.includes(p.id) && !merged.some((m) => m.id === p.id || m.slug === p.slug)) {
         merged.push(p);
       }
     }
     for (const fb of FALLBACK_PRODUCTS) {
-      if (!merged.some((m) => m.id === fb.id || m.slug === fb.slug)) {
+      if (!deletedIds.includes(fb.id) && !merged.some((m) => m.id === fb.id || m.slug === fb.slug)) {
         merged.push(fb);
       }
     }
     return merged;
   } catch (err) {
     console.warn('Network product fetch error, returning local + fallback products:', err);
-    const merged = [...localCustomProds];
+    const merged = [...localCustomProds.filter((p) => !deletedIds.includes(p.id))];
     for (const fb of FALLBACK_PRODUCTS) {
-      if (!merged.some((m) => m.id === fb.id || m.slug === fb.slug)) {
+      if (!deletedIds.includes(fb.id) && !merged.some((m) => m.id === fb.id || m.slug === fb.slug)) {
         merged.push(fb);
       }
     }
@@ -373,6 +376,10 @@ export const useCatalogStore = create<CatalogState>()(
           const custom = JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]');
           const updated = [newProd, ...custom.filter((p: any) => p.id !== newProd.id)];
           localStorage.setItem('elitebath_custom_products', JSON.stringify(updated));
+
+          const deletedIds: string[] = JSON.parse(localStorage.getItem('elitebath_deleted_product_ids') || '[]');
+          const cleanDeleted = deletedIds.filter((id) => id !== newProd.id);
+          localStorage.setItem('elitebath_deleted_product_ids', JSON.stringify(cleanDeleted));
         }
         set((state) => ({
           products: [newProd, ...state.products.filter((p) => p.id !== newProd.id)],
@@ -397,6 +404,12 @@ export const useCatalogStore = create<CatalogState>()(
           const custom = JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]');
           const updated = custom.filter((p: any) => p.id !== id);
           localStorage.setItem('elitebath_custom_products', JSON.stringify(updated));
+
+          const deletedIds: string[] = JSON.parse(localStorage.getItem('elitebath_deleted_product_ids') || '[]');
+          if (!deletedIds.includes(id)) {
+            deletedIds.push(id);
+            localStorage.setItem('elitebath_deleted_product_ids', JSON.stringify(deletedIds));
+          }
         }
         set((state) => ({
           products: state.products.filter((p) => p.id !== id),

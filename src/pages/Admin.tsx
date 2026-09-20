@@ -11,6 +11,7 @@ import { ShieldCheck, Plus, Edit, Trash2, Check, X, CreditCard, ShoppingBag, Lis
 import { ProductVariantEditor } from '../components/admin/ProductVariantEditor';
 import type { OptionDraft, VariantDraft } from '../components/admin/ProductVariantEditor';
 import { ImageUploadZone } from '../components/admin/ImageUploadZone';
+import { deleteProductImagesFromStorage } from '../lib/storage';
 import { FALLBACK_CATEGORIES, FALLBACK_PRODUCTS } from '../lib/catalogQueries';
 
 export const Admin: React.FC = () => {
@@ -792,18 +793,47 @@ export const Admin: React.FC = () => {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) return;
+    const prodToDelete = products.find(p => p.id === id);
+    const prodName = prodToDelete?.name || 'this product';
+    if (!window.confirm(`Are you sure you want to delete "${prodName}"?\n\nThis will permanently delete the product and its uploaded images from storage.`)) return;
+
     try {
+      // 1. Delete associated product images from Supabase Storage
+      if (prodToDelete) {
+        try {
+          await deleteProductImagesFromStorage(prodToDelete);
+        } catch (imgErr) {
+          console.warn('Storage image cleanup warning:', imgErr);
+        }
+      }
+
+      // 2. Delete variants from Supabase DB
+      try {
+        await supabase.from('product_variants').delete().eq('product_id', id);
+      } catch (varErr) {
+        console.warn('Variants delete warning:', varErr);
+      }
+
+      // 3. Delete product from Supabase DB
+      let dbDeleteWarning: string | null = null;
       try {
         const { error } = await supabase.from('products').delete().eq('id', id);
         if (error) throw error;
-      } catch (dbErr) {
+      } catch (dbErr: any) {
+        dbDeleteWarning = dbErr?.message || String(dbErr);
         console.warn('Supabase product delete warning:', dbErr);
       }
+
+      // 4. Remove from catalog store and local state
       useCatalogStore.getState().deleteProduct(id);
       setProducts(prev => prev.filter(p => p.id !== id));
       void useCatalogStore.getState().fetchProducts(true);
-      alert('Product deleted successfully!');
+
+      if (dbDeleteWarning) {
+        alert(`⚠️ Product deleted from local view, but database returned: ${dbDeleteWarning}.\nPlease verify the delete policy in Supabase SQL Editor.`);
+      } else {
+        alert('Product and its images deleted successfully!');
+      }
     } catch (err: any) {
       console.error('Failed to delete product:', err);
       alert('Failed to delete product: ' + (err.message || err));
