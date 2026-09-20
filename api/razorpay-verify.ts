@@ -1,3 +1,5 @@
+declare const process: any;
+
 export const config = {
   runtime: 'edge',
 };
