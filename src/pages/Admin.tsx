@@ -55,6 +55,7 @@ export const Admin: React.FC = () => {
     warranty_info: '',
     is_new_arrival: false,
     is_active: true,
+    shipping_fee: 0,
   });
 
   // Variant States
@@ -607,6 +608,7 @@ export const Admin: React.FC = () => {
         variant_config: variantConfigData,
         is_new_arrival: Boolean(productForm.is_new_arrival),
         is_active: Boolean(productForm.is_active),
+        shipping_fee: Number(productForm.shipping_fee) || 0,
       };
 
       let targetId = editingProduct ? editingProduct.id : '';
@@ -708,7 +710,8 @@ export const Admin: React.FC = () => {
       finish: prod.finish || '',
       warranty_info: prod.warranty_info || '',
       is_new_arrival: Boolean(prod.is_new_arrival),
-      is_active: prod.is_active !== false
+      is_active: prod.is_active !== false,
+      shipping_fee: prod.shipping_fee ?? 0,
     });
 
     setHasVariants(Boolean(prod.has_variants));
@@ -1396,6 +1399,7 @@ export const Admin: React.FC = () => {
                       warranty_info: '',
                       is_new_arrival: false,
                       is_active: true,
+                      shipping_fee: 0,
                     });
                     setHasVariants(false);
                     setOptionDrafts([]);
@@ -2715,6 +2719,25 @@ export const Admin: React.FC = () => {
                     value={productForm.warranty_info}
                     onChange={(e) => setProductForm({ ...productForm, warranty_info: e.target.value })}
                   />
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
+                      Shipping Fee (₹)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        placeholder="0 = FREE shipping"
+                        value={productForm.shipping_fee || ''}
+                        onChange={(e) => setProductForm({ ...productForm, shipping_fee: Number(e.target.value) || 0 })}
+                        className="w-full pl-8 pr-4 py-2.5 rounded-xl text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-1">Set 0 for free shipping. This overrides the global shipping rule for this product.</p>
+                  </div>
                 </div>
 
                 {/* Badges and visibility */}

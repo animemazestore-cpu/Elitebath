@@ -79,6 +79,7 @@ CREATE TABLE IF NOT EXISTS public.products (
   variant_config JSONB NOT NULL DEFAULT '{"enabledOptions":[], "options":[]}'::jsonb,
   is_new_arrival BOOLEAN NOT NULL DEFAULT false,
   is_active BOOLEAN NOT NULL DEFAULT true,
+  shipping_fee NUMERIC NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;

@@ -48,8 +48,20 @@ export const Checkout: React.FC = () => {
     }
   }
 
-  const shippingCharge =
-    subtotal >= 999 || appliedCoupon?.code === 'FREESHIP' ? 0 : 99;
+  // Calculate shipping: use per-product shipping_fee when set, otherwise apply global rule
+  const shippingCharge = (() => {
+    let totalShipping = 0;
+    let hasProductShippingFees = false;
+    for (const item of items) {
+      const fee = item.product.shipping_fee;
+      if (fee !== undefined && fee !== null && fee > 0) {
+        hasProductShippingFees = true;
+        totalShipping += fee * item.quantity;
+      }
+    }
+    if (hasProductShippingFees) return totalShipping;
+    return subtotal >= 999 || appliedCoupon?.code === 'FREESHIP' ? 0 : 99;
+  })();
   const total = Math.max(0, subtotal - discountAmount) + shippingCharge;
 
   // Form Fields
@@ -201,6 +213,7 @@ export const Checkout: React.FC = () => {
             name: it.product.name,
             price: it.product.price,
             slug: it.product.slug,
+            shipping_fee: it.product.shipping_fee ?? 0,
           },
           quantity: it.quantity,
           variantPrice: it.variantPrice,

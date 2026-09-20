@@ -133,7 +133,23 @@ export const Cart: React.FC = () => {
     }
   }
 
-  const shippingCharge = subtotal >= 999 ? 0 : 99;
+  // Calculate shipping: use per-product shipping_fee when set, otherwise apply global rule
+  const shippingCharge = (() => {
+    let totalShipping = 0;
+    let hasProductShippingFees = false;
+    for (const item of items) {
+      const fee = item.product.shipping_fee;
+      if (fee !== undefined && fee !== null && fee > 0) {
+        hasProductShippingFees = true;
+        totalShipping += fee * item.quantity;
+      }
+    }
+    // If any product has explicit shipping fees, use sum of those
+    // Products with shipping_fee = 0 or undefined get free shipping
+    if (hasProductShippingFees) return totalShipping;
+    // Fallback: global rule
+    return subtotal >= 999 ? 0 : 99;
+  })();
   const total = Math.max(0, subtotal - discountAmount) + shippingCharge;
 
   const handleCheckoutClick = () => {

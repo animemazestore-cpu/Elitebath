@@ -71,9 +71,20 @@ export default async function handler(req: Request) {
       }
     }
 
-    // 3. Shipping charge calculation
-    const shippingCharge =
-      subtotal >= 999 || couponCode?.toUpperCase() === 'FREESHIP' ? 0 : 99;
+    // 3. Shipping charge calculation – per-product shipping_fee support
+    let shippingCharge = 0;
+    let hasProductShippingFees = false;
+    for (const item of items) {
+      const fee = Number(item.product?.shipping_fee ?? 0);
+      if (fee > 0) {
+        hasProductShippingFees = true;
+        shippingCharge += fee * Math.max(1, Number(item.quantity ?? 1));
+      }
+    }
+    if (!hasProductShippingFees) {
+      shippingCharge =
+        subtotal >= 999 || couponCode?.toUpperCase() === 'FREESHIP' ? 0 : 99;
+    }
 
     // 4. Final total in rupees and paise
     const finalTotal = Math.max(0, subtotal - discountAmount) + shippingCharge;
