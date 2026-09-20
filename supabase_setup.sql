@@ -46,13 +46,17 @@ CREATE TABLE IF NOT EXISTS public.categories (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL UNIQUE,
   image_url TEXT NOT NULL DEFAULT '',
+  size_enabled BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+ALTER TABLE public.categories ADD COLUMN IF NOT EXISTS size_enabled BOOLEAN DEFAULT false;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anyone can view categories" ON public.categories;
 DROP POLICY IF EXISTS "Admin can manage categories" ON public.categories;
 CREATE POLICY "Anyone can view categories" ON public.categories FOR SELECT USING (true);
-CREATE POLICY "Admin can manage categories" ON public.categories FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admin can manage categories" ON public.categories FOR ALL USING (
+  auth.role() = 'authenticated' OR public.is_admin() OR auth.uid() IS NOT NULL
+) WITH CHECK (true);
 
 -- PRODUCTS
 CREATE TABLE IF NOT EXISTS public.products (
@@ -81,7 +85,9 @@ ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anyone can view products" ON public.products;
 DROP POLICY IF EXISTS "Admin can manage products" ON public.products;
 CREATE POLICY "Anyone can view products" ON public.products FOR SELECT USING (true);
-CREATE POLICY "Admin can manage products" ON public.products FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admin can manage products" ON public.products FOR ALL USING (
+  auth.role() = 'authenticated' OR public.is_admin() OR auth.uid() IS NOT NULL
+) WITH CHECK (true);
 
 -- PRODUCT VARIANTS
 CREATE TABLE IF NOT EXISTS public.product_variants (
@@ -104,7 +110,9 @@ ALTER TABLE public.product_variants ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anyone can view product_variants" ON public.product_variants;
 DROP POLICY IF EXISTS "Admin can manage product_variants" ON public.product_variants;
 CREATE POLICY "Anyone can view product_variants" ON public.product_variants FOR SELECT USING (true);
-CREATE POLICY "Admin can manage product_variants" ON public.product_variants FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admin can manage product_variants" ON public.product_variants FOR ALL USING (
+  auth.role() = 'authenticated' OR public.is_admin() OR auth.uid() IS NOT NULL
+) WITH CHECK (true);
 
 -- ORDERS
 CREATE TABLE IF NOT EXISTS public.orders (

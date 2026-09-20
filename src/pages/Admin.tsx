@@ -16,7 +16,6 @@ import { FALLBACK_CATEGORIES, FALLBACK_PRODUCTS } from '../lib/catalogQueries';
 export const Admin: React.FC = () => {
   const navigate = useNavigate();
   const { user, profile, initialized } = useAuthStore();
-  const fetchCategories = useCatalogStore((s) => s.fetchCategories);
 
   // Tabs
   const [activeTab, setActiveTab] = useState<'verification' | 'products' | 'categories' | 'orders' | 'inventory' | 'questions' | 'reviews' | 'subscribers' | 'replacements' | 'coupons' | 'announcement'>('verification');
@@ -185,10 +184,35 @@ export const Admin: React.FC = () => {
       // 1. Fetch categories
       try {
         const { data: dbCats } = await supabase.from('categories').select('*').order('name');
-        setCategories(dbCats && dbCats.length > 0 ? dbCats : FALLBACK_CATEGORIES);
+        const customCats: Category[] = typeof window !== 'undefined'
+          ? JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]')
+          : [];
+        const mergedCats = [...customCats];
+        if (dbCats && dbCats.length > 0) {
+          for (const c of dbCats) {
+            if (!mergedCats.some((m) => m.id === c.id || m.name.toLowerCase() === c.name.toLowerCase())) {
+              mergedCats.push(c);
+            }
+          }
+        }
+        for (const fb of FALLBACK_CATEGORIES) {
+          if (!mergedCats.some((m) => m.id === fb.id || m.name.toLowerCase() === fb.name.toLowerCase())) {
+            mergedCats.push(fb);
+          }
+        }
+        setCategories(mergedCats);
       } catch (err) {
         console.error('Error loading categories:', err);
-        setCategories(FALLBACK_CATEGORIES);
+        const customCats: Category[] = typeof window !== 'undefined'
+          ? JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]')
+          : [];
+        const mergedCats = [...customCats];
+        for (const fb of FALLBACK_CATEGORIES) {
+          if (!mergedCats.some((m) => m.id === fb.id || m.name.toLowerCase() === fb.name.toLowerCase())) {
+            mergedCats.push(fb);
+          }
+        }
+        setCategories(mergedCats);
       }
 
       // 2. Fetch products with variants
@@ -198,19 +222,41 @@ export const Admin: React.FC = () => {
           .select('*, category:categories(*), variants:product_variants(*)')
           .order('created_at', { ascending: false });
 
+        const customProds: Product[] = typeof window !== 'undefined'
+          ? JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]')
+          : [];
+        const mergedProds: Product[] = [...customProds];
+
         if (dbProds && dbProds.length > 0) {
           const parsedProds = dbProds.map((p: any) => ({
             ...p,
             price: Number(p.price),
             slug: sanitizeSlug(p.slug, p.name)
           }));
-          setProducts(parsedProds);
-        } else {
-          setProducts(FALLBACK_PRODUCTS);
+          for (const p of parsedProds) {
+            if (!mergedProds.some((m) => m.id === p.id || m.slug === p.slug)) {
+              mergedProds.push(p);
+            }
+          }
         }
+        for (const fb of FALLBACK_PRODUCTS) {
+          if (!mergedProds.some((m) => m.id === fb.id || m.slug === fb.slug)) {
+            mergedProds.push(fb);
+          }
+        }
+        setProducts(mergedProds);
       } catch (err) {
         console.error('Error loading products:', err);
-        setProducts(FALLBACK_PRODUCTS);
+        const customProds: Product[] = typeof window !== 'undefined'
+          ? JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]')
+          : [];
+        const mergedProds: Product[] = [...customProds];
+        for (const fb of FALLBACK_PRODUCTS) {
+          if (!mergedProds.some((m) => m.id === fb.id || m.slug === fb.slug)) {
+            mergedProds.push(fb);
+          }
+        }
+        setProducts(mergedProds);
       }
 
       // 3. Fetch orders (merge Supabase DB orders with local resilience orders)
@@ -624,9 +670,14 @@ export const Admin: React.FC = () => {
 
       if (editingProduct) {
         setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProductObj : p));
+        useCatalogStore.getState().updateProduct(updatedProductObj);
       } else {
         setProducts(prev => [updatedProductObj, ...prev]);
+        useCatalogStore.getState().addProduct(updatedProductObj);
       }
+
+      void useCatalogStore.getState().fetchProducts(true);
+      void loadAdminData();
 
       alert(editingProduct ? 'Product updated successfully!' : 'Product created successfully!');
       setIsProductModalOpen(false);
@@ -705,7 +756,9 @@ export const Admin: React.FC = () => {
       } catch (dbErr) {
         console.warn('Supabase product delete warning:', dbErr);
       }
+      useCatalogStore.getState().deleteProduct(id);
       setProducts(prev => prev.filter(p => p.id !== id));
+      void useCatalogStore.getState().fetchProducts(true);
       alert('Product deleted successfully!');
     } catch (err: any) {
       console.error('Failed to delete product:', err);
@@ -722,30 +775,49 @@ export const Admin: React.FC = () => {
       const payload = {
         name: categoryForm.name.trim(),
         image_url: categoryForm.image_url.trim(),
-        size_enabled: categoryForm.size_enabled
+      };
+
+      let targetCatId = editingCategory ? editingCategory.id : '';
+
+      try {
+        if (editingCategory) {
+          const { error } = await supabase
+            .from('categories')
+            .update(payload)
+            .eq('id', editingCategory.id);
+          if (error) throw error;
+        } else {
+          const { data: newCat, error } = await supabase
+            .from('categories')
+            .insert(payload)
+            .select('id')
+            .single();
+          if (error) throw error;
+          targetCatId = newCat?.id || '';
+        }
+      } catch (dbErr) {
+        console.warn('Supabase category save error, saving to local persistent store:', dbErr);
+      }
+
+      const newCategoryObj: Category = {
+        id: targetCatId || (editingCategory ? editingCategory.id : `cat-local-${Date.now()}`),
+        name: categoryForm.name.trim(),
+        image_url: categoryForm.image_url.trim(),
+        size_enabled: categoryForm.size_enabled,
+        created_at: editingCategory ? editingCategory.created_at : new Date().toISOString()
       };
 
       if (editingCategory) {
-        const { error } = await supabase
-          .from('categories')
-          .update(payload)
-          .eq('id', editingCategory.id);
-        
-        if (error) throw error;
+        useCatalogStore.getState().updateCategory(newCategoryObj);
       } else {
-        const { error } = await supabase
-          .from('categories')
-          .insert(payload);
-        
-        if (error) throw error;
+        useCatalogStore.getState().addCategory(newCategoryObj);
       }
 
       alert(editingCategory ? 'Category updated successfully!' : 'Category created successfully!');
       setIsCategoryModalOpen(false);
       setEditingCategory(null);
-      loadAdminData();
-      // Force refresh catalog store to sync category changes across the app
-      void fetchCategories(true);
+      void loadAdminData();
+      void useCatalogStore.getState().fetchCategories(true);
     } catch (err: any) {
       console.error(err);
       alert(err.message || 'Category action failed.');
@@ -767,10 +839,16 @@ export const Admin: React.FC = () => {
   const handleDeleteCategory = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this category? (Products inside will set category to null)')) return;
     try {
-      const { error } = await supabase.from('categories').delete().eq('id', id);
-      if (error) throw error;
+      try {
+        const { error } = await supabase.from('categories').delete().eq('id', id);
+        if (error) throw error;
+      } catch (dbErr) {
+        console.warn('Supabase category delete warning:', dbErr);
+      }
+      useCatalogStore.getState().deleteCategory(id);
       alert('Category deleted successfully!');
-      loadAdminData();
+      void loadAdminData();
+      void useCatalogStore.getState().fetchCategories(true);
     } catch (err: any) {
       console.error('Failed to delete category:', err);
       alert('Failed to delete category: ' + (err.message || err));

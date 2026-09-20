@@ -43,6 +43,12 @@ interface CatalogState {
     limit?: number
   ) => Promise<Product[]>;
   getFeaturedProducts: () => Product[];
+  addProduct: (product: Product) => void;
+  updateProduct: (product: Product) => void;
+  deleteProduct: (id: string) => void;
+  addCategory: (category: Category) => void;
+  updateCategory: (category: Category) => void;
+  deleteCategory: (id: string) => void;
 }
 
 function isFresh(fetchedAt: number | null): boolean {
@@ -50,20 +56,47 @@ function isFresh(fetchedAt: number | null): boolean {
 }
 
 async function fetchCategoriesFromNetwork(): Promise<Category[]> {
+  const localCustomCats: Category[] = typeof window !== 'undefined'
+    ? JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]')
+    : [];
+
   try {
     const { data, error } = await withTimeout(
       supabase.from('categories').select(CATEGORY_FIELDS).order('name')
     );
     if (error) throw error;
-    if (data && data.length > 0) return data as Category[];
-    return FALLBACK_CATEGORIES;
+    const dbCats = (data && data.length > 0) ? (data as Category[]) : [];
+    
+    // Merge: custom categories first, then DB categories, then fallback categories
+    const merged = [...localCustomCats];
+    for (const c of dbCats) {
+      if (!merged.some((m) => m.id === c.id || m.name.toLowerCase() === c.name.toLowerCase())) {
+        merged.push(c);
+      }
+    }
+    for (const fb of FALLBACK_CATEGORIES) {
+      if (!merged.some((m) => m.id === fb.id || m.name.toLowerCase() === fb.name.toLowerCase())) {
+        merged.push(fb);
+      }
+    }
+    return merged;
   } catch (err) {
-    console.warn('Network category fetch failed, using default sanitaryware categories:', err);
-    return FALLBACK_CATEGORIES;
+    console.warn('Network category fetch error, returning local + fallback categories:', err);
+    const merged = [...localCustomCats];
+    for (const fb of FALLBACK_CATEGORIES) {
+      if (!merged.some((m) => m.id === fb.id || m.name.toLowerCase() === fb.name.toLowerCase())) {
+        merged.push(fb);
+      }
+    }
+    return merged;
   }
 }
 
 async function fetchProductsFromNetwork(): Promise<Product[]> {
+  const localCustomProds: Product[] = typeof window !== 'undefined'
+    ? JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]')
+    : [];
+
   try {
     const { data, error } = await withTimeout(
       supabase
@@ -73,11 +106,29 @@ async function fetchProductsFromNetwork(): Promise<Product[]> {
     );
     if (error) throw error;
     const parsed = parseProducts(data as Record<string, unknown>[] | null);
-    if (parsed.length > 0) return parsed;
-    return FALLBACK_PRODUCTS;
+
+    // Merge: custom local products first, then DB products, then fallback products
+    const merged = [...localCustomProds];
+    for (const p of parsed) {
+      if (!merged.some((m) => m.id === p.id || m.slug === p.slug)) {
+        merged.push(p);
+      }
+    }
+    for (const fb of FALLBACK_PRODUCTS) {
+      if (!merged.some((m) => m.id === fb.id || m.slug === fb.slug)) {
+        merged.push(fb);
+      }
+    }
+    return merged;
   } catch (err) {
-    console.warn('Network product fetch failed, using luxury sanitaryware catalog:', err);
-    return FALLBACK_PRODUCTS;
+    console.warn('Network product fetch error, returning local + fallback products:', err);
+    const merged = [...localCustomProds];
+    for (const fb of FALLBACK_PRODUCTS) {
+      if (!merged.some((m) => m.id === fb.id || m.slug === fb.slug)) {
+        merged.push(fb);
+      }
+    }
+    return merged;
   }
 }
 
@@ -265,6 +316,78 @@ export const useCatalogStore = create<CatalogState>()(
           console.warn('Could not fetch related products:', err);
           return fromCache;
         }
+      },
+
+      addProduct: (newProd: Product) => {
+        if (typeof window !== 'undefined') {
+          const custom = JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]');
+          const updated = [newProd, ...custom.filter((p: any) => p.id !== newProd.id)];
+          localStorage.setItem('elitebath_custom_products', JSON.stringify(updated));
+        }
+        set((state) => ({
+          products: [newProd, ...state.products.filter((p) => p.id !== newProd.id)],
+          productsFetchedAt: Date.now(),
+        }));
+      },
+
+      updateProduct: (updatedProd: Product) => {
+        if (typeof window !== 'undefined') {
+          const custom = JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]');
+          const updated = custom.map((p: any) => (p.id === updatedProd.id ? updatedProd : p));
+          localStorage.setItem('elitebath_custom_products', JSON.stringify(updated));
+        }
+        set((state) => ({
+          products: state.products.map((p) => (p.id === updatedProd.id ? updatedProd : p)),
+          productsFetchedAt: Date.now(),
+        }));
+      },
+
+      deleteProduct: (id: string) => {
+        if (typeof window !== 'undefined') {
+          const custom = JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]');
+          const updated = custom.filter((p: any) => p.id !== id);
+          localStorage.setItem('elitebath_custom_products', JSON.stringify(updated));
+        }
+        set((state) => ({
+          products: state.products.filter((p) => p.id !== id),
+          productsFetchedAt: Date.now(),
+        }));
+      },
+
+      addCategory: (newCat: Category) => {
+        if (typeof window !== 'undefined') {
+          const custom = JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]');
+          const updated = [newCat, ...custom.filter((c: any) => c.id !== newCat.id)];
+          localStorage.setItem('elitebath_custom_categories', JSON.stringify(updated));
+        }
+        set((state) => ({
+          categories: [newCat, ...state.categories.filter((c) => c.id !== newCat.id)],
+          categoriesFetchedAt: Date.now(),
+        }));
+      },
+
+      updateCategory: (updatedCat: Category) => {
+        if (typeof window !== 'undefined') {
+          const custom = JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]');
+          const updated = custom.map((c: any) => (c.id === updatedCat.id ? updatedCat : c));
+          localStorage.setItem('elitebath_custom_categories', JSON.stringify(updated));
+        }
+        set((state) => ({
+          categories: state.categories.map((c) => (c.id === updatedCat.id ? updatedCat : c)),
+          categoriesFetchedAt: Date.now(),
+        }));
+      },
+
+      deleteCategory: (id: string) => {
+        if (typeof window !== 'undefined') {
+          const custom = JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]');
+          const updated = custom.filter((c: any) => c.id !== id);
+          localStorage.setItem('elitebath_custom_categories', JSON.stringify(updated));
+        }
+        set((state) => ({
+          categories: state.categories.filter((c) => c.id !== id),
+          categoriesFetchedAt: Date.now(),
+        }));
       },
     }),
     {
