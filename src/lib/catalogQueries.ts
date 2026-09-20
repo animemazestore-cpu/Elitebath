@@ -7,10 +7,10 @@ export const PRODUCT_VARIANT_FIELDS =
   'id, product_id, sku, price, stock, image_url, attributes, active, created_at, updated_at';
 
 export const PRODUCT_LIST_FIELDS =
-  'id, name, slug, description, category_id, price, stock, featured, main_image_url, sku, brand, material, finish, warranty_info, has_variants, variant_config, is_new_arrival, is_active, created_at';
+  'id, name, slug, description, category_id, price, stock, featured, main_image_url, sku, brand, material, finish, warranty_info, has_variants, variant_config, is_new_arrival, is_active, shipping_fee, created_at';
 
 export const PRODUCT_DETAIL_FIELDS =
-  'id, name, slug, description, category_id, price, stock, featured, main_image_url, additional_images, sku, brand, material, finish, warranty_info, has_variants, variant_config, is_new_arrival, is_active, created_at';
+  'id, name, slug, description, category_id, price, stock, featured, main_image_url, additional_images, sku, brand, material, finish, warranty_info, has_variants, variant_config, is_new_arrival, is_active, shipping_fee, created_at';
 
 export const PRODUCT_RELATED_FIELDS =
   'id, name, slug, price, stock, featured, main_image_url, sku, brand, finish, has_variants, created_at';
@@ -100,6 +100,7 @@ export function parseProduct(raw: Record<string, unknown>): Product {
     variants: variants.length > 0 ? variants : undefined,
     is_new_arrival: Boolean(raw.is_new_arrival),
     is_active: raw.is_active !== false,
+    shipping_fee: raw.shipping_fee !== undefined ? Number(raw.shipping_fee) : 0,
     created_at: (raw.created_at as string) || new Date().toISOString(),
     ...(category ? { category } : {}),
   };

@@ -889,8 +889,12 @@ export const ProductDetail: React.FC = () => {
                 </div>
                 <div className="p-2.5 bg-gray-50/80 rounded-xl border border-gray-100 flex flex-col items-center">
                   <Truck className="h-4 w-4 text-primary mb-1" />
-                  <span className="text-[10px] font-bold text-gray-800">Insured Delivery</span>
-                  <span className="text-[9px] text-gray-500">Secure Transit Care</span>
+                  <span className="text-[10px] font-bold text-gray-800">
+                    {product.shipping_fee && product.shipping_fee > 0
+                      ? `Shipping: ₹${product.shipping_fee}`
+                      : 'FREE Shipping'}
+                  </span>
+                  <span className="text-[9px] text-gray-500">Insured Transit</span>
                 </div>
                 <div className="p-2.5 bg-gray-50/80 rounded-xl border border-gray-100 flex flex-col items-center">
                   <Sparkles className="h-4 w-4 text-primary mb-1" />
