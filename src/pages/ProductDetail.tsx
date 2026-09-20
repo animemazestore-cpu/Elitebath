@@ -12,6 +12,7 @@ import { ProductDetailSkeleton } from '../components/product/ProductDetailSkelet
 import { ProductImage } from '../components/product/ProductImage';
 import { ProductImageGallery } from '../components/product/ProductImageGallery';
 import { ProductDescription } from '../components/product/ProductDescription';
+import { findProductBySlug } from '../lib/catalogQueries';
 
 export const ProductDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -52,12 +53,19 @@ export const ProductDetail: React.FC = () => {
     const fetchProductDetails = async () => {
       if (!slug) return;
 
-      const cacheKey = slug.toLowerCase();
+      const cacheKey = slug.toLowerCase().trim();
+      const currentProducts = useCatalogStore.getState().products;
+      const directMatch = findProductBySlug(currentProducts, cacheKey);
+      if (directMatch) {
+        setProduct(directMatch);
+        setLoading(false);
+      }
+
       const cached = useCatalogStore.getState().productDetailsBySlug[cacheKey];
       const cacheFresh =
         cached && Date.now() - cached.fetchedAt < 5 * 60 * 1000;
 
-      if (cacheFresh) {
+      if (cacheFresh && cached.product) {
         setProduct(cached.product);
         setLoading(false);
         const related = await getRelatedProducts(
@@ -70,22 +78,21 @@ export const ProductDetail: React.FC = () => {
       }
 
       try {
-        setLoading(true);
+        if (!directMatch) setLoading(true);
 
-        const fetchedProduct = await getProductBySlug(slug);
+        const fetchedProduct = await getProductBySlug(slug, true);
 
-        if (!fetchedProduct) {
-          setProduct(null);
-          setRelatedProducts([]);
-        } else {
+        if (fetchedProduct) {
           setProduct(fetchedProduct);
-
           const related = await getRelatedProducts(
             fetchedProduct.id,
             fetchedProduct.category_id,
             4
           );
           setRelatedProducts(related);
+        } else if (!directMatch) {
+          setProduct(null);
+          setRelatedProducts([]);
         }
       } catch (err) {
         console.error('Error fetching product details:', err);

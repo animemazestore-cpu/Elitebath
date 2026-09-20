@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { withTimeout } from '../lib/withTimeout';
+import { sanitizeSlug } from '../lib/persistence';
 import {
   CATEGORY_FIELDS,
   PRODUCT_DETAIL_SELECT,
@@ -133,6 +134,13 @@ async function fetchProductsFromNetwork(): Promise<Product[]> {
 }
 
 async function fetchProductDetailFromNetwork(id: string): Promise<Product | null> {
+  // First check local custom products
+  if (typeof window !== 'undefined') {
+    const localCustom: Product[] = JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]');
+    const matched = localCustom.find((p) => p.id === id);
+    if (matched) return matched;
+  }
+
   try {
     const { data, error } = await withTimeout(
       supabase.from('products').select(PRODUCT_DETAIL_SELECT).eq('id', id).maybeSingle()
@@ -146,16 +154,48 @@ async function fetchProductDetailFromNetwork(id: string): Promise<Product | null
 }
 
 async function fetchProductDetailBySlugFromNetwork(slug: string): Promise<Product | null> {
+  const cleanSlug = slug.toLowerCase().trim();
+
+  // First check local custom products
+  if (typeof window !== 'undefined') {
+    const localCustom: Product[] = JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]');
+    const matched = localCustom.find(
+      (p) =>
+        p.slug.toLowerCase() === cleanSlug ||
+        sanitizeSlug(p.slug, p.name).toLowerCase() === cleanSlug ||
+        p.id.toLowerCase() === cleanSlug
+    );
+    if (matched) return matched;
+  }
+
   try {
     const { data, error } = await withTimeout(
-      supabase.from('products').select(PRODUCT_DETAIL_SELECT).eq('slug', slug).maybeSingle()
+      supabase.from('products').select(PRODUCT_DETAIL_SELECT).eq('slug', cleanSlug).maybeSingle()
     );
     if (error) throw error;
     if (data) return parseProduct(data as Record<string, unknown>);
   } catch (err) {
     console.warn('Product detail by slug fetch error:', err);
   }
-  return FALLBACK_PRODUCTS.find((p) => p.slug === slug) ?? null;
+
+  // Also check if slug is a valid UUID in Supabase
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanSlug)) {
+    try {
+      const { data, error } = await withTimeout(
+        supabase.from('products').select(PRODUCT_DETAIL_SELECT).eq('id', cleanSlug).maybeSingle()
+      );
+      if (!error && data) return parseProduct(data as Record<string, unknown>);
+    } catch (_) {}
+  }
+
+  return (
+    FALLBACK_PRODUCTS.find(
+      (p) =>
+        p.slug.toLowerCase() === cleanSlug ||
+        sanitizeSlug(p.slug, p.name).toLowerCase() === cleanSlug ||
+        p.id.toLowerCase() === cleanSlug
+    ) ?? null
+  );
 }
 
 export const useCatalogStore = create<CatalogState>()(
@@ -256,26 +296,31 @@ export const useCatalogStore = create<CatalogState>()(
       },
 
       getProductBySlug: async (slug, force = false) => {
-        const cacheKey = slug.toLowerCase();
+        const cacheKey = slug.toLowerCase().trim();
         const cached = get().productDetailsBySlug[cacheKey];
         if (!force && cached && isFresh(cached.fetchedAt)) {
           return cached.product;
         }
 
-        let product = await fetchProductDetailBySlugFromNetwork(slug);
+        // 1. First check in-memory store products
+        let product: Product | null = findProductBySlug(get().products, cacheKey) || null;
 
+        // 2. If not found in memory, query by slug
         if (!product) {
-          const listMatch = findProductBySlug(get().products, slug);
-          if (listMatch) {
-            product = await fetchProductDetailFromNetwork(listMatch.id);
-          }
+          product = await fetchProductDetailBySlugFromNetwork(cacheKey);
         }
 
+        // 3. If still not found, fetch all products and check again
         if (!product) {
-          const products = await get().fetchProducts();
-          const listMatch = findProductBySlug(products, slug);
-          if (listMatch) {
-            product = await fetchProductDetailFromNetwork(listMatch.id);
+          const products = await get().fetchProducts(true);
+          product = findProductBySlug(products, cacheKey) || null;
+        }
+
+        // 4. If we have a product from memory or list, try to fetch enriched variants/images if missing
+        if (product && (!product.variants || product.variants.length === 0)) {
+          const enriched = await fetchProductDetailFromNetwork(product.id);
+          if (enriched) {
+            product = enriched;
           }
         }
 
@@ -283,7 +328,7 @@ export const useCatalogStore = create<CatalogState>()(
           set((state) => ({
             productDetailsBySlug: {
               ...state.productDetailsBySlug,
-              [cacheKey]: { product, fetchedAt: Date.now() },
+              [cacheKey]: { product: product!, fetchedAt: Date.now() },
             },
           }));
         }
