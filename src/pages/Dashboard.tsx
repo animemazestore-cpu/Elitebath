@@ -186,22 +186,28 @@ export const Dashboard: React.FC = () => {
 
   const getOrderStatusColor = (status: string) => {
     switch (status) {
-      case 'PENDING_VERIFICATION': return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
-      case 'PAID': return 'text-success bg-success/10 border-success/20';
-      case 'PROCESSING': return 'text-primary bg-primary/10 border-primary/20';
-      case 'SHIPPED': return 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20';
-      case 'DELIVERED': return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+      case 'PENDING_PAYMENT':
+      case 'PENDING_VERIFICATION': return 'text-amber-600 bg-amber-50 border-amber-200';
+      case 'PAID': return 'text-blue-700 bg-blue-50 border-blue-200';
+      case 'PROCESSING': return 'text-indigo-700 bg-indigo-50 border-indigo-200';
+      case 'PACKED': return 'text-purple-700 bg-purple-50 border-purple-200';
+      case 'SHIPPED': return 'text-teal-700 bg-teal-50 border-teal-200';
+      case 'OUT_FOR_DELIVERY': return 'text-orange-700 bg-orange-50 border-orange-200';
+      case 'DELIVERED': return 'text-emerald-700 bg-emerald-50 border-emerald-200';
       case 'CANCELLED': return 'text-danger bg-danger/10 border-danger/20';
-      default: return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
-      case 'PENDING_VERIFICATION': return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
-      case 'PAID': return 'text-success bg-success/10 border-success/20';
+      case 'PENDING_PAYMENT':
+      case 'PENDING_VERIFICATION': return 'text-amber-600 bg-amber-50 border-amber-200';
+      case 'PAID':
+      case 'COMPLETED': return 'text-emerald-700 bg-emerald-50 border-emerald-200';
+      case 'FAILED':
       case 'REJECTED': return 'text-danger bg-danger/10 border-danger/20';
-      default: return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
 
@@ -231,7 +237,7 @@ export const Dashboard: React.FC = () => {
                 )}
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 text-base truncate">{profile.full_name || 'Anime Fan'}</h3>
+                <h3 className="font-bold text-gray-900 text-base truncate">{profile.full_name || 'Elite Customer'}</h3>
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
               </div>
             </div>
@@ -341,9 +347,9 @@ export const Dashboard: React.FC = () => {
                 </div>
               ) : orders.length === 0 ? (
                 <div className="text-center py-12">
-                  <ShoppingBag className="h-10 w-10 text-gray-600 mx-auto mb-3" />
-                  <p className="text-sm text-gray-400 mb-4">You have not placed any orders yet.</p>
-                  <Button size="sm" onClick={() => navigate('/shop')}>Browse Merch</Button>
+                  <ShoppingBag className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500 mb-4">You have not placed any orders yet.</p>
+                  <Button size="sm" onClick={() => navigate('/shop')}>Browse Collections</Button>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -407,12 +413,12 @@ export const Dashboard: React.FC = () => {
                                       <img src={item.product?.main_image_url} alt="" className="w-full h-full object-cover" />
                                     </div>
                                     <div>
-                                      <p className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-1">{item.product?.name || 'Anime Product'}</p>
+                                      <p className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-1">{item.product?.name || 'Sanitary Product'}</p>
                                       <div className="flex flex-wrap items-center gap-2 text-[10px] text-gray-500">
                                         <span>Qty: {item.quantity} x ₹{item.price}</span>
                                         {(item as any).selected_variant && (
-                                          <span className="px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary font-extrabold text-[9px]">
-                                            Size: {(item as any).selected_variant}
+                                          <span className="px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary font-bold text-[9px]">
+                                            Option: {(item as any).selected_variant}
                                           </span>
                                         )}
                                       </div>
@@ -535,7 +541,7 @@ export const Dashboard: React.FC = () => {
                   label="Display Name"
                   type="text"
                   required
-                  placeholder="Naruto Uzumaki"
+                  placeholder="Rajesh Mehra"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                 />

@@ -1,49 +1,98 @@
 import React from 'react';
+import { FileText, CheckCircle2, AlertCircle, Award, Scale } from 'lucide-react';
 
 const PolicyPage: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-    <div className="bg-white p-8 sm:p-12 rounded-2xl border border-gray-200 shadow-sm">
-      <h1 className="text-3xl font-extrabold text-gray-900 mb-6">{title}</h1>
-      <p className="text-xs text-gray-500 mb-6">Last Updated: June 20, 2026</p>
-      <div className="space-y-6 text-sm text-gray-600 leading-relaxed">
+    <div className="bg-white p-8 sm:p-12 rounded-2xl border border-gray-200 shadow-sm space-y-8">
+      <div className="border-b border-gray-200 pb-6">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider mb-3">
+          <FileText className="h-3.5 w-3.5" />
+          <span>Legal Agreement</span>
+        </div>
+        <h1 className="text-3xl font-extrabold text-gray-900">{title}</h1>
+        <p className="text-xs text-gray-500 mt-2">Effective Date: June 20, 2026 • Elite Bath Collections Pvt. Ltd.</p>
+      </div>
+      <div className="space-y-8 text-sm text-gray-600 leading-relaxed">
         {children}
       </div>
     </div>
   </div>
 );
 
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <section>
-    <h2 className="text-lg font-bold text-gray-900 mb-2">{title}</h2>
-    {children}
+const Section: React.FC<{ title: string; icon?: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
+  <section className="space-y-2">
+    <div className="flex items-center gap-2">
+      {icon}
+      <h2 className="text-base font-bold text-gray-900">{title}</h2>
+    </div>
+    <div className="text-gray-600 space-y-2 pl-0 sm:pl-6">{children}</div>
   </section>
 );
 
 export const TermsConditions: React.FC = () => (
-  <PolicyPage title="Terms & Conditions">
-    <Section title="1. Terms of Service">
+  <PolicyPage title="Terms & Conditions of Sale">
+    <p>
+      Welcome to <strong>Elite Bath Collections</strong>. These Terms & Conditions govern your access to, use of, and purchases made through our online store, digital catalog, and architectural concierge services. By placing an order, you agree to be bound by these legal terms.
+    </p>
+
+    <Section title="1. Product Specifications & Artisan Variations" icon={<CheckCircle2 className="h-4 w-4 text-primary" />}>
       <p>
-        By accessing and placing orders on AnimeMaze, you confirm that you are at least 18 years of age or are accessing the site under the supervision of a parent or guardian. You agree to comply with all local laws and terms listed on this page.
+        Elite Bath Collections engineers architectural sanitaryware, brassware fittings, and ceramic fixtures. Due to high-temperature ceramic firing processes (1280°C) and advanced PVD metallic surface deposition:
+      </p>
+      <ul className="list-disc pl-5 space-y-1">
+        <li>Vitreous china ceramic washbasins and commodes carry a standard dimensional tolerance of ±2mm to ±3mm.</li>
+        <li>Physical Vapor Deposition (PVD) finishes (Matte Black, Brushed Gold, Rose Gold, Gunmetal) exhibit subtle, luxurious undertone reflections under varying ambient lighting conditions.</li>
+        <li>All product photographs and lifestyle renderings are designed to represent color, texture, and scale as faithfully as possible.</li>
+      </ul>
+    </Section>
+
+    <Section title="2. Pricing, Orders & Invoicing" icon={<Scale className="h-4 w-4 text-primary" />}>
+      <p>
+        All prices are listed in Indian Rupees (INR) and are inclusive of applicable Goods & Services Tax (GST). Official GST-compliant tax invoices are generated upon order dispatch and available in your Customer Dashboard.
+      </p>
+      <p>
+        We reserve the right to decline, adjust, or cancel orders arising from typographical pricing errors or system inventory synchronization delays, in which case any captured funds are promptly refunded.
       </p>
     </Section>
-    <Section title="2. Product Descriptions & Stock">
+
+    <Section title="3. Payment Security & Settlement" icon={<CheckCircle2 className="h-4 w-4 text-primary" />}>
       <p>
-        We endeavor to be as accurate as possible with our product images, description, pricing, and stock specifications. However, we do not warrant that product descriptions or other content are error-free. If a product is listed with incorrect details due to typographical error, we reserve the right to cancel any orders placed for that product.
+        Payments must be completed in full before order processing and crate dispatch. We support Razorpay encrypted payment gateway processing (Credit/Debit cards, UPI, NetBanking, EMI) and Direct UPI QR payments. Submitting fraudulent transaction IDs or fabricated payment proofs is strictly prohibited and results in immediate order termination.
       </p>
     </Section>
-    <Section title="3. Manual Payments & Screenshot Upload">
+
+    <Section title="4. Professional Installation & Plumbing Requirements" icon={<AlertCircle className="h-4 w-4 text-primary" />}>
       <p>
-        Orders placed on AnimeMaze require manual payment via UPI to our designated UPI ID (8445619079@fam). You must upload a valid, unaltered screenshot of the successful transaction. Uploading fraudulent, fake, or reused screenshots is strictly prohibited. We reserve the right to ban users and cancel orders if fraudulent screenshots are uploaded.
+        To ensure optimal performance and maintain warranty coverage:
+      </p>
+      <ul className="list-disc pl-5 space-y-1">
+        <li>All faucets, thermostatic mixers, and concealed valves must be installed by a certified licensed plumber following supplied technical specifications.</li>
+        <li>Plumbing supply lines must be flushed prior to cartridge installation to eliminate sand, cement slurry, or debris from supply pipes.</li>
+        <li>Operating water pressure must be maintained between 1.5 bar and 3.5 bar. Excessive pressure requires certified pressure-reducing valves (PRVs).</li>
+        <li><strong>Cleaning Notice:</strong> Use only mild soap and soft microfiber cloths. The use of abrasive scrubbers, hydrochloric acid, bleach, or aggressive bathroom descalers voids finish warranties.</li>
+      </ul>
+    </Section>
+
+    <Section title="5. Comprehensive Warranty Coverage" icon={<Award className="h-4 w-4 text-primary" />}>
+      <p>
+        Our products are backed by the Elite Bath Collections Quality Assurance Guarantee:
+      </p>
+      <ul className="list-disc pl-5 space-y-1">
+        <li><strong>10-Year Warranty:</strong> Solid brass faucet bodies, internal ceramic disc cartridges, and ceramic glaze durability.</li>
+        <li><strong>5-Year Warranty:</strong> Thermostatic valves, shower diverters, and PVD surface finishes against peeling or flaking.</li>
+        <li><strong>Exclusions:</strong> Damage resulting from improper installation, external physical impact, acidic chemical exposure, or unauthorized dismantling is excluded from warranty remedies.</li>
+      </ul>
+    </Section>
+
+    <Section title="6. Commercial & Architectural Trade Projects">
+      <p>
+        Orders placed through our Architectural & Trade program for residential complexes, villas, or hotels are subject to agreed delivery schedules and project milestone timelines specified in customized trade quotations.
       </p>
     </Section>
-    <Section title="4. Decorative Props & Katanas">
+
+    <Section title="7. Intellectual Property & Governing Jurisdiction">
       <p>
-        All katanas, knives, or weapon replicas sold on AnimeMaze are blunt display props or cosplay accessories. They are not weapons. The customer assumes full responsibility for complying with their local state and national regulations regarding ownership and display of cosplay replicas.
-      </p>
-    </Section>
-    <Section title="5. Account Termination">
-      <p>
-        We reserve the right to refuse service, terminate accounts, or cancel orders at our sole discretion, including but not limited to, if we believe user behavior violates applicable law or is harmful to the interests of AnimeMaze.
+        All trademarks, logos, catalog layouts, product photography, and digital assets are the proprietary property of Elite Bath Collections Pvt. Ltd. Any unauthorized reproduction is prohibited. These terms are governed by the laws of India, and any disputes shall be subject to the exclusive jurisdiction of the courts in Gurugram, Haryana.
       </p>
     </Section>
   </PolicyPage>

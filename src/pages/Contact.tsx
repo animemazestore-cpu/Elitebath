@@ -2,19 +2,13 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
-import { Mail, MessageSquare, Send, Check } from 'lucide-react';
-
-const InstagramIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-  </svg>
-);
+import { Mail, Send, Check, Phone, MapPin, Clock, Building } from 'lucide-react';
 
 export const Contact: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [inquiryType, setInquiryType] = useState('GENERAL');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -25,18 +19,21 @@ export const Contact: React.FC = () => {
 
     setLoading(true);
     try {
+      const fullMessageContent = `[Inquiry Type: ${inquiryType}] ${phone ? `[Phone: ${phone}] ` : ''}${message.trim()}`;
       const { error } = await supabase
         .from('contact_messages')
         .insert({
           name: name.trim(),
           email: email.trim(),
-          message: message.trim()
+          message: fullMessageContent,
         });
 
       if (error) throw error;
       setSuccess(true);
       setName('');
       setEmail('');
+      setPhone('');
+      setInquiryType('GENERAL');
       setMessage('');
     } catch (err) {
       console.error('Error submitting contact message:', err);
@@ -47,73 +44,134 @@ export const Contact: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      {/* Header */}
+      <div className="text-center space-y-3 mb-12">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider">
+          <Building className="h-3.5 w-3.5" />
+          <span>Client Concierge & Trade Support</span>
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900">
+          Connect With Elite Bath Collections
+        </h1>
+        <p className="text-gray-600 text-sm sm:text-base max-w-xl mx-auto">
+          Whether planning an architect-designed villa, seeking technical plumbing specifications, or requesting finish samples, our luxury concierges are at your service.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-stretch">
-        
-        <div className="md:col-span-5 bg-gray-50 border border-gray-200 p-8 rounded-2xl flex flex-col justify-between space-y-8">
+        {/* Left Information Card */}
+        <div className="md:col-span-5 bg-gray-50 border border-gray-200 p-8 rounded-2xl flex flex-col justify-between space-y-8 shadow-sm">
           <div>
-            <h1 className="text-3xl font-extrabold text-gray-900">Contact Us</h1>
-            <p className="text-sm text-gray-600 mt-2 leading-relaxed">
-              Have questions about order status, figure collections, custom katanas or business inquiries? Drop us a line.
+            <h2 className="text-xl font-extrabold text-gray-900">Corporate Showroom & Concierge</h2>
+            <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+              Experience our tactile PVD finishes, precision ceramic cartridges, and freestanding baths in person or schedule a virtual walkthrough.
             </p>
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center space-x-3 text-sm text-gray-700">
-              <Mail className="h-5 w-5 text-primary" />
-              <span>support@animemaze.com</span>
+            <div className="flex items-start space-x-3 text-xs text-gray-700">
+              <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <div>
+                <strong className="block text-gray-900 font-bold">Flagship Experience Center</strong>
+                <span>Ground Floor, Tower B, DLF Cyber City, Phase III, Gurugram, Haryana 122002</span>
+              </div>
             </div>
-            <div className="flex items-center space-x-3 text-sm text-gray-700">
-              <MessageSquare className="h-5 w-5 text-gray-500" />
-              <span>Response within 12-24 hours</span>
+
+            <div className="flex items-start space-x-3 text-xs text-gray-700">
+              <Phone className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <div>
+                <strong className="block text-gray-900 font-bold">Direct Phone & WhatsApp</strong>
+                <a href="tel:+919876543210" className="hover:text-primary transition-colors">+91 98765 43210</a>
+                <span className="text-gray-400 block text-[11px]">Mon – Sat, 10:00 AM – 7:00 PM IST</span>
+              </div>
             </div>
-            <a
-              href="https://www.instagram.com/animemaze.store"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center space-x-3 text-sm text-gray-700 hover:text-primary transition-colors group"
-            >
-              <InstagramIcon />
-              <span>@animemaze.store</span>
-            </a>
+
+            <div className="flex items-start space-x-3 text-xs text-gray-700">
+              <Mail className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <div>
+                <strong className="block text-gray-900 font-bold">Official Inquiries</strong>
+                <a href="mailto:care@elitebathcollections.com" className="hover:text-primary transition-colors block">care@elitebathcollections.com</a>
+                <a href="mailto:architects@elitebathcollections.com" className="text-gray-500 hover:text-primary text-[11px] block">architects@elitebathcollections.com</a>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-3 text-xs text-gray-700">
+              <Clock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+              <div>
+                <strong className="block text-gray-900 font-bold">Guaranteed Response</strong>
+                <span>Technical plumbing and quote responses within 12-24 business hours.</span>
+              </div>
+            </div>
           </div>
 
-          <div className="p-4 bg-white border border-gray-200 rounded-xl text-xs text-gray-500 leading-normal">
-            For issues regarding UPI payment verification delays, please specify your order number in your message description.
+          <div className="p-4 bg-white border border-gray-200 rounded-xl text-[11px] text-gray-500 leading-relaxed">
+            <strong className="text-gray-800 block mb-1">Architects & Interior Designers:</strong>
+            Mention your project square footage or CAD rough-in schedule in your message for dedicated trade discount schedules.
           </div>
         </div>
 
-        <div className="md:col-span-7 glass-card p-8 rounded-2xl border border-gray-200 shadow-sm">
+        {/* Right Form Card */}
+        <div className="md:col-span-7 bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
           {success ? (
-            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 py-8">
-              <div className="w-12 h-12 bg-success/10 border border-success/20 rounded-full flex items-center justify-center text-success">
-                <Check className="h-6 w-6" />
+            <div className="h-full flex flex-col items-center justify-center text-center space-y-4 py-12">
+              <div className="w-14 h-14 bg-success/10 border border-success/20 rounded-full flex items-center justify-center text-success">
+                <Check className="h-7 w-7" />
               </div>
-              <h2 className="text-xl font-bold text-gray-900">Message Sent!</h2>
-              <p className="text-sm text-gray-600 max-w-xs leading-relaxed">
-                Thank you for contacting AnimeMaze. We will review your message and reply via email as soon as possible.
+              <h2 className="text-2xl font-bold text-gray-900">Message Received</h2>
+              <p className="text-sm text-gray-600 max-w-sm leading-relaxed">
+                Thank you for contacting Elite Bath Collections. A specialized architectural concierge will review your inquiry and connect with you shortly.
               </p>
               <Button size="sm" onClick={() => setSuccess(false)}>Send Another Message</Button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <Input
-                label="Full Name"
-                type="text"
-                required
-                placeholder="Rohan Sharma"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Full Name"
+                  type="text"
+                  required
+                  placeholder="Rohan Sharma"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
 
-              <Input
-                label="Email Address"
-                type="email"
-                required
-                placeholder="otaku@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+                <Input
+                  label="Email Address"
+                  type="email"
+                  required
+                  placeholder="rohan.sharma@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Contact Phone"
+                  type="tel"
+                  placeholder="+91 98765 43210"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1.5">
+                    Inquiry Type
+                  </label>
+                  <select
+                    value={inquiryType}
+                    onChange={(e) => setInquiryType(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg text-sm bg-white border border-gray-300 text-gray-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="GENERAL">General Product Inquiry</option>
+                    <option value="ARCHITECTURAL">Architectural & Bulk Project Order</option>
+                    <option value="TECHNICAL">Technical Plumbing & Pressure Specs</option>
+                    <option value="ORDER_STATUS">Order Status & Tracking</option>
+                    <option value="WARRANTY">Warranty & Replacement Claim</option>
+                  </select>
+                </div>
+              </div>
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1.5">
@@ -122,21 +180,20 @@ export const Contact: React.FC = () => {
                 <textarea
                   rows={5}
                   required
-                  placeholder="How can we help you? Please provide order number if applicable."
+                  placeholder="Please describe your requirements, project details, or order ID..."
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl text-sm glass-input placeholder-gray-500 focus:outline-none resize-none"
+                  className="w-full px-4 py-3 rounded-xl text-sm border border-gray-300 placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none text-gray-900"
                 />
               </div>
 
               <Button type="submit" fullWidth loading={loading}>
-                <Send className="mr-2 h-4.5 w-4.5" />
-                Submit Message
+                <Send className="mr-2 h-4 w-4" />
+                Submit Inquiry to Concierge
               </Button>
             </form>
           )}
         </div>
-
       </div>
     </div>
   );

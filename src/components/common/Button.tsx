@@ -22,14 +22,14 @@ export const Button: React.FC<ButtonProps> = ({
   className = '',
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:pointer-events-none';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:pointer-events-none';
   
   const variants = {
-    primary: 'btn-primary text-white',
-    secondary: 'bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 shadow-sm',
-    danger: 'bg-danger text-white shadow-sm hover:bg-red-600',
-    outline: 'border border-primary text-primary hover:bg-primary/5 bg-white',
-    ghost: 'hover:bg-gray-100 text-gray-600 hover:text-gray-900',
+    primary: 'btn-primary text-white shadow-sm',
+    secondary: 'btn-secondary shadow-sm',
+    danger: 'bg-danger text-white shadow-sm hover:bg-red-700',
+    outline: 'border border-primary text-primary hover:bg-primary/10 bg-white',
+    ghost: 'hover:bg-gray-100 text-gray-700 hover:text-gray-900',
   };
 
   const sizes = {

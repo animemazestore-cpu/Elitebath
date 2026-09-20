@@ -66,6 +66,15 @@ CREATE TABLE IF NOT EXISTS public.products (
   featured BOOLEAN NOT NULL DEFAULT false,
   main_image_url TEXT NOT NULL DEFAULT '',
   additional_images JSONB NOT NULL DEFAULT '[]',
+  sku TEXT,
+  brand TEXT DEFAULT 'Elite Bath',
+  material TEXT,
+  finish TEXT,
+  warranty_info TEXT,
+  has_variants BOOLEAN NOT NULL DEFAULT false,
+  variant_config JSONB NOT NULL DEFAULT '{"enabledOptions":[], "options":[]}'::jsonb,
+  is_new_arrival BOOLEAN NOT NULL DEFAULT false,
+  is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
@@ -73,6 +82,29 @@ DROP POLICY IF EXISTS "Anyone can view products" ON public.products;
 DROP POLICY IF EXISTS "Admin can manage products" ON public.products;
 CREATE POLICY "Anyone can view products" ON public.products FOR SELECT USING (true);
 CREATE POLICY "Admin can manage products" ON public.products FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- PRODUCT VARIANTS
+CREATE TABLE IF NOT EXISTS public.product_variants (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  sku TEXT,
+  price NUMERIC(10,2) NOT NULL DEFAULT 0 CHECK (price >= 0),
+  stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
+  image_url TEXT,
+  attributes JSONB NOT NULL DEFAULT '{}'::jsonb,
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
+);
+CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON public.product_variants(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_variants_sku ON public.product_variants(sku);
+CREATE INDEX IF NOT EXISTS idx_product_variants_active ON public.product_variants(active);
+
+ALTER TABLE public.product_variants ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Anyone can view product_variants" ON public.product_variants;
+DROP POLICY IF EXISTS "Admin can manage product_variants" ON public.product_variants;
+CREATE POLICY "Anyone can view product_variants" ON public.product_variants FOR SELECT USING (true);
+CREATE POLICY "Admin can manage product_variants" ON public.product_variants FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
 
 -- ORDERS
 CREATE TABLE IF NOT EXISTS public.orders (
@@ -102,6 +134,8 @@ CREATE TABLE IF NOT EXISTS public.order_items (
   quantity INTEGER NOT NULL DEFAULT 1,
   price NUMERIC(10,2) NOT NULL DEFAULT 0,
   selected_variant TEXT,
+  selected_variant_id UUID REFERENCES public.product_variants(id) ON DELETE SET NULL,
+  selected_attributes JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
@@ -253,12 +287,61 @@ CREATE POLICY "Users can manage own likes" ON public.review_likes FOR ALL USING 
 CREATE POLICY "Anyone can view likes" ON public.review_likes FOR SELECT USING (true);
 
 -- STORAGE BUCKETS AND OBJECTS POLICIES
--- Create payment-proofs bucket if not exists
+-- 1. product-images bucket (for products, gallery, variants, categories)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product-images', 'product-images', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Allow public uploads to product-images" ON storage.objects;
+CREATE POLICY "Allow public uploads to product-images"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'product-images');
+
+DROP POLICY IF EXISTS "Allow public updates to product-images" ON storage.objects;
+CREATE POLICY "Allow public updates to product-images"
+ON storage.objects FOR UPDATE
+USING (bucket_id = 'product-images');
+
+DROP POLICY IF EXISTS "Allow public read from product-images" ON storage.objects;
+CREATE POLICY "Allow public read from product-images"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'product-images');
+
+-- 2. review-images bucket (for customer reviews)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('review-images', 'review-images', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Allow public uploads to review-images" ON storage.objects;
+CREATE POLICY "Allow public uploads to review-images"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'review-images');
+
+DROP POLICY IF EXISTS "Allow public read from review-images" ON storage.objects;
+CREATE POLICY "Allow public read from review-images"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'review-images');
+
+-- 3. replacement-photos bucket (for return/replacement requests)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('replacement-photos', 'replacement-photos', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+DROP POLICY IF EXISTS "Allow public uploads to replacement-photos" ON storage.objects;
+CREATE POLICY "Allow public uploads to replacement-photos"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'replacement-photos');
+
+DROP POLICY IF EXISTS "Allow public read from replacement-photos" ON storage.objects;
+CREATE POLICY "Allow public read from replacement-photos"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'replacement-photos');
+
+-- 4. payment-proofs bucket
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('payment-proofs', 'payment-proofs', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
--- Policies for public upload and select access on payment-proofs
 DROP POLICY IF EXISTS "Allow public uploads to payment-proofs" ON storage.objects;
 CREATE POLICY "Allow public uploads to payment-proofs"
 ON storage.objects FOR INSERT

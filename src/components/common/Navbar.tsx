@@ -16,10 +16,10 @@ export const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-  const DEFAULT_ANNOUNCEMENT = '🎉 Special Launch Offer: Use code ANIME20 for 20% discount! 🚚 FREE Shipping on orders above ₹999!';
+  const DEFAULT_ANNOUNCEMENT = '✨ Exclusive Offer: Use code ELITE10 for 10% discount! 🚚 FREE Shipping on sanitaryware above ₹999!';
 
   const [announcement, setAnnouncement] = useState(() => {
-    return localStorage.getItem('animemaze_announcement') || DEFAULT_ANNOUNCEMENT;
+    return localStorage.getItem('elitebath_announcement') || localStorage.getItem('animemaze_announcement') || DEFAULT_ANNOUNCEMENT;
   });
 
   // Fetch announcement from DB on mount — DB is source of truth
@@ -35,10 +35,10 @@ export const Navbar: React.FC = () => {
 
         if (!error && data && data.length > 0) {
           setAnnouncement(data[0].message);
-          localStorage.setItem('animemaze_announcement', data[0].message);
+          localStorage.setItem('elitebath_announcement', data[0].message);
         }
       } catch (err) {
-        console.warn('Could not load announcement from DB, using localStorage fallback:', err);
+        console.warn('Could not load announcement from DB, using fallback:', err);
       }
     };
     fetchAnnouncement();
@@ -47,7 +47,7 @@ export const Navbar: React.FC = () => {
   // Listen for admin updates fired from the same tab
   useEffect(() => {
     const handleStorageChange = () => {
-      setAnnouncement(localStorage.getItem('animemaze_announcement') || DEFAULT_ANNOUNCEMENT);
+      setAnnouncement(localStorage.getItem('elitebath_announcement') || localStorage.getItem('animemaze_announcement') || DEFAULT_ANNOUNCEMENT);
     };
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('announcement_updated', handleStorageChange);
@@ -84,10 +84,20 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
-            <Link to="/" className="flex items-center space-x-2 group">
-              <span className="text-2xl font-extrabold tracking-wider text-primary group-hover:opacity-80">
-                AnimeMaze
-              </span>
+            <Link to="/" className="flex items-center space-x-3 group">
+              <img
+                src="/logo.png"
+                alt="Elite Bath Collections"
+                className="h-11 w-11 object-contain rounded-full border border-gray-200 shadow-sm group-hover:scale-105 transition-transform"
+              />
+              <div className="flex flex-col">
+                <span className="text-lg sm:text-xl font-extrabold tracking-tight text-gray-900 leading-none group-hover:text-primary transition-colors">
+                  Elite Bath
+                </span>
+                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-primary leading-none mt-0.5">
+                  Collections
+                </span>
+              </div>
             </Link>
           </div>
 
@@ -104,7 +114,7 @@ export const Navbar: React.FC = () => {
           <form onSubmit={handleSearchSubmit} className="hidden lg:flex items-center relative w-64 xl:w-80">
             <input
               type="text"
-              placeholder="Search anime, products..."
+              placeholder="Search faucets, showers, basins..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-gray-50 border border-gray-300 rounded-full py-2 pl-4 pr-10 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-gray-900 placeholder-gray-500"

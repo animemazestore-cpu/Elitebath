@@ -2,11 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --background: #ffffff;
+  --surface: #f8faf9;
+  --surface-muted: #f1f5f2;
+  --border: #e2e8e4;
+  --text-primary: #17211b;
+  --text-secondary: #647067;
+  --text-muted: #94a19a;
+
+  --primary: #166534;
+  --primary-hover: #14532d;
+  --primary-soft: #dcfce7;
+
+  --secondary: #4d7c5a;
+  --success: #15803d;
+  --warning: #d97706;
+  --danger: #dc2626;
+}
+
 @layer base {
   body {
     background-color: #FFFFFF;
-    color: #111827;
+    color: #17211B;
     font-family: 'Outfit', 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
   /* Custom Scrollbar */
@@ -16,80 +36,84 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #F3F4F6;
+    background: #F8FAF9;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #D1D5DB;
+    background: #CBD5E1;
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #9CA3AF;
+    background: #94A19A;
   }
 }
 
 @layer components {
-  /* Clean Card Style */
+  /* Clean Sanitary Card Style */
   .glass-card {
     background: #FFFFFF;
-    border: 1px solid #E5E7EB;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    border: 1px solid #E2E8E4;
+    box-shadow: 0 1px 3px 0 rgba(23, 33, 27, 0.05), 0 1px 2px 0 rgba(23, 33, 27, 0.03);
+    border-radius: 1rem;
   }
 
   .glass-card-hover {
-    transition: all 0.2s ease-in-out;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .glass-card-hover:hover {
-    border-color: #8B5CF6;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border-color: #166534;
+    box-shadow: 0 8px 16px -4px rgba(22, 101, 52, 0.1), 0 2px 6px -1px rgba(23, 33, 27, 0.04);
     transform: translateY(-2px);
   }
 
-  /* Input fields */
+  /* Professional Input Fields */
   .glass-input {
     background: #FFFFFF;
     border: 1px solid #D1D5DB;
-    color: #111827;
+    color: #17211B;
     transition: all 0.2s ease-in-out;
+    border-radius: 0.75rem;
   }
 
   .glass-input:focus {
     outline: none;
-    border-color: #8B5CF6;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    border-color: #166534;
+    box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.12);
     background: #FFFFFF;
   }
 
   .glass-input::placeholder {
-    color: #9CA3AF;
+    color: #94A19A;
   }
 
-  /* Premium Buttons */
+  /* Refined Sanitary Buttons */
   .btn-primary {
-    background: #8B5CF6;
+    background: #166534;
+    color: #FFFFFF;
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    transition: all 0.2s ease-in-out;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.3);
-    background: #7C3AED;
+    box-shadow: 0 4px 10px -1px rgba(22, 101, 52, 0.25);
+    background: #14532D;
   }
 
   .btn-secondary {
-    background: #F3F4F6;
-    color: #374151;
-    border: 1px solid #D1D5DB;
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    background: #F1F5F2;
+    color: #17211B;
+    border: 1px solid #E2E8E4;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
     transition: all 0.2s ease-in-out;
   }
 
   .btn-secondary:hover {
-    background: #E5E7EB;
-    border-color: #9CA3AF;
+    background: #E8F0EA;
+    border-color: #CBD5E1;
+    color: #14532D;
   }
 }
 
@@ -101,7 +125,7 @@
 .animate-marquee {
   display: inline-block;
   white-space: nowrap;
-  animation: marquee 12s linear infinite;
+  animation: marquee 14s linear infinite;
   will-change: transform;
 }
 
@@ -141,4 +165,30 @@
 
 .scrollbar-hide::-webkit-scrollbar-thumb {
   display: none;
+}
+
+/* Print packing slip styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-packing-slip,
+  #printable-packing-slip * {
+    visibility: visible;
+  }
+  #printable-packing-slip {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 24px;
+    background: white !important;
+    color: black !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
 }

@@ -15,19 +15,22 @@ export const TrackingStepper: React.FC<TrackingStepperProps> = ({ status, tracki
   const [copied, setCopied] = React.useState(false);
 
   const stages = [
-    { key: 'PLACED', label: 'Order Placed', icon: Clock, desc: 'Awaiting manual UPI verification' },
-    { key: 'PAID', label: 'Payment Approved', icon: CheckCircle2, desc: 'UPI screenshot verified successfully' },
-    { key: 'PROCESSING', label: 'Processing', icon: Package, desc: 'Items are being quality-checked and packaged' },
-    { key: 'SHIPPED', label: 'Shipped', icon: Truck, desc: 'Dispatched from warehouse' },
-    { key: 'DELIVERED', label: 'Delivered', icon: Home, desc: 'Package delivered safely' },
+    { key: 'PLACED', label: 'Order Placed', icon: Clock, desc: 'Order received and awaiting verification' },
+    { key: 'PAID', label: 'Payment Confirmed', icon: CheckCircle2, desc: 'Payment verified via Razorpay / UPI' },
+    { key: 'PROCESSING', label: 'Processing & Pack', icon: Package, desc: 'Items undergoing quality inspection & secure packaging' },
+    { key: 'SHIPPED', label: 'Dispatched / In Transit', icon: Truck, desc: 'Dispatched with insured courier carrier' },
+    { key: 'DELIVERED', label: 'Delivered', icon: Home, desc: 'Safely delivered to your address' },
   ];
 
   const getStatusIndex = (currentStatus: OrderStatus): number => {
     switch (currentStatus) {
-      case 'PENDING_PAYMENT': return 0;
+      case 'PENDING_PAYMENT':
+      case 'PENDING_VERIFICATION': return 0;
       case 'PAID': return 1;
-      case 'PROCESSING': return 2;
-      case 'SHIPPED': return 3;
+      case 'PROCESSING':
+      case 'PACKED': return 2;
+      case 'SHIPPED':
+      case 'OUT_FOR_DELIVERY': return 3;
       case 'DELIVERED': return 4;
       case 'CANCELLED': return -1;
       default: return 0;

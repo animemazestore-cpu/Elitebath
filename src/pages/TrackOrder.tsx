@@ -102,7 +102,7 @@ export const TrackOrder: React.FC = () => {
               label="Email Address / Phone"
               type="text"
               required
-              placeholder="otaku@example.com / +91..."
+              placeholder="customer@example.com / +91..."
               value={contactInfo}
               onChange={(e) => setContactInfo(e.target.value)}
             />
@@ -185,8 +185,15 @@ export const TrackOrder: React.FC = () => {
                       <img src={item.product?.main_image_url} alt="" className="w-full h-full object-cover" />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900 text-sm line-clamp-1">{item.product?.name || 'Anime Product'}</p>
-                      <p className="text-xs text-gray-500">Qty: {item.quantity} x ₹{item.price}</p>
+                      <p className="font-bold text-gray-900 text-sm line-clamp-1">{item.product?.name || 'Sanitary Fitting'}</p>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                        <span>Qty: {item.quantity} x ₹{item.price}</span>
+                        {(item as any).selected_variant && (
+                          <span className="px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary font-bold text-[9px]">
+                            {(item as any).selected_variant}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <span className="font-extrabold text-gray-900 text-sm">₹{item.price * item.quantity}</span>

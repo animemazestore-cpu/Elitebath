@@ -1,35 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Smartphone, Download } from 'lucide-react';
-
-// Hardcoded download URL - easy to edit
-const DOWNLOAD_URL = 'https://download937.mediafire.com/l5nh72o2m2jgFT9Uyco1jevFQAU91DCLXuZXN-MvKSNzQi0piHNYFrcZAYcQfRH86C_P6riKJr7l36uIhbxkIQCHSuRNzlqAlR0OFh3bf896k3E_QdlKFF9IsazzeZ1stuJT2WIjteBYCt9YWIQIP9rYWZbuDUO2qR7OEPa6RAVCD_E/b4ypqciqjpjzv7u/app-debug.apk';
+import { X, BookOpen, Download, Sparkles } from 'lucide-react';
 
 export const AppDownloadPopup: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Show popup after 3 seconds on every page load
+  // Check if previously dismissed
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsOpen(true);
-    }, 3000);
-
-    return () => clearTimeout(timer);
+    const dismissed = localStorage.getItem('elitebath_brochure_dismissed');
+    if (!dismissed) {
+      // Show once after 10s for new visitors
+      const timer = setTimeout(() => {
+        setIsOpen(false); // keep disabled by default for clean UX
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const handleClose = () => {
+    localStorage.setItem('elitebath_brochure_dismissed', 'true');
     setIsOpen(false);
   };
 
   const handleDownload = () => {
-    window.open(DOWNLOAD_URL, '_blank');
+    alert("The 2026 Elite Bath Collections digital catalog will be available shortly. Browse our online shop for current models.");
     handleClose();
-  };
-
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      handleClose();
-    }
   };
 
   return (
@@ -41,78 +36,61 @@ export const AppDownloadPopup: React.FC = () => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={handleOverlayClick}
+          onClick={handleClose}
         >
-          {/* Dark blurred overlay */}
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
-          {/* Popup card */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="relative w-full max-w-md bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden"
+            className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close button */}
             <button
               onClick={handleClose}
-              className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 z-10"
-              aria-label="Close popup"
+              className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors z-10"
+              aria-label="Close"
             >
               <X className="w-5 h-5 text-gray-600" />
             </button>
 
-            {/* Content */}
             <div className="p-8">
-              {/* Phone illustration */}
               <div className="flex justify-center mb-6">
-                <div className="relative">
-                  <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-purple-700 rounded-3xl flex items-center justify-center shadow-lg">
-                    <Smartphone className="w-12 h-12 text-white" />
-                  </div>
-                  {/* Glow effect */}
-                  <div className="absolute inset-0 bg-purple-500/30 blur-2xl rounded-3xl -z-10" />
+                <div className="w-20 h-20 bg-primary/10 border border-primary/20 rounded-2xl flex items-center justify-center">
+                  <BookOpen className="w-10 h-10 text-primary" />
                 </div>
               </div>
 
-              {/* Title */}
-              <h2 className="text-2xl font-bold text-center text-gray-900 mb-3">
-                📱 Download the AnimeMaze App
+              <div className="inline-flex items-center justify-center gap-1.5 w-full text-center text-xs font-bold uppercase tracking-wider text-primary mb-2">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>2026 Lookbook</span>
+              </div>
+
+              <h2 className="text-2xl font-extrabold text-center text-gray-900 mb-2">
+                Elite Bath Collections
               </h2>
 
-              {/* Subtitle */}
-              <p className="text-center text-gray-600 mb-8 leading-relaxed">
-                Enjoy a faster shopping experience, exclusive app-only offers, instant order tracking, quicker checkout, and push notifications.
+              <p className="text-center text-gray-600 text-sm mb-6 leading-relaxed">
+                Explore our full architectural catalog featuring luxury sanitaryware, rain showers, precision faucets, and bathroom accessories.
               </p>
 
-              {/* Buttons */}
               <div className="space-y-3">
-                {/* Download button */}
                 <button
                   onClick={handleDownload}
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white font-semibold py-4 px-6 rounded-2xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg flex items-center justify-center gap-3 group"
+                  className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3.5 px-6 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
                 >
-                  <Download className="w-5 h-5 group-hover:animate-bounce" />
-                  <span>Download App</span>
+                  <Download className="w-4 h-4" />
+                  <span>Download Digital Catalog</span>
                 </button>
 
-                {/* Maybe Later button */}
                 <button
                   onClick={handleClose}
-                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-2xl transition-all duration-300"
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-xl transition-all text-sm"
                 >
-                  Maybe Later
+                  Continue Shopping
                 </button>
-              </div>
-
-              {/* Google Play badge hint */}
-              <div className="flex items-center justify-center gap-2 mt-6 text-sm text-gray-500">
-                <div className="w-6 h-6 bg-gray-200 rounded flex items-center justify-center">
-                  <Download className="w-3 h-3 text-gray-600" />
-                </div>
-                <span>Available on Google Play</span>
               </div>
             </div>
           </motion.div>

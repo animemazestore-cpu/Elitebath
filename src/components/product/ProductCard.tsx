@@ -41,12 +41,12 @@ export const ProductCard = memo(function ProductCard({
 
   return (
     <article
-      className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col group cursor-pointer shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/30 transition-all duration-300 ease-out"
+      className="bg-white rounded-2xl border border-border overflow-hidden flex flex-col group cursor-pointer shadow-card hover:shadow-card-hover hover:-translate-y-1 hover:border-primary/40 transition-all duration-300 ease-out"
       onClick={handleClick}
     >
-      <div className="relative aspect-[4/5] bg-gray-50 overflow-hidden">
+      <div className="relative aspect-[4/5] bg-surface overflow-hidden">
         {showFeaturedBadge && (
-          <span className="absolute top-2 left-2 z-10 px-2 py-0.5 bg-primary text-white text-[10px] font-bold uppercase rounded tracking-wide">
+          <span className="absolute top-2.5 left-2.5 z-10 px-2.5 py-0.5 bg-primary text-white text-[10px] font-bold uppercase rounded-full tracking-wider shadow-sm">
             Featured
           </span>
         )}
@@ -77,7 +77,19 @@ export const ProductCard = memo(function ProductCard({
         </h3>
         <ProductDescription description={product.description} className={descriptionClassName} lines={3} />
         <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
-          <span className={priceClassName}>₹{product.price}</span>
+          <div>
+            <div className="flex items-baseline gap-1">
+              {product.has_variants && (
+                <span className="text-[10px] text-gray-400 font-medium">From</span>
+              )}
+              <span className={priceClassName}>₹{product.price.toLocaleString('en-IN')}</span>
+            </div>
+            {product.has_variants && (
+              <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                Multi-Option
+              </span>
+            )}
+          </div>
           {product.stock > 0 ? (
             stockVariant === 'pill' ? (
               <span className="text-[8px] sm:text-[10px] font-bold text-success bg-success/10 border border-success/20 px-1.5 sm:px-2 py-0.5 rounded uppercase">

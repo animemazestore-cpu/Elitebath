@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Heart, ShoppingCart, Star, ShieldAlert, Sparkles, ChevronRight, ThumbsUp, Plus, HelpCircle } from 'lucide-react';
+import { Heart, ShoppingCart, Star, ShieldAlert, Sparkles, ChevronRight, ThumbsUp, Plus, HelpCircle, ShieldCheck, Check, CreditCard, Truck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import type { Product, Review, ProductQuestion } from '../types/database';
 import { useAuthStore } from '../store/useAuthStore';
@@ -39,6 +39,8 @@ export const ProductDetail: React.FC = () => {
   // Q&A Form States
   const [newQuestion, setNewQuestion] = useState('');
 
+  // Variant & Selection States
+  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [userCanReview, setUserCanReview] = useState(false);
@@ -94,6 +96,27 @@ export const ProductDetail: React.FC = () => {
 
     fetchProductDetails();
   }, [slug, getProductBySlug, getRelatedProducts]);
+
+  // Auto-initialize variant selection when product is loaded
+  useEffect(() => {
+    if (!product) return;
+    if (product.has_variants && product.variants && product.variants.length > 0) {
+      const firstActive = product.variants.find((v) => v.active) || product.variants[0];
+      if (firstActive && firstActive.attributes) {
+        setSelectedAttributes({ ...firstActive.attributes });
+      }
+    } else if (product.variant_config?.options && product.variant_config.options.length > 0) {
+      const initial: Record<string, string> = {};
+      product.variant_config.options.forEach((opt) => {
+        const firstVal = opt.values[0];
+        const valStr = typeof firstVal === 'string' ? firstVal : firstVal?.label;
+        if (valStr) initial[opt.id] = valStr;
+      });
+      setSelectedAttributes(initial);
+    } else {
+      setSelectedAttributes({});
+    }
+  }, [product]);
 
   // Fetch Reviews & Q&A
   useEffect(() => {
@@ -165,6 +188,25 @@ export const ProductDetail: React.FC = () => {
 
     fetchReviewsAndQuestions();
   }, [product, user]);
+
+  // Match active variant based on selected attributes (unconditional hook)
+  const activeVariant = useMemo(() => {
+    if (!product?.variants || product.variants.length === 0) return null;
+    return product.variants.find((v) => {
+      if (!v.active) return false;
+      return Object.entries(selectedAttributes).every(
+        ([key, val]) => v.attributes[key] === val
+      );
+    }) || null;
+  }, [product?.variants, selectedAttributes]);
+
+  // Gallery images (unconditional hook)
+  const galleryImages = useMemo(() => {
+    if (!product) return [];
+    const primary = activeVariant?.image_url || product.main_image_url;
+    const list = [primary, ...(product.additional_images || [])];
+    return Array.from(new Set(list.filter(Boolean)));
+  }, [product, activeVariant?.image_url]);
 
   if (loading) {
     return <ProductDetailSkeleton />;
@@ -459,25 +501,39 @@ export const ProductDetail: React.FC = () => {
     });
 
   const liked = user ? isInWishlist(product.id) : false;
-  const isOutOfStock = product.stock <= 0;
-  const sizeEnabled = product.category?.size_enabled || false;
+
+  const hasVariants = Boolean(product.has_variants && product.variants && product.variants.length > 0);
+
+  const currentPrice = activeVariant ? activeVariant.price : product.price;
+  const currentStock = activeVariant ? activeVariant.stock : product.stock;
+  const currentSku = activeVariant?.sku || product.sku;
+  const isOutOfStock = currentStock <= 0;
+  const sizeEnabled = !hasVariants && (product.category?.size_enabled || false);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 space-y-12 sm:space-y-20">
       {/* Breadcrumb */}
       <nav className="flex items-center space-x-1.5 text-xs sm:text-sm text-gray-500">
-        <Link to="/" className="hover:text-gray-900 transition-colors">Home</Link>
-        <ChevronRight className="h-3.5 w-3.5" />
-        <Link to="/shop" className="hover:text-gray-900 transition-colors">Shop</Link>
-        <ChevronRight className="h-3.5 w-3.5" />
-        <span className="text-gray-600 truncate max-w-xs">{product.name}</span>
+        <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+        <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
+        <Link to="/shop" className="hover:text-primary transition-colors">Shop</Link>
+        {product.category && (
+          <>
+            <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
+            <Link to={`/shop?category=${encodeURIComponent(product.category.name)}`} className="hover:text-primary transition-colors truncate">
+              {product.category.name}
+            </Link>
+          </>
+        )}
+        <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
+        <span className="text-gray-900 font-medium truncate max-w-xs">{product.name}</span>
       </nav>
       {/* Main product display */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         {/* Left Side: Images */}
         <div className="lg:col-span-5">
           <ProductImageGallery 
-            images={[product.main_image_url, ...(product.additional_images || [])]} 
+            images={galleryImages} 
             productName={product.name}
           />
         </div>
@@ -485,10 +541,22 @@ export const ProductDetail: React.FC = () => {
         {/* Right Side: Details & Add to Cart */}
         <div className="lg:col-span-7 space-y-6">
           <div className="space-y-2">
-            <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase">
-              <Sparkles className="h-3 w-3" />
-              <span>Premium Collection</span>
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase">
+                <Sparkles className="h-3 w-3" />
+                <span>{product.brand || 'Elite Bath Collections'}</span>
+              </span>
+              {currentSku && (
+                <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-mono font-medium">
+                  SKU: {currentSku}
+                </span>
+              )}
+              {product.is_new_arrival && (
+                <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 border border-amber-500/20 text-xs font-semibold">
+                  New Arrival
+                </span>
+              )}
+            </div>
             <h1 className="text-3xl font-extrabold text-gray-900 leading-tight">{product.name}</h1>
           </div>
 
@@ -510,9 +578,51 @@ export const ProductDetail: React.FC = () => {
             </div>
           )}
 
-          <div className="text-2xl font-extrabold text-gray-900">₹{product.price}</div>
+          {/* Price Display */}
+          <div className="space-y-1">
+            <div className="flex items-baseline gap-3">
+              <span className="text-3xl font-extrabold text-gray-900">
+                ₹{currentPrice.toLocaleString('en-IN')}
+              </span>
+              {hasVariants && !activeVariant && (
+                <span className="text-xs text-gray-500 font-medium">
+                  (Starting price, select options below)
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-500">Inclusive of all taxes & warranty coverage</p>
+          </div>
 
-          <div className="border-t border-b border-gray-200 py-4">
+          {/* Product Specifications Grid */}
+          {(product.material || product.finish || product.warranty_info) && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 py-3 border-y border-gray-200 text-xs">
+              {product.material && (
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-100">
+                  <span className="text-gray-400 block text-[10px] uppercase font-bold tracking-wider">Material</span>
+                  <span className="font-semibold text-gray-800 truncate block">{product.material}</span>
+                </div>
+              )}
+              {(activeVariant?.attributes?.finish || product.finish) && (
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-100">
+                  <span className="text-gray-400 block text-[10px] uppercase font-bold tracking-wider">Finish</span>
+                  <span className="font-semibold text-gray-800 truncate block">
+                    {activeVariant?.attributes?.finish || product.finish}
+                  </span>
+                </div>
+              )}
+              {product.warranty_info && (
+                <div className="bg-gray-50 rounded-lg p-2.5 border border-gray-100 col-span-2 sm:col-span-1">
+                  <span className="text-gray-400 block text-[10px] uppercase font-bold tracking-wider">Warranty</span>
+                  <span className="font-semibold text-primary truncate block flex items-center gap-1">
+                    <ShieldCheck className="h-3.5 w-3.5 flex-shrink-0" />
+                    {product.warranty_info}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="py-2">
             <ProductDescription 
               description={product.description} 
               className="text-sm text-gray-600"
@@ -520,27 +630,110 @@ export const ProductDetail: React.FC = () => {
             />
           </div>
 
+          {/* Dynamic Variant Selectors */}
+          {hasVariants && product.variant_config?.options && product.variant_config.options.length > 0 && (
+            <div className="space-y-4 pt-2 border-t border-gray-200">
+              {product.variant_config.options.map((option) => {
+                const currentVal = selectedAttributes[option.id];
+                const isColor = option.type === 'color' || option.id.toLowerCase() === 'color';
+
+                return (
+                  <div key={option.id} className="space-y-2.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-700 font-semibold uppercase tracking-wider text-xs">
+                        {option.name}
+                      </span>
+                      {currentVal && (
+                        <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-md">
+                          {currentVal}
+                        </span>
+                      )}
+                    </div>
+
+                    {isColor ? (
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        {option.values.map((val) => {
+                          const valLabel = typeof val === 'string' ? val : val.label;
+                          const valHex = typeof val === 'string' ? undefined : val.colorHex;
+                          const isSelected = currentVal === valLabel;
+
+                          return (
+                            <button
+                              key={valLabel}
+                              type="button"
+                              onClick={() =>
+                                setSelectedAttributes((prev) => ({ ...prev, [option.id]: valLabel }))
+                              }
+                              title={valLabel}
+                              className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all ${
+                                isSelected
+                                  ? 'border-primary ring-2 ring-primary/30 bg-primary/5 text-primary font-bold shadow-sm'
+                                  : 'border-gray-300 hover:border-gray-400 bg-white text-gray-700'
+                              }`}
+                            >
+                              <span
+                                className="w-4 h-4 rounded-full border border-black/15 flex-shrink-0 shadow-inner"
+                                style={{ backgroundColor: valHex || '#166534' }}
+                              />
+                              <span>{valLabel}</span>
+                              {isSelected && <Check className="h-3 w-3 text-primary" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {option.values.map((val) => {
+                          const valLabel = typeof val === 'string' ? val : val.label;
+                          const isSelected = currentVal === valLabel;
+
+                          return (
+                            <button
+                              key={valLabel}
+                              type="button"
+                              onClick={() =>
+                                setSelectedAttributes((prev) => ({ ...prev, [option.id]: valLabel }))
+                              }
+                              className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
+                                isSelected
+                                  ? 'bg-primary text-white border-primary shadow-sm scale-98'
+                                  : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+                              }`}
+                            >
+                              {valLabel}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* Stock state */}
-          <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between text-sm pt-2">
             <span className="text-gray-600 font-medium">Availability:</span>
             {isOutOfStock ? (
-              <span className="font-semibold text-danger bg-danger/10 border border-danger/20 px-2 py-0.5 rounded uppercase text-xs">
+              <span className="font-semibold text-danger bg-danger/10 border border-danger/20 px-2.5 py-0.5 rounded uppercase text-xs">
                 Out of Stock
               </span>
-            ) : product.stock <= 5 ? (
-              <span className="font-semibold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded uppercase text-xs">
-                Only {product.stock} left in stock!
+            ) : currentStock <= 5 ? (
+              <span className="font-semibold text-amber-600 bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded uppercase text-xs">
+                Only {currentStock} left in stock!
               </span>
             ) : (
-              <span className="font-semibold text-success bg-success/10 border border-success/20 px-2 py-0.5 rounded uppercase text-xs">
-                In Stock ({product.stock} available)
+              <span className="font-semibold text-success bg-success/10 border border-success/20 px-2.5 py-0.5 rounded uppercase text-xs">
+                In Stock ({currentStock} available)
               </span>
             )}
           </div>
 
           {/* Actions */}
           {!isOutOfStock && (
-            <div className="space-y-4 pt-4">
+            <div className="space-y-4 pt-2">
+              {/* Legacy size selector if product category has size_enabled and no variants */}
               {sizeEnabled && (
                 <div className="space-y-3 border-b border-gray-200 pb-4 mb-4">
                   <div className="flex items-center justify-between">
@@ -579,7 +772,7 @@ export const ProductDetail: React.FC = () => {
                   </button>
                   <span className="px-4 text-sm font-bold text-gray-900">{quantity}</span>
                   <button
-                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                    onClick={() => setQuantity(Math.min(currentStock, quantity + 1))}
                     className="px-3.5 py-1.5 text-gray-600 hover:text-gray-900 transition-colors"
                   >
                     +
@@ -587,32 +780,116 @@ export const ProductDetail: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Button
                   onClick={() => {
                     if (sizeEnabled && !selectedSize) {
-                      alert("Please select a size (S, M, L, or XL) before adding to cart!");
+                      alert("Please select a size before adding to cart!");
                       return;
                     }
-                    addItem(product, quantity, selectedSize || undefined);
-                    alert(`Added to cart! ${selectedSize ? `Size: ${selectedSize}` : ''}`);
+
+                    if (hasVariants && product.variant_config?.options) {
+                      const missingOption = product.variant_config.options.find(
+                        (opt) => opt.required !== false && !selectedAttributes[opt.id]
+                      );
+                      if (missingOption) {
+                        alert(`Please select an option for ${missingOption.name}!`);
+                        return;
+                      }
+                    }
+
+                    const variantLabel = activeVariant
+                      ? Object.values(selectedAttributes).join(' / ')
+                      : selectedSize || undefined;
+
+                    addItem(product, quantity, {
+                      selectedVariant: variantLabel,
+                      selectedVariantId: activeVariant?.id,
+                      selectedAttributes,
+                      variantPrice: activeVariant?.price ?? product.price,
+                      variantSku: activeVariant?.sku || product.sku || undefined,
+                      variantImage: activeVariant?.image_url || undefined,
+                      variantStock: currentStock,
+                    });
+
+                    alert(`Added to cart! ${variantLabel ? `(${variantLabel})` : ''}`);
                   }}
-                  className="flex-grow py-3.5"
+                  variant="outline"
+                  className="flex-1 py-3.5"
                 >
                   <ShoppingCart className="mr-2 h-5 w-5" />
                   Add To Cart
                 </Button>
 
+                <Button
+                  onClick={() => {
+                    if (sizeEnabled && !selectedSize) {
+                      alert("Please select a size before checkout!");
+                      return;
+                    }
+
+                    if (hasVariants && product.variant_config?.options) {
+                      const missingOption = product.variant_config.options.find(
+                        (opt) => opt.required !== false && !selectedAttributes[opt.id]
+                      );
+                      if (missingOption) {
+                        alert(`Please select an option for ${missingOption.name}!`);
+                        return;
+                      }
+                    }
+
+                    const variantLabel = activeVariant
+                      ? Object.values(selectedAttributes).join(' / ')
+                      : selectedSize || undefined;
+
+                    addItem(product, quantity, {
+                      selectedVariant: variantLabel,
+                      selectedVariantId: activeVariant?.id,
+                      selectedAttributes,
+                      variantPrice: activeVariant?.price ?? product.price,
+                      variantSku: activeVariant?.sku || product.sku || undefined,
+                      variantImage: activeVariant?.image_url || undefined,
+                      variantStock: currentStock,
+                    });
+
+                    navigate('/checkout');
+                  }}
+                  className="flex-1 py-3.5"
+                >
+                  <CreditCard className="mr-2 h-5 w-5" />
+                  Buy Now
+                </Button>
+
                 {user && (
                   <button
                     onClick={() => toggleWishlist(user.id, product)}
-                    className={`px-4 rounded-xl border backdrop-blur-md transition-all flex items-center justify-center ${
+                    className={`p-3.5 rounded-xl border backdrop-blur-md transition-all flex items-center justify-center ${
                       liked ? 'bg-danger/10 text-danger border-danger/20' : 'bg-white border-gray-300 text-gray-600 hover:text-gray-900'
                     }`}
+                    title={liked ? "Remove from wishlist" : "Add to wishlist"}
                   >
                     <Heart className={`h-5 w-5 ${liked ? 'fill-current' : ''}`} />
                   </button>
                 )}
+              </div>
+
+              {/* Sanitary Trust Features Strip */}
+              <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-gray-100 text-center">
+                <div className="p-2.5 bg-gray-50/80 rounded-xl border border-gray-100 flex flex-col items-center">
+                  <ShieldCheck className="h-4 w-4 text-primary mb-1" />
+                  <span className="text-[10px] font-bold text-gray-800">10-Yr Warranty</span>
+                  <span className="text-[9px] text-gray-500">Anti-Tarnish Plating</span>
+                </div>
+                <div className="p-2.5 bg-gray-50/80 rounded-xl border border-gray-100 flex flex-col items-center">
+                  <Truck className="h-4 w-4 text-primary mb-1" />
+                  <span className="text-[10px] font-bold text-gray-800">Insured Delivery</span>
+                  <span className="text-[9px] text-gray-500">Secure Transit Care</span>
+                </div>
+                <div className="p-2.5 bg-gray-50/80 rounded-xl border border-gray-100 flex flex-col items-center">
+                  <Sparkles className="h-4 w-4 text-primary mb-1" />
+                  <span className="text-[10px] font-bold text-gray-800">100% Solid Brass</span>
+                  <span className="text-[9px] text-gray-500">Lead-Free Ingot</span>
+                </div>
               </div>
             </div>
           )}

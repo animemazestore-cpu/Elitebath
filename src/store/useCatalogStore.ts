@@ -7,6 +7,8 @@ import {
   PRODUCT_DETAIL_SELECT,
   PRODUCT_LIST_SELECT,
   PRODUCT_RELATED_FIELDS,
+  FALLBACK_CATEGORIES,
+  FALLBACK_PRODUCTS,
   findProductBySlug,
   parseProduct,
   parseProducts,
@@ -48,42 +50,68 @@ function isFresh(fetchedAt: number | null): boolean {
 }
 
 async function fetchCategoriesFromNetwork(): Promise<Category[]> {
-  const { data, error } = await withTimeout(
-    supabase.from('categories').select(CATEGORY_FIELDS).order('name')
-  );
-  if (error) throw error;
-  return (data as Category[]) ?? [];
+  try {
+    const { data, error } = await withTimeout(
+      supabase.from('categories').select(CATEGORY_FIELDS).order('name')
+    );
+    if (error) throw error;
+    if (data && data.length > 0) return data as Category[];
+    return FALLBACK_CATEGORIES;
+  } catch (err) {
+    console.warn('Network category fetch failed, using default sanitaryware categories:', err);
+    return FALLBACK_CATEGORIES;
+  }
 }
 
 async function fetchProductsFromNetwork(): Promise<Product[]> {
-  const { data, error } = await withTimeout(
-    supabase.from('products').select(PRODUCT_LIST_SELECT).order('created_at', { ascending: false })
-  );
-  if (error) throw error;
-  return parseProducts(data as Record<string, unknown>[] | null);
+  try {
+    const { data, error } = await withTimeout(
+      supabase
+        .from('products')
+        .select(PRODUCT_LIST_SELECT)
+        .order('created_at', { ascending: false })
+    );
+    if (error) throw error;
+    const parsed = parseProducts(data as Record<string, unknown>[] | null);
+    if (parsed.length > 0) return parsed;
+    return FALLBACK_PRODUCTS;
+  } catch (err) {
+    console.warn('Network product fetch failed, using luxury sanitaryware catalog:', err);
+    return FALLBACK_PRODUCTS;
+  }
 }
 
 async function fetchProductDetailFromNetwork(id: string): Promise<Product | null> {
-  const { data, error } = await withTimeout(
-    supabase.from('products').select(PRODUCT_DETAIL_SELECT).eq('id', id).maybeSingle()
-  );
-  if (error) throw error;
-  return data ? parseProduct(data as Record<string, unknown>) : null;
+  try {
+    const { data, error } = await withTimeout(
+      supabase.from('products').select(PRODUCT_DETAIL_SELECT).eq('id', id).maybeSingle()
+    );
+    if (error) throw error;
+    if (data) return parseProduct(data as Record<string, unknown>);
+  } catch (err) {
+    console.warn('Product detail by ID fetch error:', err);
+  }
+  return FALLBACK_PRODUCTS.find((p) => p.id === id) ?? null;
 }
 
 async function fetchProductDetailBySlugFromNetwork(slug: string): Promise<Product | null> {
-  const { data, error } = await withTimeout(
-    supabase.from('products').select(PRODUCT_DETAIL_SELECT).eq('slug', slug).maybeSingle()
-  );
-  if (error) throw error;
-  return data ? parseProduct(data as Record<string, unknown>) : null;
+  try {
+    const { data, error } = await withTimeout(
+      supabase.from('products').select(PRODUCT_DETAIL_SELECT).eq('slug', slug).maybeSingle()
+    );
+    if (error) throw error;
+    if (data) return parseProduct(data as Record<string, unknown>);
+  } catch (err) {
+    console.warn('Product detail by slug fetch error:', err);
+  }
+  return FALLBACK_PRODUCTS.find((p) => p.slug === slug) ?? null;
 }
 
 export const useCatalogStore = create<CatalogState>()(
   persist(
     (set, get) => ({
-      categories: [],
-      products: [],
+      categories: FALLBACK_CATEGORIES,
+      products: FALLBACK_PRODUCTS,
       categoriesFetchedAt: null,
       productsFetchedAt: null,
       categoriesLoading: false,
@@ -231,7 +259,8 @@ export const useCatalogStore = create<CatalogState>()(
               .limit(limit)
           );
           if (error) throw error;
-          return parseProducts(data as Record<string, unknown>[] | null);
+          const fetched = parseProducts(data as Record<string, unknown>[] | null);
+          return fetched.length > 0 ? fetched : fromCache;
         } catch (err) {
           console.warn('Could not fetch related products:', err);
           return fromCache;
@@ -239,7 +268,7 @@ export const useCatalogStore = create<CatalogState>()(
       },
     }),
     {
-      name: 'animemaze-catalog',
+      name: 'elite-bath-catalog',
       partialize: (state) => ({
         categories: state.categories,
         products: state.products,

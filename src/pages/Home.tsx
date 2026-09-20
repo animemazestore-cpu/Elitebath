@@ -22,7 +22,6 @@ export const Home: React.FC = () => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
-  const [bgImageLoaded, setBgImageLoaded] = useState(false);
   const [heroLoading, setHeroLoading] = useState(true);
 
   useEffect(() => {
@@ -67,9 +66,9 @@ export const Home: React.FC = () => {
   };
 
   const trustPoints = [
-    { icon: ShieldCheck, label: 'Secure UPI checkout with manual verification' },
-    { icon: Truck, label: 'Tracked shipping across India' },
-    { icon: Package, label: 'Carefully packed collectibles & apparel' },
+    { icon: ShieldCheck, label: '100% Genuine, tested sanitary fittings & valves' },
+    { icon: Truck, label: 'Fast & tracked delivery across India' },
+    { icon: Package, label: 'Heavy-duty protective transit packaging' },
   ];
 
   return (
@@ -78,70 +77,66 @@ export const Home: React.FC = () => {
       {heroLoading ? (
         <HeroSkeleton />
       ) : (
-        <section className="relative bg-gray-50 border-b border-gray-200 overflow-hidden">
-          {/* Background Image with Overlay */}
-          <div className="absolute inset-0 z-0">
-            <motion.div
-              animate={{
-                y: [0, -20, 0],
-                scale: [1, 1.02, 1],
-              }}
-              transition={{
-                duration: 8,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="w-full h-full"
-            >
-              <img
-                src="/hero_bg.png"
-                alt=""
-                className={`w-full h-full object-cover transition-opacity duration-700 ${bgImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                loading="eager"
-                onLoad={() => setBgImageLoaded(true)}
-              />
-            </motion.div>
-            {/* Dark Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-50/85 via-gray-100/80 to-gray-50/85" />
-            {/* Gradient Masking at edges */}
-            <div className="absolute inset-0 bg-gradient-to-t from-gray-50 via-transparent to-gray-50/30" />
+        <section className="relative bg-gradient-to-b from-gray-50/60 via-white to-white border-b border-gray-200 overflow-hidden">
+          {/* Mobile Seamless Faded Hero Background (spans entire section without card boxes) */}
+          <div className="block lg:hidden absolute inset-0 z-0 pointer-events-none overflow-hidden">
+            <img
+              src="/hero_sanitary.jpg"
+              alt=""
+              className="w-full h-full object-cover object-[center_35%] opacity-20 filter contrast-105"
+              loading="eager"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/50 to-white" />
           </div>
 
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-            <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-              <div className="text-center lg:text-left space-y-8">
+          {/* Desktop Subtle Background Layer */}
+          <div className="hidden lg:block absolute inset-0 z-0 opacity-15 pointer-events-none">
+            <img
+              src="/hero_sanitary.jpg"
+              alt=""
+              className="w-full h-full object-cover filter blur-sm"
+              loading="eager"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-gray-50/90" />
+          </div>
+
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
+            <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+              <div className="text-center lg:text-left space-y-6 sm:space-y-8">
+                {/* Natural, unboxed typography with high readability */}
                 <div className="space-y-4">
-                  <p className="text-sm font-semibold uppercase tracking-wider text-primary">
-                    Premium Anime Merchandise
-                  </p>
-                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-tight">
-                    Collect, wear, and display your favourite anime worlds
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Bathrooms For A Better Tomorrow</span>
+                  </div>
+                  <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 leading-tight">
+                    Elevate Your Bathroom with Premium Sanitary Collections
                   </h1>
-                  <p className="text-gray-600 text-base sm:text-lg max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                    Action figures, apparel, display props, and accessories — curated for fans who care about quality.
+                  <p className="text-gray-600 text-sm sm:text-base lg:text-lg max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                    Precision brass faucets, rainfall showers, designer basins, and luxury accessories engineered for enduring performance and timeless elegance.
                   </p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                   <button
                     onClick={() => navigate('/shop')}
-                    className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg font-semibold text-white bg-primary hover:bg-primary-dark shadow-sm transition-colors"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-white bg-primary hover:bg-primary-dark shadow-sm hover:shadow-md transition-all active:scale-[0.99]"
                   >
                     <ShoppingBag className="h-5 w-5" />
-                    Shop All Products
+                    Shop Collections
                   </button>
                   <button
                     onClick={() => navigate('/shop')}
-                    className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg font-semibold text-gray-700 border border-gray-300 bg-white hover:border-primary hover:text-primary transition-colors"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-gray-700 border border-gray-300 bg-white hover:border-primary hover:text-primary shadow-xs hover:shadow-sm transition-all active:scale-[0.99]"
                   >
-                    <Sparkles className="h-5 w-5" />
+                    <Sparkles className="h-5 w-5 text-primary" />
                     Browse Categories
                   </button>
                 </div>
 
-                <ul className="space-y-3 pt-2 border-t border-gray-200">
+                <ul className="space-y-3 pt-3 sm:pt-4 border-t border-gray-200">
                   {trustPoints.map(({ icon: Icon, label }) => (
-                    <li key={label} className="flex items-center gap-3 text-sm text-gray-600 justify-center lg:justify-start">
+                    <li key={label} className="flex items-center gap-3 text-xs sm:text-sm text-gray-600 font-medium justify-center lg:justify-start">
                       <Icon className="h-4 w-4 text-primary flex-shrink-0" />
                       <span>{label}</span>
                     </li>
@@ -150,13 +145,20 @@ export const Home: React.FC = () => {
               </div>
 
               <div className="hidden lg:flex items-center justify-center">
-                <img
-                  src="/hero_bg.png"
-                  alt="Anime merchandise collection"
-                  className={`w-full max-w-lg object-contain transition-opacity duration-500 ${heroImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                  loading="eager"
-                  onLoad={() => setHeroImageLoaded(true)}
-                />
+                <div className="relative w-full max-w-lg aspect-[16/10] rounded-3xl overflow-hidden shadow-2xl border-4 border-white group">
+                  <img
+                    src="/hero_sanitary.jpg"
+                    alt="Elite Bath Collections luxury bathroom setting"
+                    className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${heroImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    loading="eager"
+                    onLoad={() => setHeroImageLoaded(true)}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4 text-white">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Modern Architecture</span>
+                    <p className="text-sm font-bold">Curated Sanitaryware & Fittings</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -259,9 +261,9 @@ export const Home: React.FC = () => {
                 <ShieldCheck className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Secure UPI payments</h3>
+                <h3 className="font-semibold text-gray-900">Solid Core Craftsmanship</h3>
                 <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                  Pay via UPI and upload your transaction screenshot. Orders are verified before processing.
+                  Crafted with heavy-grade brass, SUS304 stainless steel, and vitreous china for durability.
                 </p>
               </div>
             </div>
@@ -271,9 +273,9 @@ export const Home: React.FC = () => {
                 <Gift className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Quality-checked items</h3>
+                <h3 className="font-semibold text-gray-900">Multi-Layer Protective Finish</h3>
                 <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                  Figures, apparel, and display props are inspected before dispatch.
+                  Corrosion-resistant plating engineered to withstand water spots, humidity, and daily wear.
                 </p>
               </div>
             </div>
@@ -283,9 +285,9 @@ export const Home: React.FC = () => {
                 <Check className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Buyer reviews on product pages</h3>
+                <h3 className="font-semibold text-gray-900">Verified Customer Reviews</h3>
                 <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                  Read ratings and feedback from verified purchasers on each product detail page.
+                  Read genuine feedback and installation photos from verified buyers across India.
                 </p>
               </div>
             </div>

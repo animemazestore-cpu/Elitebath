@@ -171,14 +171,14 @@ export const Auth: React.FC = () => {
         {!verificationPendingEmail && !isResetMode && (
           <div className="text-center mb-8">
             <h2 className="text-3xl font-extrabold tracking-tight text-gray-900">
-              {isForgotPassword ? 'Reset Password' : isLogin ? 'Welcome Back Otaku' : 'Join AnimeMaze'}
+              {isForgotPassword ? 'Reset Password' : isLogin ? 'Welcome Back' : 'Create an Account'}
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               {isForgotPassword
                 ? 'Enter your email to receive a recovery link'
                 : isLogin
-                ? "Access the ultimate anime store collection"
-                : 'Create your account to start collecting merch'}
+                ? "Sign in to track orders and manage your saved fittings"
+                : 'Create an account to streamline checkout and track deliveries'}
             </p>
           </div>
         )}
@@ -195,7 +195,7 @@ export const Auth: React.FC = () => {
                 We've sent a verification link to <strong className="text-gray-900">{verificationPendingEmail}</strong>.
               </p>
               <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">
-                Please click the link in the email to activate your AnimeMaze account.
+                Please click the link in the email to activate your Elite Bath Collections account.
               </p>
             </div>
 
@@ -334,7 +334,7 @@ export const Auth: React.FC = () => {
                       label="Full Name"
                       type="text"
                       required
-                      placeholder="E.g. Naruto Uzumaki"
+                      placeholder="E.g. Rajesh Mehra"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                     />
@@ -346,7 +346,7 @@ export const Auth: React.FC = () => {
                 label="Email Address"
                 type="email"
                 required
-                placeholder="otaku@example.com"
+                placeholder="rajesh.mehra@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />

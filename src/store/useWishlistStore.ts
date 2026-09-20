@@ -6,11 +6,12 @@ import { sanitizeSlug } from '../lib/persistence';
 // We use localStorage as the single source of truth for wishlist items.
 // This ensures locally-added products (with "local-prod-xxx" IDs) always
 // work regardless of whether the user is logged in with Supabase or mock admin.
-const WISHLIST_KEY = 'animemaze_wishlist';
+const WISHLIST_KEY = 'elitebath_wishlist';
+const LEGACY_WISHLIST_KEY = 'animemaze_wishlist';
 
 const loadFromStorage = (): Product[] => {
   try {
-    const raw = localStorage.getItem(WISHLIST_KEY);
+    const raw = localStorage.getItem(WISHLIST_KEY) || localStorage.getItem(LEGACY_WISHLIST_KEY);
     const parsed: Product[] = raw ? JSON.parse(raw) : [];
     return parsed.map(p => ({
       ...p,
