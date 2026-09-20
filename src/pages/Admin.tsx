@@ -1244,15 +1244,67 @@ export const Admin: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-gray-50">
       
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsMobileMenuOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md border border-gray-200"
-      >
-        <Menu className="h-6 w-6 text-gray-700" />
-      </button>
+      {/* Mobile Sticky Top Header */}
+      <header className="lg:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm w-full">
+        <div className="flex items-center justify-between px-3.5 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-1.5 -ml-1 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Open navigation menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-6 w-6 text-primary flex-shrink-0" />
+              <div>
+                <h1 className="text-sm font-extrabold text-gray-900 leading-none">Admin Panel</h1>
+                <p className="text-[10px] text-gray-500 font-medium capitalize mt-0.5">{activeTab.replace('_', ' ')}</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={loadAdminData}
+              className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Refresh Data"
+            >
+              <RefreshCcw className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable Horizontal Pill Tabs */}
+        <div className="flex items-center gap-1.5 px-3 pb-2 overflow-x-auto no-scrollbar scroll-smooth">
+          {([
+            { id: 'verification', label: 'Status' },
+            { id: 'products', label: 'Products' },
+            { id: 'categories', label: 'Categories' },
+            { id: 'orders', label: 'Orders' },
+            { id: 'inventory', label: 'Inventory' },
+            { id: 'questions', label: 'Q&A' },
+            { id: 'reviews', label: 'Reviews' },
+            { id: 'replacements', label: 'Returns' },
+            { id: 'coupons', label: 'Coupons' },
+            { id: 'announcement', label: 'Notice' },
+            { id: 'subscribers', label: 'Subscribers' },
+          ] as const).map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id as any)}
+              className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                activeTab === t.id
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </header>
 
       {/* Mobile Drawer Overlay */}
       {isMobileMenuOpen && (
@@ -1325,7 +1377,7 @@ export const Admin: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 lg:p-8 lg:ml-0">
+      <main className="flex-1 p-3 sm:p-6 lg:p-8 lg:ml-0 min-w-0">
         <div className="max-w-7xl mx-auto">
           {/* Desktop Header */}
           <div className="hidden lg:flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -1337,9 +1389,6 @@ export const Admin: React.FC = () => {
               <p className="text-sm text-gray-600 mt-1">Manage payments, inventory, catalogs, Q&A, and reviews</p>
             </div>
           </div>
-
-          {/* Mobile Header Spacer */}
-          <div className="lg:hidden h-16" />
 
           {dbWarning && (
             <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-2xl flex items-start space-x-3 text-amber-900 shadow-sm">
@@ -1365,19 +1414,78 @@ export const Admin: React.FC = () => {
           
           {/* TAB 1: Payment Verification Panel */}
           {activeTab === 'verification' && (
-            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+            <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
               <h2 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
                 <CreditCard className="h-5.5 w-5.5 text-secondary" />
                 <span>Order Status Management</span>
               </h2>
 
-              <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl">
-                <p className="text-sm text-gray-700">
+              <div className="p-3.5 sm:p-4 bg-primary/10 border border-primary/20 rounded-xl">
+                <p className="text-xs sm:text-sm text-gray-700">
                   <strong className="text-primary">Note:</strong> Payments are processed securely via Razorpay (automated signature verification) and Direct UPI QR (UTR/transaction proof verification).
                 </p>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* Mobile Verification Cards */}
+              <div className="sm:hidden space-y-3">
+                {orders.filter(o => ['PENDING_PAYMENT', 'PAID', 'CANCELLED'].includes(o.status)).length === 0 ? (
+                  <div className="p-6 text-center text-gray-500 italic bg-gray-50 rounded-xl border border-gray-200 text-xs">
+                    No recent orders found.
+                  </div>
+                ) : (
+                  orders
+                    .filter(o => ['PENDING_PAYMENT', 'PAID', 'CANCELLED'].includes(o.status))
+                    .slice(0, 15)
+                    .map((order) => (
+                      <div key={order.id} className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono font-bold text-xs bg-gray-200 text-gray-800 px-2 py-0.5 rounded">
+                            #{order.id.slice(0, 10)}
+                          </span>
+                          <span className="font-extrabold text-sm text-gray-900">
+                            ₹{order.total_amount}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          <p className="font-bold text-gray-900">{order.shipping_address?.fullName || 'Guest Customer'}</p>
+                          {order.shipping_address?.phone && (
+                            <a href={`tel:${order.shipping_address.phone}`} className="text-primary hover:underline">
+                              {order.shipping_address.phone}
+                            </a>
+                          )}
+                          <p className="text-[11px] text-gray-500 mt-0.5">
+                            {order.shipping_address?.city}, {order.shipping_address?.state}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-200">
+                          {order.status === 'PENDING_PAYMENT' && (
+                            <span className="inline-flex items-center space-x-1 px-2.5 py-1 bg-warning/10 border border-warning/20 text-warning rounded-lg text-[11px] font-semibold">
+                              <span>⏳ Pending Payment</span>
+                            </span>
+                          )}
+                          {order.status === 'PAID' && (
+                            <span className="inline-flex items-center space-x-1 px-2.5 py-1 bg-success/10 border border-success/20 text-success rounded-lg text-[11px] font-semibold">
+                              <Check className="h-3 w-3" />
+                              <span>Paid</span>
+                            </span>
+                          )}
+                          {order.status === 'CANCELLED' && (
+                            <span className="inline-flex items-center space-x-1 px-2.5 py-1 bg-danger/10 border border-danger/20 text-danger rounded-lg text-[11px] font-semibold">
+                              <X className="h-3 w-3" />
+                              <span>Cancelled</span>
+                            </span>
+                          )}
+                          <span className="text-[11px] text-gray-500 ml-auto font-medium">
+                            Payment: <strong className="text-gray-800">{order.payment_status}</strong>
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                )}
+              </div>
+
+              {/* Desktop Table */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-sm text-gray-600">
                   <thead className="bg-gray-50 text-xs font-bold uppercase tracking-wider text-gray-500 border-b border-gray-200">
                     <tr>
@@ -1452,8 +1560,8 @@ export const Admin: React.FC = () => {
 
           {/* TAB 2: Products Manager */}
           {activeTab === 'products' && (
-            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3.5">
                 <div>
                   <h2 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
                     <ShoppingBag className="h-5.5 w-5.5 text-secondary" />
@@ -1463,7 +1571,7 @@ export const Admin: React.FC = () => {
                     Manage sanitaryware collections, base specifications, and multi-attribute product variants.
                   </p>
                 </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
                   <div className="relative flex-grow sm:w-64">
                     <Search className="h-4 w-4 text-gray-400 absolute left-3 top-2.5" />
                     <input
@@ -1471,10 +1579,10 @@ export const Admin: React.FC = () => {
                       placeholder="Search by name, SKU..."
                       value={productSearchQuery}
                       onChange={(e) => setProductSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-3 py-1.5 rounded-xl text-xs bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:border-primary"
+                      className="w-full pl-9 pr-3 py-2 sm:py-1.5 rounded-xl text-xs bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:border-primary"
                     />
                   </div>
-                  <Button size="sm" onClick={() => {
+                  <Button size="sm" className="w-full sm:w-auto justify-center" onClick={() => {
                     setEditingProduct(null);
                     setProductForm({
                       name: '',
@@ -1505,8 +1613,97 @@ export const Admin: React.FC = () => {
                 </div>
               </div>
 
-              {/* Products Table */}
-              <div className="overflow-x-auto">
+              {/* Mobile Products List */}
+              <div className="md:hidden space-y-3">
+                {products
+                  .filter((prod) => {
+                    if (!productSearchQuery.trim()) return true;
+                    const q = productSearchQuery.toLowerCase();
+                    return (
+                      prod.name.toLowerCase().includes(q) ||
+                      prod.slug.toLowerCase().includes(q) ||
+                      (prod.sku && prod.sku.toLowerCase().includes(q)) ||
+                      (prod.brand && prod.brand.toLowerCase().includes(q)) ||
+                      (prod.category?.name && prod.category.name.toLowerCase().includes(q))
+                    );
+                  })
+                  .map((prod) => (
+                    <div key={prod.id} className="p-3.5 bg-gray-50 rounded-2xl border border-gray-200 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <img
+                          src={prod.main_image_url}
+                          alt=""
+                          className="w-16 h-18 object-cover rounded-xl bg-white border border-gray-200 shadow-sm flex-shrink-0"
+                          onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.jpg'; }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-2">{prod.name}</h3>
+                            <span className="font-black text-sm text-gray-900 flex-shrink-0">
+                              ₹{prod.price.toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            {prod.sku && (
+                              <span className="text-[10px] text-gray-600 font-mono bg-white px-1.5 py-0.5 rounded border border-gray-200">
+                                {prod.sku}
+                              </span>
+                            )}
+                            <span className="text-[10px] text-primary font-semibold bg-primary/5 px-1.5 py-0.5 rounded border border-primary/10">
+                              {prod.category?.name || 'Unassigned'}
+                            </span>
+                            {prod.has_variants && (
+                              <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-secondary bg-secondary/10 px-1.5 py-0.5 rounded">
+                                <Sliders className="h-2.5 w-2.5" />
+                                {prod.variants?.length ? `${prod.variants.length} Variants` : 'Variants'}
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-1 text-[11px] text-gray-500 line-clamp-1">
+                            {prod.material && <span className="font-medium text-gray-700">{prod.material}</span>}
+                            {prod.material && prod.finish && <span> • </span>}
+                            {prod.finish && <span>{prod.finish}</span>}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                        <div>
+                          {prod.stock <= 0 ? (
+                            <span className="text-[10px] font-bold text-danger bg-danger/10 border border-danger/20 px-2 py-0.5 rounded uppercase">
+                              Out of Stock
+                            </span>
+                          ) : prod.stock <= 5 ? (
+                            <span className="text-[10px] font-bold text-amber-600 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded uppercase">
+                              {prod.stock} left
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                              {prod.stock} in stock
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEditProduct(prod)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white border border-gray-300 hover:border-primary text-primary text-xs font-bold rounded-lg transition-colors shadow-sm"
+                          >
+                            <Edit className="h-3.5 w-3.5" /> Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(prod.id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white border border-gray-300 hover:border-danger/40 text-danger text-xs font-bold rounded-lg transition-colors shadow-sm"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Delete
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+
+              {/* Desktop Products Table */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-sm text-gray-600">
                   <thead className="bg-gray-50 text-xs font-bold uppercase text-gray-400 border-b border-gray-200">
                     <tr>
@@ -1609,7 +1806,7 @@ export const Admin: React.FC = () => {
 
           {/* TAB 3: Categories Manager */}
           {activeTab === 'categories' && (
-            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+            <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
                   <List className="h-5.5 w-5.5 text-secondary" />
@@ -1624,8 +1821,48 @@ export const Admin: React.FC = () => {
                 </Button>
               </div>
 
-              {/* Categories Table */}
-              <div className="overflow-x-auto">
+              {/* Mobile Categories List */}
+              <div className="sm:hidden space-y-3">
+                {categories.map((cat) => (
+                  <div key={cat.id} className="p-3.5 bg-gray-50 rounded-2xl border border-gray-200 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={cat.image_url}
+                        alt=""
+                        className="w-12 h-12 object-cover rounded-xl bg-white border border-gray-200 flex-shrink-0"
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.jpg'; }}
+                      />
+                      <div className="min-w-0">
+                        <p className="font-bold text-gray-900 text-sm truncate">{cat.name}</p>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold mt-1 ${
+                          cat.size_enabled ? 'bg-success/10 border border-success/20 text-success' : 'bg-gray-200 text-gray-600'
+                        }`}>
+                          {cat.size_enabled ? 'Sizes Enabled' : 'Sizes Disabled'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => handleEditCategory(cat)}
+                        className="p-2 bg-white border border-gray-300 text-primary rounded-lg shadow-sm"
+                        title="Edit Category"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCategory(cat.id)}
+                        className="p-2 bg-white border border-gray-300 text-danger rounded-lg shadow-sm"
+                        title="Delete Category"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Categories Table */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-sm text-gray-600">
                   <thead className="bg-gray-50 text-xs font-bold uppercase text-gray-400 border-b border-gray-200">
                     <tr>
@@ -1679,55 +1916,55 @@ export const Admin: React.FC = () => {
           {activeTab === 'orders' && (
             <div className="space-y-6">
               {/* Top Summary Metrics Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+                <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-gray-200 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Total Orders</p>
-                    <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                    <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400">Total Orders</p>
+                    <div className="p-1.5 sm:p-2 rounded-xl bg-primary/10 text-primary">
                       <ShoppingBag className="h-4 w-4" />
                     </div>
                   </div>
-                  <p className="text-2xl font-black text-gray-900 mt-2">{orders.length}</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">All customer orders placed</p>
+                  <p className="text-xl sm:text-2xl font-black text-gray-900 mt-2">{orders.length}</p>
+                  <p className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5">All customer orders</p>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-gray-200 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Total Revenue</p>
-                    <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
+                    <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400">Total Revenue</p>
+                    <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-50 text-emerald-700">
                       <CreditCard className="h-4 w-4" />
                     </div>
                   </div>
-                  <p className="text-2xl font-black text-gray-900 mt-2">₹{totalRevenue.toLocaleString('en-IN')}</p>
-                  <p className="text-[11px] text-emerald-700 font-semibold mt-0.5">Paid & completed transactions</p>
+                  <p className="text-xl sm:text-2xl font-black text-gray-900 mt-2">₹{totalRevenue.toLocaleString('en-IN')}</p>
+                  <p className="text-[10px] sm:text-[11px] text-emerald-700 font-semibold mt-0.5">Paid transactions</p>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-gray-200 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400">In Fulfillment</p>
-                    <div className="p-2 rounded-xl bg-indigo-50 text-indigo-700">
+                    <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400">In Fulfillment</p>
+                    <div className="p-1.5 sm:p-2 rounded-xl bg-indigo-50 text-indigo-700">
                       <Package className="h-4 w-4" />
                     </div>
                   </div>
-                  <p className="text-2xl font-black text-gray-900 mt-2">{activeFulfillmentCount}</p>
-                  <p className="text-[11px] text-indigo-700 font-semibold mt-0.5">Processing, packed & dispatched</p>
+                  <p className="text-xl sm:text-2xl font-black text-gray-900 mt-2">{activeFulfillmentCount}</p>
+                  <p className="text-[10px] sm:text-[11px] text-indigo-700 font-semibold mt-0.5">Processing & dispatched</p>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-gray-200 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Delivered</p>
-                    <div className="p-2 rounded-xl bg-teal-50 text-teal-700">
+                    <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400">Delivered</p>
+                    <div className="p-1.5 sm:p-2 rounded-xl bg-teal-50 text-teal-700">
                       <CheckCircle2 className="h-4 w-4" />
                     </div>
                   </div>
-                  <p className="text-2xl font-black text-gray-900 mt-2">{deliveredCount}</p>
-                  <p className="text-[11px] text-teal-700 font-semibold mt-0.5">Safely delivered to clients</p>
+                  <p className="text-xl sm:text-2xl font-black text-gray-900 mt-2">{deliveredCount}</p>
+                  <p className="text-[10px] sm:text-[11px] text-teal-700 font-semibold mt-0.5">Delivered to clients</p>
                 </div>
               </div>
 
               {/* Orders Table Container */}
-              <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div>
                     <h2 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
                       <ShoppingBag className="h-5.5 w-5.5 text-primary" />
@@ -1767,7 +2004,7 @@ export const Admin: React.FC = () => {
                     <select
                       value={orderStatusFilter}
                       onChange={(e) => setOrderStatusFilter(e.target.value)}
-                      className="text-xs bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="text-xs bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary flex-1 sm:flex-none"
                     >
                       <option value="ALL">All Fulfillment Statuses</option>
                       <option value="PENDING_PAYMENT">Pending Payment</option>
@@ -1783,7 +2020,7 @@ export const Admin: React.FC = () => {
                     <select
                       value={orderPaymentFilter}
                       onChange={(e) => setOrderPaymentFilter(e.target.value)}
-                      className="text-xs bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      className="text-xs bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary flex-1 sm:flex-none"
                     >
                       <option value="ALL">All Payment Statuses</option>
                       <option value="PAID">Paid / Completed</option>
@@ -1808,8 +2045,212 @@ export const Admin: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Mobile Orders List */}
+                <div className="lg:hidden space-y-4">
+                  {filteredOrders.length === 0 ? (
+                    <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-2xl border border-gray-200">
+                      <ShoppingBag className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                      <p className="font-semibold text-gray-700">No orders match filter</p>
+                      <p className="text-xs text-gray-400 mt-1">Try changing or resetting filters</p>
+                    </div>
+                  ) : (
+                    filteredOrders.map((order) => (
+                      <div key={order.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-3.5 shadow-sm">
+                        {/* Card Header: ID, Date, Total */}
+                        <div className="flex items-start justify-between gap-2 pb-2.5 border-b border-gray-200">
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono font-extrabold text-xs text-gray-900 bg-white px-2 py-0.5 rounded border border-gray-200 shadow-sm">
+                                #{order.id.slice(0, 10)}
+                              </span>
+                              <button
+                                onClick={() => handleCopyText(order.id, 'Order ID')}
+                                className="p-1 text-gray-400 hover:text-primary rounded transition-colors"
+                                title="Copy full Order ID"
+                              >
+                                <Copy className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                            <p className="text-[11px] text-gray-500 mt-1">
+                              {order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) : 'Recent'}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-black text-base text-gray-900 block">
+                              ₹{(Number(order.total_amount) || 0).toLocaleString('en-IN')}
+                            </span>
+                            <span className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase mt-0.5 ${
+                              order.payment_status === 'PAID' || order.payment_status === 'COMPLETED'
+                                ? 'text-emerald-700 bg-emerald-100 border border-emerald-300'
+                                : order.payment_status === 'FAILED'
+                                ? 'text-danger bg-danger/10 border border-danger/20'
+                                : 'text-amber-700 bg-amber-100 border border-amber-300'
+                            }`}>
+                              {order.payment_status || 'PENDING'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Customer Info */}
+                        <div className="space-y-1 bg-white p-3 rounded-xl border border-gray-200 text-xs">
+                          <div className="flex items-center justify-between">
+                            <p className="font-bold text-gray-900">{order.shipping_address?.fullName || 'Guest Customer'}</p>
+                            <button
+                              onClick={() => handleCopyAddress(order)}
+                              className="inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary-hover font-bold"
+                            >
+                              <Copy className="h-3 w-3" /> Copy
+                            </button>
+                          </div>
+                          {order.shipping_address?.phone && (
+                            <a
+                              href={`tel:${order.shipping_address.phone}`}
+                              className="text-primary hover:underline font-semibold block text-[11px]"
+                            >
+                              📞 {order.shipping_address.phone}
+                            </a>
+                          )}
+                          <p className="text-gray-600 text-[11px] leading-snug">
+                            {order.shipping_address?.address}, {order.shipping_address?.city}, {order.shipping_address?.state} - {order.shipping_address?.pincode}
+                          </p>
+                        </div>
+
+                        {/* Ordered Items Summary */}
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">Items ({order.items?.length || 0}):</p>
+                          <div className="space-y-1.5">
+                            {order.items?.map((item, idx) => {
+                              const itemName = item.product?.name || (item as any).product_name || 'Sanitaryware Item';
+                              const itemImg = item.product?.main_image_url || (item as any).image_url || '/placeholder.jpg';
+                              return (
+                                <div key={item.id || idx} className="flex items-center gap-2.5 bg-white p-2 rounded-xl border border-gray-200">
+                                  <img
+                                    src={itemImg}
+                                    alt=""
+                                    className="w-10 h-10 object-cover rounded-lg bg-gray-50 border border-gray-200 flex-shrink-0"
+                                    onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.jpg'; }}
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-semibold text-gray-900 text-xs truncate">{itemName}</p>
+                                    <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                                      {item.selected_variant && (
+                                        <span className="text-emerald-800 bg-emerald-50 px-1 rounded font-medium">
+                                          {item.selected_variant}
+                                        </span>
+                                      )}
+                                      <span>{item.quantity} × ₹{(item.price || 0).toLocaleString('en-IN')}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Fulfillment Status Selector */}
+                        <div className="space-y-1.5 pt-1">
+                          <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 block">
+                            Fulfillment Status
+                          </label>
+                          <select
+                            value={order.status}
+                            onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
+                            className="w-full bg-white border border-gray-300 text-xs font-bold text-gray-900 rounded-xl p-2.5 focus:outline-none focus:border-primary shadow-sm"
+                          >
+                            <option value="PENDING_PAYMENT">⏳ Pending Payment</option>
+                            <option value="PAID">💳 Order Paid</option>
+                            <option value="PROCESSING">⚙️ Processing & QC</option>
+                            <option value="PACKED">📦 Packed & Crated</option>
+                            <option value="SHIPPED">🚚 Dispatched / Shipped</option>
+                            <option value="OUT_FOR_DELIVERY">🛵 Out for Delivery</option>
+                            <option value="DELIVERED">✅ Delivered</option>
+                            <option value="CANCELLED">❌ Cancelled</option>
+                            <option value="PENDING_VERIFICATION">⏳ Pending Verification</option>
+                          </select>
+                        </div>
+
+                        {/* Courier Tracking or Add Tracking */}
+                        {(order.shipping_address as any)?.tracking_info ? (
+                          <div className="bg-white p-2.5 rounded-xl border border-gray-200 text-xs space-y-1.5">
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-gray-800 flex items-center gap-1">
+                                <Truck className="h-3.5 w-3.5 text-primary" />
+                                {(order.shipping_address as any).tracking_info.carrier}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  const tracking = (order.shipping_address as any).tracking_info;
+                                  setTrackingOrderId(order.id);
+                                  setTrackingCarrier(tracking.carrier || '');
+                                  setTrackingNumber(tracking.tracking_number || '');
+                                  setTrackingTargetStatus(order.status);
+                                  setIsTrackingModalOpen(true);
+                                }}
+                                className="text-primary hover:underline font-bold text-xs flex items-center gap-0.5"
+                              >
+                                <Edit className="h-3 w-3" /> Edit
+                              </button>
+                            </div>
+                            <div className="flex items-center justify-between font-mono text-[11px] text-gray-700 bg-gray-50 px-2 py-1 rounded border border-gray-200">
+                              <span className="truncate">{(order.shipping_address as any).tracking_info.tracking_number}</span>
+                              <button
+                                onClick={() => handleCopyText((order.shipping_address as any).tracking_info.tracking_number, 'Tracking Number')}
+                                className="text-gray-400 hover:text-primary ml-1"
+                              >
+                                <Copy className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          order.status !== 'CANCELLED' && order.status !== 'PENDING_PAYMENT' && (
+                            <button
+                              onClick={() => {
+                                setTrackingOrderId(order.id);
+                                setTrackingCarrier('Delhivery Express');
+                                setTrackingNumber('');
+                                setTrackingTargetStatus(order.status);
+                                setIsTrackingModalOpen(true);
+                              }}
+                              className="w-full py-2 bg-white border border-primary/30 hover:border-primary text-primary text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                            >
+                              <Truck className="h-3.5 w-3.5" /> Add Courier Tracking
+                            </button>
+                          )
+                        )}
+
+                        {/* Estimated Delivery & Packing Slip */}
+                        <div className="flex items-center justify-between pt-2 border-t border-gray-200 gap-2">
+                          <div className="text-xs">
+                            <span className="text-gray-400 text-[10px] block font-bold uppercase">Delivery:</span>
+                            <span className="font-semibold text-gray-800 text-xs">
+                              {order.estimated_delivery_date
+                                ? new Date(order.estimated_delivery_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+                                : 'Not scheduled'}
+                            </span>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedPackingSlipOrder(order)}
+                            className="text-xs py-1.5 px-3 flex items-center gap-1"
+                          >
+                            <Printer className="h-3.5 w-3.5" />
+                            <span>Print Slip</span>
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
                 {/* Orders Table */}
-                <div className="overflow-x-auto">
+                <div className="hidden lg:block overflow-x-auto">
                   <table className="w-full text-left text-sm text-gray-600">
                     <thead className="bg-gray-50 text-[11px] font-bold uppercase text-gray-400 border-b border-gray-200">
                       <tr>
@@ -2168,13 +2609,45 @@ export const Admin: React.FC = () => {
 
           {/* TAB 5: Inventory Low stock Warning */}
           {activeTab === 'inventory' && (
-            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+            <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
               <h2 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
                 <AlertTriangle className="h-5.5 w-5.5 text-danger animate-bounce" />
                 <span>Inventory & Low Stock Warnings</span>
               </h2>
 
-              <div className="overflow-x-auto">
+              {/* Mobile Inventory List */}
+              <div className="sm:hidden space-y-3">
+                {products.map((prod) => (
+                  <div key={prod.id} className="p-3.5 bg-gray-50 rounded-2xl border border-gray-200 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-bold text-gray-900 text-sm leading-tight">{prod.name}</p>
+                        <p className="text-[10px] text-gray-500 font-mono mt-0.5">{prod.slug}</p>
+                      </div>
+                      <span className="font-extrabold text-sm text-gray-900 flex-shrink-0">
+                        ₹{prod.price.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t border-gray-200">
+                      <span className="text-xs text-gray-600 font-medium">
+                        Stock: <strong className="text-gray-900 font-bold">{prod.stock}</strong> units
+                      </span>
+                      <div>
+                        {prod.stock === 0 ? (
+                          <span className="text-danger bg-danger/10 border border-danger/20 px-2 py-0.5 rounded text-[10px] font-bold uppercase">OUT OF STOCK</span>
+                        ) : prod.stock <= 5 ? (
+                          <span className="text-amber-600 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-bold uppercase">LOW STOCK</span>
+                        ) : (
+                          <span className="text-success bg-success/10 border border-success/20 px-2 py-0.5 rounded text-[10px] font-bold uppercase">HEALTHY</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Inventory Table */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-sm text-gray-600">
                   <thead className="bg-gray-50 text-xs font-bold uppercase text-gray-400 border-b border-gray-200">
                     <tr>
@@ -2272,13 +2745,71 @@ export const Admin: React.FC = () => {
 
           {/* TAB 7: Reviews Moderation */}
           {activeTab === 'reviews' && (
-            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+            <div className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
               <h2 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
                 <Star className="h-5.5 w-5.5 text-yellow-500 fill-current" />
                 <span>Reviews Moderation</span>
               </h2>
 
-              <div className="overflow-x-auto">
+              {/* Mobile Reviews List */}
+              <div className="sm:hidden space-y-3">
+                {reviews.length === 0 ? (
+                  <div className="p-6 text-center text-gray-500 italic bg-gray-50 rounded-xl border border-gray-200 text-xs">
+                    No reviews submitted yet.
+                  </div>
+                ) : (
+                  reviews.map((rev) => (
+                    <div key={rev.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-gray-900 text-xs">{rev.user_name}</p>
+                          {rev.verified_purchase && (
+                            <span className="text-[9px] font-bold text-secondary">Verified Buyer</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 font-bold text-yellow-500 text-xs">
+                          {rev.rating} <Star className="h-3 w-3 fill-current" />
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-700 bg-white p-2.5 rounded-xl border border-gray-200">
+                        "{rev.review_text}"
+                      </p>
+                      <div className="flex items-center justify-between pt-1">
+                        <span className={`px-2 py-0.5 border rounded uppercase text-[10px] font-bold ${
+                          rev.status === 'APPROVED' ? 'text-success border-success/20 bg-success/5' :
+                          rev.status === 'REJECTED' ? 'text-danger border-danger/20 bg-danger/5' :
+                          'text-amber-500 border-amber-500/20 bg-amber-500/5'
+                        }`}>
+                          {rev.status}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleModerateReview(rev.id, 'APPROVED')}
+                            className="px-2.5 py-1 bg-success/20 text-success rounded-lg border border-success/30 text-xs font-bold flex items-center gap-1"
+                          >
+                            <Check className="h-3 w-3" /> Approve
+                          </button>
+                          <button
+                            onClick={() => handleModerateReview(rev.id, 'REJECTED')}
+                            className="px-2.5 py-1 bg-danger/20 text-danger rounded-lg border border-danger/30 text-xs font-bold flex items-center gap-1"
+                          >
+                            <X className="h-3 w-3" /> Reject
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReview(rev.id)}
+                            className="p-1.5 bg-gray-200 text-gray-600 rounded-lg"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Desktop Reviews Table */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-sm text-gray-600">
                   <thead className="bg-gray-50 text-xs font-bold uppercase text-gray-400 border-b border-gray-200">
                     <tr>
@@ -2525,7 +3056,59 @@ export const Admin: React.FC = () => {
                 </Button>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* Mobile Coupons List */}
+              <div className="sm:hidden space-y-3">
+                {coupons.map((coupon) => (
+                  <div key={coupon.code} className="p-3.5 bg-gray-50 rounded-2xl border border-gray-200 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-extrabold text-gray-900 bg-white border border-gray-200 px-2.5 py-1 rounded-lg text-xs font-mono tracking-wider shadow-sm">
+                        {coupon.code}
+                      </span>
+                      <button
+                        onClick={() => handleToggleCoupon(coupon.code)}
+                        className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase border transition-all ${
+                          coupon.active !== false
+                            ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
+                            : 'text-red-500 bg-red-50 border-red-200'
+                        }`}
+                      >
+                        {coupon.active !== false ? 'Active' : 'Disabled'}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-gray-700">
+                      <span>Discount: <strong className="font-bold text-gray-900">{coupon.type === 'PERCENT' ? `${coupon.value}%` : `₹${coupon.value}`}</strong></span>
+                      <span className="text-gray-500 text-[11px]">{coupon.minOrder > 0 ? `Min ₹${coupon.minOrder}` : 'No min'}</span>
+                    </div>
+                    <div className="flex items-center justify-end gap-2 pt-1 border-t border-gray-200">
+                      <button
+                        onClick={() => {
+                          setEditingCoupon(coupon);
+                          setCouponForm({
+                            code: coupon.code,
+                            type: coupon.type,
+                            value: coupon.value,
+                            minOrder: coupon.minOrder || 0,
+                            active: coupon.active !== false
+                          });
+                          setIsCouponModalOpen(true);
+                        }}
+                        className="px-3 py-1 bg-white border border-gray-300 text-primary text-xs font-bold rounded-lg shadow-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCoupon(coupon.code)}
+                        className="p-1 bg-white border border-gray-300 text-danger rounded-lg shadow-sm"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Coupons Table */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-left text-sm text-gray-600">
                   <thead className="bg-gray-50 text-xs font-bold uppercase text-gray-400 border-b border-gray-200">
                     <tr>
@@ -2674,8 +3257,8 @@ export const Admin: React.FC = () => {
 
       {/* PRODUCT MODAL (Add/Edit) */}
       {isProductModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-4xl bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-2xl max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-sm">
+          <div className="relative w-full max-w-4xl bg-white border border-gray-200 rounded-2xl p-4 sm:p-8 shadow-2xl max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 mb-6 border-b border-gray-200">
               <div>
                 <h3 className="text-xl font-extrabold text-gray-900">
@@ -2929,11 +3512,11 @@ export const Admin: React.FC = () => {
               />
 
               {/* Action Buttons */}
-              <div className="flex gap-4 justify-end pt-6 border-t border-gray-200">
-                <Button variant="outline" type="button" onClick={() => setIsProductModalOpen(false)} disabled={submittingProduct}>
+              <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 justify-end pt-6 border-t border-gray-200">
+                <Button variant="outline" type="button" onClick={() => setIsProductModalOpen(false)} disabled={submittingProduct} className="w-full sm:w-auto">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={submittingProduct}>
+                <Button type="submit" disabled={submittingProduct} className="w-full sm:w-auto">
                   {submittingProduct ? 'Saving...' : (editingProduct ? 'Update Product' : 'Create Product')}
                 </Button>
               </div>
@@ -2944,18 +3527,27 @@ export const Admin: React.FC = () => {
 
       {/* CATEGORY MODAL (Add/Edit) */}
       {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-md bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-gray-900 mb-6">
-              {editingCategory ? 'Edit Category' : 'Add New Category'}
-            </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-sm">
+          <div className="relative w-full max-w-md bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 mb-5 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900">
+                {editingCategory ? 'Edit Category' : 'Add New Category'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              >
+                <CloseIcon className="h-5 w-5" />
+              </button>
+            </div>
 
             <form onSubmit={handleCategorySubmit} className="space-y-5">
               <Input
                 label="Category Name"
                 type="text"
                 required
-                placeholder="e.g. Wall Decor"
+                placeholder="e.g. Luxury Showers"
                 value={categoryForm.name}
                 onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
               />
@@ -2974,7 +3566,7 @@ export const Admin: React.FC = () => {
               <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
                 <div>
                   <label className="text-sm font-semibold text-gray-900 block">Enable Size Selection</label>
-                  <p className="text-xs text-gray-500 mt-1">Products in this category will require size selection (S, M, L, XL)</p>
+                  <p className="text-xs text-gray-500 mt-1">Products in this category will require size selection</p>
                 </div>
                 <button
                   type="button"
@@ -2991,11 +3583,11 @@ export const Admin: React.FC = () => {
                 </button>
               </div>
 
-              <div className="flex gap-4 justify-end pt-4">
-                <Button variant="outline" type="button" onClick={() => setIsCategoryModalOpen(false)} disabled={submittingCategory}>
+              <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 justify-end pt-4">
+                <Button variant="outline" type="button" onClick={() => setIsCategoryModalOpen(false)} disabled={submittingCategory} className="w-full sm:w-auto">
                   Cancel
                 </Button>
-                <Button type="submit" disabled={submittingCategory}>
+                <Button type="submit" disabled={submittingCategory} className="w-full sm:w-auto">
                   {submittingCategory ? 'Saving...' : 'Submit'}
                 </Button>
               </div>
@@ -3008,8 +3600,8 @@ export const Admin: React.FC = () => {
 
       {/* COURIER TRACKING DETAILS MODAL */}
       {isTrackingModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-md bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-sm">
+          <div className="relative w-full max-w-md bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-2xl">
             <button
               onClick={() => setIsTrackingModalOpen(false)}
               className="absolute top-4 right-4 p-2 bg-gray-100 text-gray-500 hover:text-gray-900 rounded-full border border-gray-300 focus:outline-none"
@@ -3040,11 +3632,11 @@ export const Admin: React.FC = () => {
                 onChange={(e) => setTrackingNumber(e.target.value)}
               />
 
-              <div className="flex gap-4 justify-end pt-4">
-                <Button variant="outline" type="button" onClick={() => setIsTrackingModalOpen(false)}>
+              <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 justify-end pt-4">
+                <Button variant="outline" type="button" onClick={() => setIsTrackingModalOpen(false)} className="w-full sm:w-auto">
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button type="submit" className="w-full sm:w-auto">
                   Save & Update Status
                 </Button>
               </div>
@@ -3055,8 +3647,8 @@ export const Admin: React.FC = () => {
 
       {/* COUPON MODAL (Add/Edit) */}
       {isCouponModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-md bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-sm">
+          <div className="relative w-full max-w-md bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-2xl">
             <button
               onClick={() => {
                 setIsCouponModalOpen(false);
@@ -3127,14 +3719,14 @@ export const Admin: React.FC = () => {
                 </label>
               </div>
 
-              <div className="flex gap-4 justify-end pt-4">
+              <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 justify-end pt-4">
                 <Button variant="outline" type="button" onClick={() => {
                   setIsCouponModalOpen(false);
                   setEditingCoupon(null);
-                }}>
+                }} className="w-full sm:w-auto">
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button type="submit" className="w-full sm:w-auto">
                   {editingCoupon ? 'Save Changes' : 'Create Coupon'}
                 </Button>
               </div>
@@ -3145,17 +3737,17 @@ export const Admin: React.FC = () => {
 
       {/* PACKING SLIP & DISPATCH INVOICE MODAL */}
       {selectedPackingSlipOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/70 backdrop-blur-sm overflow-y-auto">
-          <div className="relative w-full max-w-3xl bg-white border border-gray-200 rounded-2xl shadow-2xl my-8 overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-gray-900/70 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-3xl bg-white border border-gray-200 rounded-2xl shadow-2xl my-4 sm:my-8 overflow-hidden">
             {/* Modal Controls (Hidden in Print) */}
-            <div className="no-print flex items-center justify-between px-6 py-4 bg-gray-50 border-b border-gray-200">
+            <div className="no-print flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <Printer className="h-5 w-5 text-primary" />
-                <h3 className="text-base font-bold text-gray-900">Luxury Packing Slip & Dispatch Invoice</h3>
+                <h3 className="text-sm sm:text-base font-bold text-gray-900">Packing Slip & Invoice</h3>
               </div>
               <div className="flex items-center gap-2">
-                <Button size="sm" onClick={() => window.print()} className="flex items-center gap-1.5">
-                  <Printer className="h-4 w-4" /> Print Document
+                <Button size="sm" onClick={() => window.print()} className="flex items-center gap-1.5 text-xs">
+                  <Printer className="h-4 w-4" /> Print
                 </Button>
                 <button
                   onClick={() => setSelectedPackingSlipOrder(null)}
@@ -3167,7 +3759,7 @@ export const Admin: React.FC = () => {
             </div>
 
             {/* Printable Document Body */}
-            <div id="printable-packing-slip" className="p-8 space-y-6 text-gray-900 bg-white">
+            <div id="printable-packing-slip" className="p-4 sm:p-8 space-y-5 sm:space-y-6 text-gray-900 bg-white">
               {/* Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start border-b border-gray-200 pb-6 gap-4">
                 <div>
