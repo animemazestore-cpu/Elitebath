@@ -27,7 +27,11 @@ function razorpayDevApiPlugin(): Plugin {
               else if (coupon === 'LUXURY20' && subtotal >= 5000) discount = Math.round((subtotal * 20) / 100);
               else if (coupon === 'BATH500' && subtotal >= 2500) discount = 500;
 
-              const shipping = subtotal >= 999 || coupon === 'FREESHIP' ? 0 : 99;
+              let shipping = 0;
+              for (const it of items) {
+                const fee = Number(it.product?.shipping_fee || 0);
+                shipping += fee * Math.max(1, Number(it.quantity ?? 1));
+              }
               const total = Math.max(0, subtotal - discount) + shipping;
               const deliveryDate = new Date();
               deliveryDate.setDate(deliveryDate.getDate() + 5);

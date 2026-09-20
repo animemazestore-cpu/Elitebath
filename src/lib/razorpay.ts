@@ -1,6 +1,6 @@
 export interface RazorpayOrderPayload {
   items: Array<{
-    product: { id: string; name: string; price: number; slug?: string };
+    product: { id: string; name: string; price: number; slug?: string; shipping_fee?: number };
     quantity: number;
     variantPrice?: number;
     selectedVariant?: string;
@@ -140,7 +140,11 @@ export async function createRazorpayOrder(
     else if (payload.couponCode === 'LUXURY20' && subtotal >= 5000) discount = Math.round((subtotal * 20) / 100);
     else if (payload.couponCode === 'BATH500' && subtotal >= 2500) discount = 500;
     
-    const shipping = subtotal >= 999 ? 0 : 99;
+    // Per-product shipping fee calculation (matches cart & product settings, defaults to 0 / FREE)
+    const shipping = payload.items.reduce(
+      (sum, it) => sum + (Number(it.product?.shipping_fee) || 0) * (Number(it.quantity) || 1),
+      0
+    );
     const finalTotal = Math.max(0, subtotal - discount) + shipping;
     const deliveryDate = new Date();
     deliveryDate.setDate(deliveryDate.getDate() + 5);
