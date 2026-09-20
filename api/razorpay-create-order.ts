@@ -86,12 +86,12 @@ export default async function handler(req: Request) {
     const keySecret =
       typeof process !== 'undefined' ? process.env?.RAZORPAY_KEY_SECRET : null;
 
-    let razorpayOrderId = `order_test_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    let razorpayOrderId: string | null = null;
 
     // If real keys are provided, create actual order on Razorpay
-    if (keySecret && keyId && !keyId.includes('demo')) {
+    if (keySecret && keyId && !keyId.includes('demo') && !keyId.includes('placeholder')) {
       try {
-        const credentials = btoa(`${keyId}:${keySecret}`);
+        const credentials = btoa(`${keyId.trim()}:${keySecret.trim()}`);
         const rzpResponse = await fetch('https://api.razorpay.com/v1/orders', {
           method: 'POST',
           headers: {
@@ -114,10 +114,34 @@ export default async function handler(req: Request) {
           const rzpData = await rzpResponse.json();
           razorpayOrderId = rzpData.id;
         } else {
-          console.warn('Razorpay API returned non-OK, using fallback test order id');
+          const errData = await rzpResponse.json().catch(() => ({}));
+          console.error('Razorpay API returned error:', errData);
+          const errorMsg =
+            errData?.error?.description ||
+            `Razorpay API error (${rzpResponse.status}): Your Razorpay key or account activation status may be invalid.`;
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: errorMsg,
+            }),
+            {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
         }
-      } catch (rzpErr) {
-        console.warn('Razorpay API request error, proceeding with fallback test order:', rzpErr);
+      } catch (rzpErr: any) {
+        console.error('Razorpay API request failed:', rzpErr);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `Razorpay connection error: ${rzpErr?.message || 'Unknown network error'}`,
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
       }
     }
 

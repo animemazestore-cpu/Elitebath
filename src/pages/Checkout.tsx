@@ -232,14 +232,21 @@ export const Checkout: React.FC = () => {
       setOrderDeliveryDate(serverOrder.estimatedDeliveryDate);
 
       // 3. Configure Razorpay modal options
-      const options = {
+      const isRealOrderId =
+        Boolean(serverOrder.razorpayOrderId) &&
+        typeof serverOrder.razorpayOrderId === 'string' &&
+        serverOrder.razorpayOrderId.startsWith('order_') &&
+        !serverOrder.razorpayOrderId.startsWith('order_test_') &&
+        !serverOrder.razorpayOrderId.startsWith('order_dev_');
+
+      const options: any = {
         key: serverOrder.keyId,
         amount: serverOrder.amount,
         currency: serverOrder.currency || 'INR',
         name: 'Elite Bath Collections',
         description: `Order Ref: ${orderRefId}`,
         image: '/logo.png',
-        order_id: serverOrder.razorpayOrderId,
+        ...(isRealOrderId ? { order_id: serverOrder.razorpayOrderId } : {}),
         prefill: {
           name: fullName,
           email: email,
@@ -260,8 +267,8 @@ export const Checkout: React.FC = () => {
         },
         handler: async (response: {
           razorpay_payment_id: string;
-          razorpay_order_id: string;
-          razorpay_signature: string;
+          razorpay_order_id?: string;
+          razorpay_signature?: string;
         }) => {
           try {
             setLoading(true);
@@ -269,8 +276,8 @@ export const Checkout: React.FC = () => {
             const verifyRes = await verifyRazorpayPayment({
               orderId: orderRefId,
               razorpayPaymentId: response.razorpay_payment_id,
-              razorpayOrderId: response.razorpay_order_id,
-              razorpaySignature: response.razorpay_signature,
+              razorpayOrderId: response.razorpay_order_id || serverOrder.razorpayOrderId || '',
+              razorpaySignature: response.razorpay_signature || '',
             });
 
             if (verifyRes.success) {
