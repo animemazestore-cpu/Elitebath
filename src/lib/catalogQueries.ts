@@ -7,22 +7,22 @@ export const PRODUCT_VARIANT_FIELDS =
   'id, product_id, sku, price, stock, image_url, attributes, active, created_at, updated_at';
 
 export const PRODUCT_LIST_FIELDS =
-  'id, name, slug, description, category_id, price, stock, featured, main_image_url, sku, brand, material, finish, warranty_info, has_variants, variant_config, is_new_arrival, is_active, shipping_fee, created_at';
+  'id, name, slug, description, category_id, price, stock, featured, main_image_url, sku, brand, material, finish, warranty_info, has_variants, variant_config, is_new_arrival, is_active, created_at';
 
 export const PRODUCT_DETAIL_FIELDS =
-  'id, name, slug, description, category_id, price, stock, featured, main_image_url, additional_images, sku, brand, material, finish, warranty_info, has_variants, variant_config, is_new_arrival, is_active, shipping_fee, created_at';
+  'id, name, slug, description, category_id, price, stock, featured, main_image_url, additional_images, sku, brand, material, finish, warranty_info, has_variants, variant_config, is_new_arrival, is_active, created_at';
 
 export const PRODUCT_RELATED_FIELDS =
   'id, name, slug, price, stock, featured, main_image_url, sku, brand, finish, has_variants, created_at';
 
 export const PRODUCT_LIST_SELECT = `
-  ${PRODUCT_LIST_FIELDS},
+  *,
   category:categories (${CATEGORY_FIELDS}),
   variants:product_variants (${PRODUCT_VARIANT_FIELDS})
 `;
 
 export const PRODUCT_DETAIL_SELECT = `
-  ${PRODUCT_DETAIL_FIELDS},
+  *,
   category:categories (${CATEGORY_FIELDS}),
   variants:product_variants (${PRODUCT_VARIANT_FIELDS})
 `;

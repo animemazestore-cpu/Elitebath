@@ -71,20 +71,11 @@ export default async function handler(req: Request) {
       }
     }
 
-    // 3. Shipping charge calculation – per-product shipping_fee support
+    // 3. Per-product shipping fee calculation
     let shippingCharge = 0;
-    let hasProductShippingFees = false;
     for (const item of items) {
-      const fee = item.product?.shipping_fee;
-      // If shipping_fee is defined (even as 0), admin has set it — use it
-      if (fee !== undefined && fee !== null) {
-        hasProductShippingFees = true;
-        shippingCharge += Number(fee) * Math.max(1, Number(item.quantity ?? 1));
-      }
-    }
-    if (!hasProductShippingFees) {
-      shippingCharge =
-        subtotal >= 999 || couponCode?.toUpperCase() === 'FREESHIP' ? 0 : 99;
+      const fee = Number(item.product?.shipping_fee || 0);
+      shippingCharge += fee * Math.max(1, Number(item.quantity ?? 1));
     }
 
     // 4. Final total in rupees and paise

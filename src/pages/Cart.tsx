@@ -133,23 +133,10 @@ export const Cart: React.FC = () => {
     }
   }
 
-  // Calculate shipping: use per-product shipping_fee when defined, otherwise apply global rule
-  const shippingCharge = (() => {
-    let totalShipping = 0;
-    let hasProductShippingFees = false;
-    for (const item of items) {
-      const fee = item.product.shipping_fee;
-      // If shipping_fee is defined (even as 0), admin has set it — use it
-      if (fee !== undefined && fee !== null) {
-        hasProductShippingFees = true;
-        totalShipping += Number(fee) * item.quantity;
-      }
-    }
-    // If any product has an explicit shipping_fee (including 0 = free), use that total
-    if (hasProductShippingFees) return totalShipping;
-    // Fallback: global rule for legacy products without shipping_fee
-    return subtotal >= 999 ? 0 : 99;
-  })();
+  // Per-product shipping: admin sets shipping_fee per product (0 = FREE, >0 = charged)
+  const shippingCharge = items.reduce((sum, item) => {
+    return sum + (Number(item.product.shipping_fee) || 0) * item.quantity;
+  }, 0);
   const total = Math.max(0, subtotal - discountAmount) + shippingCharge;
 
   const handleCheckoutClick = () => {
@@ -300,12 +287,6 @@ export const Cart: React.FC = () => {
                 )}
               </div>
 
-              {shippingCharge > 0 && (
-                <div className="text-[10px] text-primary italic leading-tight">
-                  Add ₹{999 - subtotal} more to unlock FREE shipping!
-                </div>
-              )}
-            </div>
 
             {/* Coupon input */}
             <div className="space-y-2 pt-2 border-t border-gray-200">

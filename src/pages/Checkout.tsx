@@ -48,21 +48,10 @@ export const Checkout: React.FC = () => {
     }
   }
 
-  // Calculate shipping: use per-product shipping_fee when defined, otherwise apply global rule
-  const shippingCharge = (() => {
-    let totalShipping = 0;
-    let hasProductShippingFees = false;
-    for (const item of items) {
-      const fee = item.product.shipping_fee;
-      // If shipping_fee is defined (even as 0), admin has set it — use it
-      if (fee !== undefined && fee !== null) {
-        hasProductShippingFees = true;
-        totalShipping += Number(fee) * item.quantity;
-      }
-    }
-    if (hasProductShippingFees) return totalShipping;
-    return subtotal >= 999 || appliedCoupon?.code === 'FREESHIP' ? 0 : 99;
-  })();
+  // Per-product shipping: admin sets shipping_fee per product (0 = FREE, >0 = charged)
+  const shippingCharge = items.reduce((sum, item) => {
+    return sum + (Number(item.product.shipping_fee) || 0) * item.quantity;
+  }, 0);
   const total = Math.max(0, subtotal - discountAmount) + shippingCharge;
 
   // Form Fields
