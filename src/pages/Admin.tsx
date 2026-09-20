@@ -31,6 +31,7 @@ export const Admin: React.FC = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [subscribers, setSubscribers] = useState<NewsletterSubscriber[]>([]);
   const [replacementRequests, setReplacementRequests] = useState<ReplacementRequest[]>([]);
+  const [dbWarning, setDbWarning] = useState<string | null>(null);
   const [loadingData, setLoadingData] = useState(false);
   const [submittingProduct, setSubmittingProduct] = useState(false);
   const [submittingCategory, setSubmittingCategory] = useState(false);
@@ -218,10 +219,13 @@ export const Admin: React.FC = () => {
 
       // 2. Fetch products with variants
       try {
-        const { data: dbProds } = await supabase
+        const { data: dbProds, error: prodErr } = await supabase
           .from('products')
           .select('*, category:categories(*), variants:product_variants(*)')
           .order('created_at', { ascending: false });
+
+        if (prodErr) throw prodErr;
+        setDbWarning(null);
 
         const customProds: Product[] = typeof window !== 'undefined'
           ? JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]')
@@ -246,8 +250,9 @@ export const Admin: React.FC = () => {
           }
         }
         setProducts(mergedProds);
-      } catch (err) {
-        console.error('Error loading products:', err);
+      } catch (err: any) {
+        console.error('Error loading products from Supabase:', err);
+        setDbWarning(err?.message || 'Failed to reach Supabase database. Working in local storage mode.');
         const customProds: Product[] = typeof window !== 'undefined'
           ? JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]')
           : [];
@@ -612,6 +617,7 @@ export const Admin: React.FC = () => {
       };
 
       let targetId = editingProduct ? editingProduct.id : '';
+      let dbSaveError: string | null = null;
 
       try {
         if (editingProduct) {
@@ -645,10 +651,12 @@ export const Admin: React.FC = () => {
               attributes: v.attributes,
               active: v.active !== false,
             }));
-            await supabase.from('product_variants').insert(rows);
+            const { error: varErr } = await supabase.from('product_variants').insert(rows);
+            if (varErr) throw varErr;
           }
         }
-      } catch (dbErr) {
+      } catch (dbErr: any) {
+        dbSaveError = dbErr?.message || String(dbErr);
         console.warn('Supabase DB save error, applying local state update:', dbErr);
       }
 
@@ -681,7 +689,13 @@ export const Admin: React.FC = () => {
       void useCatalogStore.getState().fetchProducts(true);
       void loadAdminData();
 
-      alert(editingProduct ? 'Product updated successfully!' : 'Product created successfully!');
+      if (dbSaveError) {
+        alert(
+          `⚠️ Product saved LOCALLY on this browser only!\n\nDatabase sync failed: ${dbSaveError}\n\nNote: Because the database connection or table write failed, this product is stored in your laptop's local cache and will NOT appear on mobile or other devices until your Supabase project is active and connected.`
+        );
+      } else {
+        alert(editingProduct ? 'Product updated successfully in cloud database!' : 'Product created and synced to cloud database successfully!');
+      }
       setIsProductModalOpen(false);
       setEditingProduct(null);
     } catch (err: any) {
@@ -781,6 +795,7 @@ export const Admin: React.FC = () => {
       };
 
       let targetCatId = editingCategory ? editingCategory.id : '';
+      let dbCatError: string | null = null;
 
       try {
         if (editingCategory) {
@@ -798,7 +813,8 @@ export const Admin: React.FC = () => {
           if (error) throw error;
           targetCatId = newCat?.id || '';
         }
-      } catch (dbErr) {
+      } catch (dbErr: any) {
+        dbCatError = dbErr?.message || String(dbErr);
         console.warn('Supabase category save error, saving to local persistent store:', dbErr);
       }
 
@@ -816,7 +832,13 @@ export const Admin: React.FC = () => {
         useCatalogStore.getState().addCategory(newCategoryObj);
       }
 
-      alert(editingCategory ? 'Category updated successfully!' : 'Category created successfully!');
+      if (dbCatError) {
+        alert(
+          `⚠️ Category saved LOCALLY on this browser only!\n\nDatabase sync failed: ${dbCatError}\n\nNote: It will NOT appear on mobile or other devices until Supabase is active and connected.`
+        );
+      } else {
+        alert(editingCategory ? 'Category updated successfully in cloud database!' : 'Category created and synced to cloud database successfully!');
+      }
       setIsCategoryModalOpen(false);
       setEditingCategory(null);
       void loadAdminData();
@@ -1261,6 +1283,21 @@ export const Admin: React.FC = () => {
 
           {/* Mobile Header Spacer */}
           <div className="lg:hidden h-16" />
+
+          {dbWarning && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-2xl flex items-start space-x-3 text-amber-900 shadow-sm">
+              <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-bold">Database Connection Warning (Multi-Device Sync Inactive)</p>
+                <p className="mt-1 text-xs text-amber-800">
+                  Supabase could not be reached: <span className="font-mono bg-amber-100 px-1 py-0.5 rounded">{dbWarning}</span>
+                </p>
+                <p className="mt-1 text-xs text-amber-700">
+                  Products and categories created or edited will only be saved in <strong>this laptop's browser memory (localStorage)</strong>. They will <strong>NOT</strong> appear on mobile or other devices until the Supabase project is active and connected in <code className="bg-amber-100 px-1 py-0.5 rounded font-mono">.env</code> and Vercel Environment Variables.
+                </p>
+              </div>
+            </div>
+          )}
 
           {loadingData ? (
             <div className="py-20 flex justify-center">

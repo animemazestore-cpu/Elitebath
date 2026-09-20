@@ -286,7 +286,7 @@ export const Cart: React.FC = () => {
                   <span className="text-gray-900 font-semibold">₹{shippingCharge}</span>
                 )}
               </div>
-
+            </div>
 
             {/* Coupon input */}
             <div className="space-y-2 pt-2 border-t border-gray-200">
