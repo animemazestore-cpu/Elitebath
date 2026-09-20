@@ -117,17 +117,20 @@ CREATE TABLE IF NOT EXISTS public.orders (
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   total_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'PENDING_VERIFICATION' CHECK (status IN ('PENDING_VERIFICATION','PAID','PROCESSING','SHIPPED','DELIVERED','CANCELLED')),
-  payment_status TEXT NOT NULL DEFAULT 'PENDING_VERIFICATION' CHECK (payment_status IN ('PENDING_VERIFICATION','PAID','REJECTED')),
+  payment_status TEXT NOT NULL DEFAULT 'PENDING_VERIFICATION' CHECK (payment_status IN ('PENDING_VERIFICATION','PAID','COMPLETED','REJECTED')),
   shipping_address JSONB NOT NULL DEFAULT '{}',
   tracking_number TEXT,
   tracking_carrier TEXT,
+  estimated_delivery_date TIMESTAMPTZ,
+  order_ref TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can view own orders" ON public.orders;
+DROP POLICY IF EXISTS "Anyone can view orders" ON public.orders;
 DROP POLICY IF EXISTS "Anyone can create orders" ON public.orders;
 DROP POLICY IF EXISTS "Admin can manage orders" ON public.orders;
-CREATE POLICY "Users can view own orders" ON public.orders FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Anyone can view orders" ON public.orders FOR SELECT USING (true);
 CREATE POLICY "Anyone can create orders" ON public.orders FOR INSERT WITH CHECK (true);
 CREATE POLICY "Admin can manage orders" ON public.orders FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
 
@@ -146,9 +149,10 @@ CREATE TABLE IF NOT EXISTS public.order_items (
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anyone can insert order items" ON public.order_items;
 DROP POLICY IF EXISTS "Users can view own order items" ON public.order_items;
+DROP POLICY IF EXISTS "Anyone can view order items" ON public.order_items;
 DROP POLICY IF EXISTS "Admin can manage order items" ON public.order_items;
 CREATE POLICY "Anyone can insert order items" ON public.order_items FOR INSERT WITH CHECK (true);
-CREATE POLICY "Users can view own order items" ON public.order_items FOR SELECT USING (EXISTS (SELECT 1 FROM public.orders WHERE id = order_id AND user_id = auth.uid()));
+CREATE POLICY "Anyone can view order items" ON public.order_items FOR SELECT USING (true);
 CREATE POLICY "Admin can manage order items" ON public.order_items FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
 
 -- PAYMENT PROOF

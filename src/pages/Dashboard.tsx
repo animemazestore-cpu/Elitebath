@@ -61,33 +61,156 @@ export const Dashboard: React.FC = () => {
     const fetchOrders = async () => {
       setOrdersLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('orders')
-          .select(`
-            *,
-            items:order_items (
+        let dbOrders: any[] = [];
+        try {
+          const { data, error } = await supabase
+            .from('orders')
+            .select(`
               *,
-              product:products (*)
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+              items:order_items (
+                *,
+                product:products (*)
+              )
+            `)
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
 
-        if (error) throw error;
+          if (!error && data) {
+            dbOrders = data;
+          }
+        } catch (dbErr) {
+          console.warn('Error fetching user orders from Supabase:', dbErr);
+        }
 
-        const dbOrders = data || [];
+        // Also fetch orders matching user email in shipping_address (in case user purchased as guest or before login)
+        if (user.email) {
+          try {
+            const { data: emailOrders } = await supabase
+              .from('orders')
+              .select(`
+                *,
+                items:order_items (
+                  *,
+                  product:products (*)
+                )
+              `)
+              .filter('shipping_address->>email', 'eq', user.email)
+              .order('created_at', { ascending: false });
 
-        const ordersWithVariantsMapped = dbOrders.map((order: any) => {
+            if (emailOrders && emailOrders.length > 0) {
+              const existingIds = new Set(dbOrders.map((o) => o.id));
+              for (const eo of emailOrders) {
+                if (!existingIds.has(eo.id)) {
+                  dbOrders.push(eo);
+                  existingIds.add(eo.id);
+                }
+              }
+            }
+          } catch (_) {}
+        }
+
+        // Read local offline/resilience orders from localStorage
+        let localOrders: any[] = [];
+        try {
+          const raw =
+            localStorage.getItem('elitebath_local_orders') ||
+            localStorage.getItem('animemaze_local_orders');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              localOrders = parsed.filter((lo: any) => {
+                const matchesUser = lo.user_id === user.id;
+                const matchesEmail =
+                  user.email &&
+                  lo.shipping_address?.email &&
+                  String(lo.shipping_address.email).toLowerCase() === user.email.toLowerCase();
+                return matchesUser || matchesEmail;
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('Error reading local orders in dashboard:', e);
+        }
+
+        // Combine DB orders & local orders, avoiding duplicates
+        const existingRefs = new Set();
+        dbOrders.forEach((o) => {
+          if (o.id) existingRefs.add(String(o.id).toLowerCase());
+          if (o.shipping_address?.order_ref)
+            existingRefs.add(String(o.shipping_address.order_ref).toLowerCase());
+          if (o.shipping_address?.transactionId)
+            existingRefs.add(String(o.shipping_address.transactionId).toLowerCase());
+        });
+
+        const normalizedLocalOrders = localOrders
+          .filter((lo: any) => {
+            const loId = String(lo.id || '').toLowerCase();
+            const loRef = String(lo.shipping_address?.order_ref || '').toLowerCase();
+            return !existingRefs.has(loId) && (!loRef || !existingRefs.has(loRef));
+          })
+          .map((lo: any) => ({
+            ...lo,
+            items: (lo.items || []).map((it: any) => ({
+              ...it,
+              product: it.product || {
+                name: it.product_name || 'Sanitaryware Item',
+                main_image_url: it.image_url || '/placeholder.jpg',
+                sku: it.sku || null,
+                price: Number(it.price || 0),
+              },
+            })),
+          }));
+
+        const combinedRaw = [...dbOrders, ...normalizedLocalOrders].sort((a: any, b: any) => {
+          const timeA = new Date(a.created_at || 0).getTime();
+          const timeB = new Date(b.created_at || 0).getTime();
+          return timeB - timeA;
+        });
+
+        const ordersWithVariantsMapped = combinedRaw.map((order: any) => {
           const itemVariants = order.shipping_address?.item_variants || [];
+          const rawItems =
+            Array.isArray(order.items) && order.items.length > 0
+              ? order.items
+              : itemVariants.map((iv: any, idx: number) => ({
+                  id: `var-${idx}`,
+                  product_id: iv.product_id,
+                  price: 0,
+                  quantity: 1,
+                  selected_variant: iv.selected_variant,
+                  product: {
+                    name: 'Sanitaryware Fixture',
+                    main_image_url: '/placeholder.jpg',
+                    price: 0,
+                  },
+                }));
+
           return {
             ...order,
-            items: order.items?.map((item: any) => {
-              const matchedVariant = itemVariants.find((iv: any) => iv.product_id === item.product_id);
+            id: order.shipping_address?.order_ref || order.id,
+            items: rawItems.map((item: any) => {
+              const matchedVariant = itemVariants.find(
+                (iv: any) => iv.product_id === item.product_id
+              );
               return {
                 ...item,
-                selected_variant: item.selected_variant || matchedVariant?.selected_variant || null
+                price: Number(item.price || 0),
+                selected_variant:
+                  item.selected_variant || matchedVariant?.selected_variant || null,
+                product: item.product
+                  ? {
+                      ...item.product,
+                      price: Number(item.product.price || item.price || 0),
+                      main_image_url:
+                        item.product.main_image_url || item.image_url || '/placeholder.jpg',
+                    }
+                  : {
+                      name: item.product_name || 'Sanitaryware Product',
+                      main_image_url: item.image_url || '/placeholder.jpg',
+                      price: Number(item.price || 0),
+                    },
               };
-            })
+            }),
           };
         });
 
@@ -374,7 +497,16 @@ export const Dashboard: React.FC = () => {
                             )}
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <Link
+                              to={`/track-order?id=${encodeURIComponent(order.shipping_address?.order_ref || order.id)}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all"
+                            >
+                              <Truck className="h-3.5 w-3.5" />
+                              <span>Track</span>
+                            </Link>
+
                             <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase border ${getOrderStatusColor(order.status)}`}>
                               {order.status.replace('_', ' ')}
                             </span>
@@ -388,7 +520,15 @@ export const Dashboard: React.FC = () => {
                         {isExpanded && (
                           <div className="p-5 bg-gray-50 border-t border-gray-200 space-y-6 text-sm">
                             <div className="border-b border-gray-200 pb-6">
-                              <h4 className="font-bold text-gray-500 mb-4 text-xs uppercase tracking-wider">Order Shipment Progress:</h4>
+                              <div className="flex items-center justify-between mb-4">
+                                <h4 className="font-bold text-gray-500 text-xs uppercase tracking-wider">Order Shipment Progress:</h4>
+                                <Link
+                                  to={`/track-order?id=${encodeURIComponent(order.shipping_address?.order_ref || order.id)}`}
+                                  className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+                                >
+                                  Open Full Tracker <Truck className="h-3 w-3" />
+                                </Link>
+                              </div>
                               <TrackingStepper 
                                 status={order.status} 
                                 trackingInfo={(order.shipping_address as any)?.tracking_info} 

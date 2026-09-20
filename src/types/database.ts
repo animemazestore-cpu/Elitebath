@@ -102,6 +102,7 @@ export interface ShippingAddress {
   transactionId?: string;
   paymentMethod?: string;
   paymentId?: string;
+  order_ref?: string;
   fampay_order_id?: string;
   fampay_utr?: string;
   tracking_info?: {

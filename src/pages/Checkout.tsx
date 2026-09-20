@@ -115,6 +115,7 @@ export const Checkout: React.FC = () => {
       country,
       paymentMethod: paymentMethodUsed,
       paymentId,
+      order_ref: orderId,
       item_variants: items.map((item) => ({
         product_id: item.product.id,
         selected_variant: item.selectedVariant || null,
@@ -127,20 +128,39 @@ export const Checkout: React.FC = () => {
     estDelivery.setDate(estDelivery.getDate() + 5);
 
     try {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId);
       // Attempt to record in Supabase
-      const { error: orderError } = await supabase.from('orders').insert({
-        id: orderId.startsWith('ord-') ? undefined : orderId,
-        user_id: user?.id || null,
-        total_amount: total,
-        status: 'PAID',
-        payment_status: 'COMPLETED',
-        shipping_address: shippingAddressJson,
-        estimated_delivery_date: estDelivery.toISOString(),
-      });
+      const { data: insertedOrder, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          ...(isUuid ? { id: orderId } : {}),
+          user_id: user?.id || null,
+          total_amount: total,
+          status: 'PAID',
+          payment_status: 'PAID',
+          shipping_address: shippingAddressJson,
+          estimated_delivery_date: estDelivery.toISOString(),
+        })
+        .select()
+        .maybeSingle();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.warn('Supabase DB order insert error:', orderError);
+      } else if (insertedOrder?.id) {
+        // Record individual order items in Supabase
+        const orderItemsPayload = items.map((item) => ({
+          order_id: insertedOrder.id,
+          product_id: item.product.id,
+          quantity: item.quantity,
+          price: item.variantPrice ?? item.product.price,
+          selected_variant: item.selectedVariant || null,
+          selected_variant_id: item.selectedVariantId || null,
+          selected_attributes: item.selectedAttributes || {},
+        }));
+        await supabase.from('order_items').insert(orderItemsPayload);
+      }
     } catch (dbErr) {
-      console.warn('Supabase DB order insert error, storing in local orders:', dbErr);
+      console.warn('Supabase DB order insert exception, storing in local orders:', dbErr);
     }
 
     // Always persist to local orders store for 100% resilient access
@@ -150,7 +170,7 @@ export const Checkout: React.FC = () => {
         user_id: user?.id || 'guest',
         total_amount: total,
         status: 'PAID',
-        payment_status: 'COMPLETED',
+        payment_status: 'PAID',
         payment_id: paymentId,
         shipping_address: shippingAddressJson,
         estimated_delivery_date: estDelivery.toISOString(),
@@ -164,6 +184,13 @@ export const Checkout: React.FC = () => {
           selected_variant_id: item.selectedVariantId || null,
           selected_attributes: item.selectedAttributes || {},
           image_url: item.variantImage || item.product.main_image_url,
+          product: {
+            id: item.product.id,
+            name: item.product.name,
+            main_image_url: item.variantImage || item.product.main_image_url,
+            price: item.variantPrice ?? item.product.price,
+            slug: item.product.slug,
+          },
         })),
         created_at: new Date().toISOString(),
       };
