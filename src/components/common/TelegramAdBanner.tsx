@@ -1,28 +1,10 @@
 import React, { useState } from 'react';
-import { X, ExternalLink } from 'lucide-react';
-
-const CANDIDATE_IMAGES = [
-  '/img/adbanner.jpg',
-  '/img/banner.jpg',
-  '/img/banner.png',
-  '/img/banner.webp',
-  '/img/banner.jpeg',
-];
+import { X, Send, ExternalLink, Code2 } from 'lucide-react';
 
 export const TelegramAdBanner: React.FC = () => {
   const [isVisible, setIsVisible] = useState(() => {
     return !sessionStorage.getItem('elitebath_tg_ad_dismissed');
   });
-  const [imgIndex, setImgIndex] = useState(0);
-  const [imgError, setImgError] = useState(false);
-
-  const handleImageError = () => {
-    if (imgIndex < CANDIDATE_IMAGES.length - 1) {
-      setImgIndex((prev) => prev + 1);
-    } else {
-      setImgError(true);
-    }
-  };
 
   const handleClose = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -37,41 +19,51 @@ export const TelegramAdBanner: React.FC = () => {
   return (
     <section
       aria-label="Sponsored Announcement"
-      className="w-full bg-black border-b border-gray-200 transition-all duration-300 relative overflow-hidden"
+      className="w-full bg-gradient-to-r from-slate-950 via-[#0d1322] to-slate-950 border-b border-indigo-500/20 transition-all duration-300 relative overflow-hidden shadow-sm"
     >
-      {/* Sleek horizontal banner: full length (100% width) with slim, elegant height */}
-      <div className="w-full h-14 sm:h-16 md:h-20 relative overflow-hidden group">
+      {/* Background ambient glow effect */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-transparent to-transparent pointer-events-none" />
+
+      {/* Main Container - Full Length, Perfectly Proportioned */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 relative flex items-center justify-between gap-3">
+        {/* Clickable Area linking to Telegram */}
         <a
           href="https://t.me/lennoxislive"
           target="_blank"
           rel="noopener noreferrer"
-          className="block w-full h-full cursor-pointer select-none"
-          title="Open Telegram @lennoxislive"
+          className="flex-grow flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-6 group cursor-pointer pr-8 sm:pr-0"
+          title="Contact Website Developer @lennoxislive"
         >
-          {!imgError ? (
-            <img
-              src={CANDIDATE_IMAGES[imgIndex]}
-              alt="Elite Bath Announcement"
-              className="w-full h-full object-cover object-center block transition-opacity duration-200 group-hover:opacity-95"
-              onError={handleImageError}
-            />
-          ) : (
-            <div className="w-full h-full px-4 bg-gradient-to-r from-slate-950 via-sky-950 to-slate-950 text-white flex items-center justify-center gap-3 text-center">
-              <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 text-xs font-bold uppercase tracking-wider border border-sky-500/30">
-                Telegram VIP
-              </span>
-              <span className="text-xs sm:text-sm font-semibold">
-                Exclusive Deals & Updates on @lennoxislive
-              </span>
-              <ExternalLink className="h-3.5 w-3.5 text-sky-400 hidden sm:inline-block" />
+          {/* Left: Developer Badge & Tagline */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-sm">
+              <Code2 className="h-3.5 w-3.5 text-indigo-400" />
+              <span>WEBSITE DEVELOPER</span>
             </div>
-          )}
+
+            <p className="text-xs sm:text-sm font-medium text-slate-200 group-hover:text-white transition-colors">
+              <span>Modern websites</span>
+              <span className="mx-2 text-indigo-400 font-bold">•</span>
+              <span>Fast performance</span>
+              <span className="mx-2 text-indigo-400 font-bold hidden xs:inline">•</span>
+              <span className="hidden xs:inline">Clean & scalable code</span>
+            </p>
+          </div>
+
+          {/* Right: Telegram Contact Pill */}
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs shadow-md shadow-sky-500/25 transition-all group-hover:scale-105 whitespace-nowrap">
+              <Send className="h-3.5 w-3.5 fill-current" />
+              <span>Contact @lennoxislive</span>
+              <ExternalLink className="h-3 w-3 opacity-80" />
+            </span>
+          </div>
         </a>
 
-        {/* Close Button (X) - positioned neatly on the right */}
+        {/* Close Button (X) - collapses space immediately */}
         <button
           onClick={handleClose}
-          className="absolute top-1/2 -translate-y-1/2 right-3 sm:right-6 z-20 p-1.5 rounded-full bg-black/70 hover:bg-black text-white shadow-md backdrop-blur-sm transition-all hover:scale-110 cursor-pointer border border-white/30"
+          className="flex-shrink-0 p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           title="Close announcement"
           aria-label="Close announcement"
         >
