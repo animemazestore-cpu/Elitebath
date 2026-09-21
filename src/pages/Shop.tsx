@@ -1089,13 +1089,13 @@ export const Shop: React.FC = () => {
           {/* Product Grid Area */}
           <div className="flex-grow">
             {isInitialLoad ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
                 <ProductCardSkeleton count={6} />
               </div>
             ) : filteredProducts.length === 0 ? (
               /* Luxury Empty State */
-              <div className="text-center py-16 px-4 bg-gray-50/70 rounded-3xl border border-gray-200 border-dashed max-w-2xl mx-auto">
-                <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner">
+              <div className="text-center py-16 px-4 bg-gray-50/70 border border-gray-200 border-dashed max-w-2xl mx-auto">
+                <div className="w-16 h-16 bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 shadow-inner">
                   <Box className="h-8 w-8 text-primary" />
                 </div>
                 <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-2">
@@ -1118,7 +1118,7 @@ export const Shop: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
                 {filteredProducts.map((product) => (
                   <ProductCard
                     key={product.id}

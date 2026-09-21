@@ -2,7 +2,7 @@ import { Skeleton } from './Skeleton';
 
 export function CategoryCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden cursor-pointer">
+    <div className="bg-white border border-gray-200/80 overflow-hidden cursor-pointer">
       {/* Image */}
       <Skeleton className="w-full aspect-[4/3]" />
       
