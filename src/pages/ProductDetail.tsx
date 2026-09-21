@@ -50,6 +50,8 @@ export const ProductDetail: React.FC = () => {
   const [ratingFilter, setRatingFilter] = useState<number | 'All'>('All');
 
   useEffect(() => {
+    let isCancelled = false;
+
     const fetchProductDetails = async () => {
       if (!slug) return;
 
@@ -59,50 +61,67 @@ export const ProductDetail: React.FC = () => {
       if (directMatch) {
         setProduct(directMatch);
         setLoading(false);
-      }
-
-      const cached = useCatalogStore.getState().productDetailsBySlug[cacheKey];
-      const cacheFresh =
-        cached && Date.now() - cached.fetchedAt < 5 * 60 * 1000;
-
-      if (cacheFresh && cached.product) {
-        setProduct(cached.product);
-        setLoading(false);
-        const related = await getRelatedProducts(
-          cached.product.id,
-          cached.product.category_id,
-          4
-        );
-        setRelatedProducts(related);
-        return;
+      } else {
+        setLoading(true);
       }
 
       try {
-        if (!directMatch) setLoading(true);
-
+        // Always fetch live authoritative product details & prices from network
         const fetchedProduct = await getProductBySlug(slug, true);
 
-        if (fetchedProduct) {
-          setProduct(fetchedProduct);
-          const related = await getRelatedProducts(
-            fetchedProduct.id,
-            fetchedProduct.category_id,
-            4
-          );
-          setRelatedProducts(related);
-        } else if (!directMatch) {
-          setProduct(null);
-          setRelatedProducts([]);
+        if (!isCancelled) {
+          if (fetchedProduct) {
+            setProduct(fetchedProduct);
+            const related = await getRelatedProducts(
+              fetchedProduct.id,
+              fetchedProduct.category_id,
+              4
+            );
+            setRelatedProducts(related);
+          } else if (!directMatch) {
+            setProduct(null);
+            setRelatedProducts([]);
+          }
         }
       } catch (err) {
-        console.error('Error fetching product details:', err);
+        console.error('Error fetching live product details:', err);
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
 
     fetchProductDetails();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [slug, getProductBySlug, getRelatedProducts]);
+
+  // Live real-time price & catalog synchronization on ProductDetail page
+  useEffect(() => {
+    if (!slug) return;
+    const unsub = useCatalogStore.subscribe((state) => {
+      const match = findProductBySlug(state.products, slug.toLowerCase().trim());
+      if (match) {
+        setProduct((prev) => {
+          if (!prev) return match;
+          if (
+            prev.price !== match.price ||
+            prev.stock !== match.stock ||
+            prev.name !== match.name ||
+            JSON.stringify(prev.variants) !== JSON.stringify(match.variants)
+          ) {
+            return { ...prev, ...match };
+          }
+          return prev;
+        });
+      }
+    });
+
+    return () => unsub();
+  }, [slug]);
 
   // Auto-initialize variant selection when product is loaded
   useEffect(() => {
