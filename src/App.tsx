@@ -53,6 +53,9 @@ export const App: React.FC = () => {
       <div className="flex flex-col min-h-screen bg-white text-gray-900">
         <Navbar />
         
+        {/* Dedicated Separate Ad Space (Non-overlapping, Collapsible) */}
+        <TelegramAdBanner />
+
         {/* Main Content Area */}
         <main className="flex-grow">
           <Routes>
@@ -83,9 +86,6 @@ export const App: React.FC = () => {
 
       {/* Global Concierge & Support Floating Widget */}
       <FloatingConcierge />
-
-      {/* Telegram Ad Banner (safe area, closeable, 1 at a time) */}
-      <TelegramAdBanner />
 
       {/* Global App Download Popup */}
       <AppDownloadPopup />
