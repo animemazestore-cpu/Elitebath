@@ -6,7 +6,7 @@ interface ProductCardSkeletonProps {
 
 function SingleSkeleton() {
   return (
-    <div className="bg-white border border-gray-200/80 overflow-hidden flex flex-col">
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col shadow-sm">
       <Skeleton className="aspect-[4/5]" />
       <div className="p-4 sm:p-5 flex flex-col flex-grow space-y-3">
         <Skeleton className="h-4 w-4/5 rounded" />

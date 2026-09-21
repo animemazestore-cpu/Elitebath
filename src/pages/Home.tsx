@@ -182,7 +182,7 @@ export const Home: React.FC = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5">
             {showCategorySkeleton ? (
               <CategoryCardSkeleton count={6} />
             ) : (
@@ -191,18 +191,17 @@ export const Home: React.FC = () => {
                   key={cat.id}
                   type="button"
                   onClick={() => navigate(`/shop?category=${encodeURIComponent(cat.name)}`)}
-                  className="bg-white border border-gray-200/80 hover:border-gray-900 text-left group transition-colors duration-200 flex flex-col cursor-pointer"
+                  className="bg-white rounded-xl overflow-hidden border border-gray-200 text-left group shadow-sm hover:shadow-md hover:border-primary/40 transition-all"
                 >
-                  <div className="aspect-square w-full overflow-hidden bg-gray-50/50">
+                  <div className="aspect-square w-full overflow-hidden bg-gray-100">
                     <ProductImage
                       src={cat.image_url}
                       alt={cat.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
-                  <div className="p-3 border-t border-gray-100 flex items-center justify-between">
-                    <h3 className="font-medium text-xs sm:text-sm text-gray-900 group-hover:text-primary transition-colors truncate">{cat.name}</h3>
-                    <ArrowRight className="h-3.5 w-3.5 text-gray-400 group-hover:text-primary group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                  <div className="p-3 sm:p-4">
+                    <h3 className="font-semibold text-sm text-gray-900 line-clamp-2">{cat.name}</h3>
                   </div>
                 </button>
               ))
@@ -228,16 +227,16 @@ export const Home: React.FC = () => {
         </div>
 
         {isInitialLoad ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5 lg:gap-6">
             <ProductCardSkeleton count={5} />
           </div>
         ) : featuredProducts.length === 0 ? (
-          <div className="text-center py-16 px-6 bg-gray-50 border border-gray-200">
+          <div className="text-center py-16 px-6 bg-gray-50 rounded-xl border border-gray-200">
             <p className="text-gray-600 text-sm mb-4">No featured products at the moment.</p>
             <Button size="sm" onClick={() => navigate('/shop')}>Browse the full shop</Button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5 lg:gap-6">
             {featuredProducts.map((product) => (
               <ProductCard
                 key={product.id}

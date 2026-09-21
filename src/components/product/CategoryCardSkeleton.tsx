@@ -10,7 +10,7 @@ export function CategoryCardSkeleton({ count = 6 }: CategoryCardSkeletonProps) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="bg-white border border-gray-200/80 overflow-hidden"
+          className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm"
         >
           <Skeleton className="aspect-square" />
           <div className="p-3 sm:p-4">
