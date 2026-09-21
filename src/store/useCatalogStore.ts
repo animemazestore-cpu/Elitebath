@@ -135,12 +135,13 @@ async function fetchProductsFromNetwork(): Promise<Product[]> {
       }
     }
 
-    // Only fallback if completely empty
-    if (merged.length === 0) {
-      for (const fb of FALLBACK_PRODUCTS) {
-        if (!deletedIds.includes(fb.id)) {
-          merged.push(fb);
-        }
+    // Include all showcase / placeholder catalog products that are not replaced by DB and not deleted
+    for (const fb of FALLBACK_PRODUCTS) {
+      if (
+        !deletedIds.includes(fb.id) &&
+        !merged.some((m) => m.id === fb.id || m.slug.toLowerCase() === fb.slug.toLowerCase())
+      ) {
+        merged.push(fb);
       }
     }
 

@@ -3835,7 +3835,7 @@ export const Admin: React.FC = () => {
                     <h1 className="text-2xl font-black tracking-tight text-gray-900 uppercase">Elite Bath Collections</h1>
                   </div>
                   <p className="text-xs font-semibold uppercase tracking-widest text-primary mt-1">Luxury Sanitaryware & Architectural Bathroom Fittings</p>
-                  <p className="text-xs text-gray-500 mt-1">DLF Cyber City, Phase III, Gurugram, Haryana 122002 • muhammad1211junaid@gmail.com • +91 70554 35358 / +91 90843 39649</p>
+                  <p className="text-xs text-gray-500 mt-1">Under pass flyover, Buxar, Distt. Hapur, Uttar Pradesh • muhammad1211junaid@gmail.com • +91 70554 35358 / +91 90843 39649 / +91 63995 25356</p>
                 </div>
                 <div className="text-right sm:text-right">
                   <span className="inline-block px-3 py-1 rounded bg-primary/10 border border-primary/20 text-primary text-xs font-extrabold uppercase tracking-wider mb-2">

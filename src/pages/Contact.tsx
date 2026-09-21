@@ -73,8 +73,8 @@ export const Contact: React.FC = () => {
             <div className="flex items-start space-x-3 text-xs text-gray-700">
               <MapPin className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <div>
-                <strong className="block text-gray-900 font-bold">Flagship Experience Center</strong>
-                <span>Ground Floor, Tower B, DLF Cyber City, Phase III, Gurugram, Haryana 122002</span>
+                <strong className="block text-gray-900 font-bold">Showroom & Experience Center</strong>
+                <span>Under pass flyover, Buxar, Distt. Hapur, Uttar Pradesh</span>
               </div>
             </div>
 

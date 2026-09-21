@@ -27,7 +27,10 @@ export const Footer: React.FC = () => {
             <p className="text-gray-600 text-sm leading-relaxed max-w-sm">
               Bathrooms for a better tomorrow. Engineering elegance, reliability, and precision into luxury faucets, rainfall showers, sanitaryware, and curated bathroom accessories.
             </p>
-            <div className="flex items-center gap-2 pt-2 text-xs font-semibold text-primary">
+            <p className="text-xs text-gray-500">
+              📍 Under pass flyover, Buxar, Distt. Hapur, Uttar Pradesh
+            </p>
+            <div className="flex items-center gap-2 pt-1 text-xs font-semibold text-primary">
               <Sparkles className="h-4 w-4" />
               <span>Architectural & Sanitary Solutions</span>
             </div>
