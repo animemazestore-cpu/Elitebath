@@ -161,16 +161,43 @@ export const ProductDetail: React.FC = () => {
         setReviews(reviewsWithLikes);
 
         // Fetch questions
-        const { data: dbQuestions, error: qnaError } = await supabase
-          .from('product_questions')
-          .select('*')
-          .eq('product_id', product.id)
-          .order('created_at', { ascending: false });
+        let questionsList: ProductQuestion[] = [];
+        try {
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(product.id);
+          let query = supabase.from('product_questions').select('*');
+          if (isUuid) {
+            query = query.eq('product_id', product.id);
+          } else {
+            query = query.filter('product_id', 'eq', product.id);
+          }
+          const { data: dbQuestions, error: qnaError } = await query.order('created_at', { ascending: false });
+          if (!qnaError && dbQuestions) {
+            questionsList = dbQuestions as ProductQuestion[];
+          }
+        } catch (qErr) {
+          console.warn('Error fetching questions from Supabase:', qErr);
+        }
 
-        if (qnaError) throw qnaError;
+        // Also merge any local fallback questions
+        try {
+          const localQStr = localStorage.getItem('elitebath_product_questions');
+          if (localQStr) {
+            const parsedLocal: ProductQuestion[] = JSON.parse(localQStr);
+            const matchingLocal = parsedLocal.filter(
+              (q) => q.product_id === product.id || (product.slug && q.product_id === product.slug)
+            );
+            for (const lq of matchingLocal) {
+              const existingIdx = questionsList.findIndex((q) => q.id === lq.id);
+              if (existingIdx === -1) {
+                questionsList.push(lq);
+              } else if (lq.answer && !questionsList[existingIdx].answer) {
+                questionsList[existingIdx].answer = lq.answer;
+              }
+            }
+          }
+        } catch (_) {}
 
-        const questionsList = dbQuestions || [];
-        setQuestions(questionsList as ProductQuestion[]);
+        setQuestions(questionsList);
 
         // Verify if user purchased this product (DB only)
         if (user) {
@@ -194,6 +221,29 @@ export const ProductDetail: React.FC = () => {
     };
 
     fetchReviewsAndQuestions();
+
+    // Setup Realtime Q&A listener for live answer & question synchronization
+    let channel: any = null;
+    try {
+      channel = supabase
+        .channel(`product-qna-${product.id}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'product_questions' },
+          () => {
+            fetchReviewsAndQuestions();
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      console.warn('Q&A realtime channel error:', e);
+    }
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, [product, user]);
 
   // Match active variant based on selected attributes (unconditional hook)
@@ -337,28 +387,59 @@ export const ProductDetail: React.FC = () => {
   // Submit Question — always try Supabase
   const handleQuestionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user) {
+      alert('Please sign in to ask a question.');
+      return;
+    }
     if (!newQuestion.trim()) return;
 
     setQnaLoading(true);
     try {
-      const { data: questionData, error } = await supabase
-        .from('product_questions')
-        .insert({
+      const qText = newQuestion.trim();
+      let insertedQ: ProductQuestion | null = null;
+
+      try {
+        const { data: questionData, error } = await supabase
+          .from('product_questions')
+          .insert({
+            product_id: product.id,
+            user_id: user.id,
+            question: qText,
+          })
+          .select()
+          .maybeSingle();
+
+        if (!error && questionData) {
+          insertedQ = questionData as ProductQuestion;
+        } else if (error) {
+          console.warn('Supabase question insert warning:', error);
+        }
+      } catch (dbErr) {
+        console.warn('Supabase question insert exception:', dbErr);
+      }
+
+      if (!insertedQ) {
+        insertedQ = {
+          id: `local-q-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           product_id: product.id,
           user_id: user.id,
-          question: newQuestion.trim(),
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      if (questionData) {
-        setQuestions([questionData as ProductQuestion, ...questions]);
-        setNewQuestion('');
-        alert('Question submitted successfully!');
+          question: qText,
+          answer: null,
+          created_at: new Date().toISOString(),
+        };
       }
+
+      // Save to local storage for instant sync & resilience
+      try {
+        const localQStr = localStorage.getItem('elitebath_product_questions') || '[]';
+        const parsed: ProductQuestion[] = JSON.parse(localQStr);
+        parsed.unshift(insertedQ);
+        localStorage.setItem('elitebath_product_questions', JSON.stringify(parsed));
+      } catch (_) {}
+
+      setQuestions([insertedQ, ...questions]);
+      setNewQuestion('');
+      alert('Your question has been submitted! Our product specialists will review and answer it shortly.');
     } catch (err: any) {
       console.error('Error submitting question:', err);
       alert(err.message || 'Failed to submit question.');

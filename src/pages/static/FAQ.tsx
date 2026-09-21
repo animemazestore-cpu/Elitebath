@@ -78,7 +78,7 @@ export const FAQ: React.FC = () => {
     {
       category: "Returns & Transit Claims",
       question: "What should I do if my package arrives damaged or incomplete?",
-      answer: "In the unlikely event of transit breakage or packaging compromise, simply record an unboxing video and notify our concierge support at care@elitebathcollections.com or via your Dashboard within 7 days of delivery. We will initiate an immediate expedited replacement at zero additional cost."
+      answer: "In the unlikely event of transit breakage or packaging compromise, simply record an unboxing video and notify our concierge support at muhammad1211junaid@gmail.com or via your Dashboard within 7 days of delivery. We will initiate an immediate expedited replacement at zero additional cost."
     }
   ];
 
@@ -148,10 +148,10 @@ export const FAQ: React.FC = () => {
             Contact Customer Concierge
           </a>
           <a
-            href="mailto:care@elitebathcollections.com"
+            href="mailto:muhammad1211junaid@gmail.com"
             className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
           >
-            Email Technical Team
+            Email: muhammad1211junaid@gmail.com
           </a>
         </div>
       </div>

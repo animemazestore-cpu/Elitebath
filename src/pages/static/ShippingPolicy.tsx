@@ -87,7 +87,7 @@ export const ShippingPolicy: React.FC = () => (
       <ol className="list-decimal pl-5 space-y-1">
         <li>Inspect the exterior wooden crate and carton seals for any visible puncture or transit crushing before signing the Proof of Delivery (POD).</li>
         <li>If noticeable external damage is present, note "Package Received Damaged" on the courier delivery sheet.</li>
-        <li>Record a brief continuous unboxing video while uncrating the ceramic and brassware items. If any product is broken, contact our concierge at <a href="mailto:care@elitebathcollections.com" className="text-primary font-bold hover:underline">care@elitebathcollections.com</a> within 7 days for an immediate priority replacement.</li>
+        <li>Record a brief continuous unboxing video while uncrating the ceramic and brassware items. If any product is broken, contact our concierge at <a href="mailto:muhammad1211junaid@gmail.com" className="text-primary font-bold hover:underline">muhammad1211junaid@gmail.com</a> or call <a href="tel:+917055435358" className="text-primary font-bold hover:underline">+91 70554 35358</a> within 7 days for an immediate priority replacement.</li>
       </ol>
     </Section>
   </PolicyPage>

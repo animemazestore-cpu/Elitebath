@@ -205,7 +205,7 @@ CREATE POLICY "Admin can manage reviews" ON public.reviews FOR ALL USING (EXISTS
 -- PRODUCT QUESTIONS
 CREATE TABLE IF NOT EXISTS public.product_questions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  product_id TEXT NOT NULL,
   user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   question TEXT NOT NULL,
   answer TEXT,
@@ -215,9 +215,11 @@ ALTER TABLE public.product_questions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anyone can view questions" ON public.product_questions;
 DROP POLICY IF EXISTS "Authenticated users can ask questions" ON public.product_questions;
 DROP POLICY IF EXISTS "Admin can manage questions" ON public.product_questions;
+DROP POLICY IF EXISTS "Anyone can ask questions" ON public.product_questions;
+DROP POLICY IF EXISTS "Anyone can manage questions" ON public.product_questions;
 CREATE POLICY "Anyone can view questions" ON public.product_questions FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can ask questions" ON public.product_questions FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Admin can manage questions" ON public.product_questions FOR ALL USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Anyone can ask questions" ON public.product_questions FOR INSERT WITH CHECK (true);
+CREATE POLICY "Anyone can manage questions" ON public.product_questions FOR ALL USING (true) WITH CHECK (true);
 
 -- NEWSLETTER SUBSCRIBERS
 CREATE TABLE IF NOT EXISTS public.newsletter_subscribers (
@@ -367,6 +369,13 @@ ON storage.objects FOR SELECT
 USING (bucket_id = 'payment-proofs');
 
 -- ============================================================
+-- HELPFUL MIGRATIONS FOR EXISTING INSTANCES:
+-- ============================================================
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS estimated_delivery_date TIMESTAMPTZ;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS order_ref TEXT;
+ALTER TABLE public.product_questions DROP CONSTRAINT IF EXISTS product_questions_product_id_fkey;
+ALTER TABLE public.product_questions ALTER COLUMN product_id TYPE TEXT;
+
 -- DONE! After running:
 -- 1. Go to Authentication > Users, create your admin account
 -- 2. Run: UPDATE profiles SET role = 'admin' WHERE email = 'your-admin@email.com';

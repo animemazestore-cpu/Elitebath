@@ -52,11 +52,23 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2 text-sm text-gray-600">
               <li><Link to="/about" className="hover:text-primary transition-colors">About Us</Link></li>
               <li><Link to="/contact" className="hover:text-primary transition-colors">Contact Support</Link></li>
-              <li><Link to="/track" className="hover:text-primary transition-colors">Track Order</Link></li>
+              <li><Link to="/track-order" className="hover:text-primary transition-colors">Track Order</Link></li>
               <li><Link to="/faq" className="hover:text-primary transition-colors">FAQ & Installation</Link></li>
               <li><Link to="/shipping-policy" className="hover:text-primary transition-colors">Shipping & Delivery</Link></li>
               <li><Link to="/refund-policy" className="hover:text-primary transition-colors">Returns & Replacements</Link></li>
             </ul>
+            <div className="mt-4 pt-3 border-t border-gray-200 text-xs text-gray-500 space-y-1">
+              <a href="mailto:muhammad1211junaid@gmail.com" className="hover:text-primary block truncate font-semibold text-gray-800">
+                muhammad1211junaid@gmail.com
+              </a>
+              <div className="flex flex-wrap gap-x-1.5 text-[11px] text-gray-600 font-medium">
+                <a href="tel:+917055435358" className="hover:text-primary">+91 70554 35358</a>
+                <span>•</span>
+                <a href="tel:+919084339649" className="hover:text-primary">+91 90843 39649</a>
+                <span>•</span>
+                <a href="tel:+916399525356" className="hover:text-primary">+91 63995 25356</a>
+              </div>
+            </div>
           </div>
 
           {/* Legal & Payments */}

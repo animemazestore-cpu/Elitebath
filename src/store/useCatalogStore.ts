@@ -16,8 +16,6 @@ import {
 } from '../lib/catalogQueries';
 import type { Category, Product } from '../types/database';
 
-const CACHE_TTL_MS = 5 * 60 * 1000;
-
 interface CachedProductDetail {
   product: Product;
   fetchedAt: number;
@@ -52,29 +50,25 @@ interface CatalogState {
   deleteCategory: (id: string) => void;
 }
 
-function isFresh(fetchedAt: number | null): boolean {
-  return fetchedAt !== null && Date.now() - fetchedAt < CACHE_TTL_MS;
+function isFresh(_fetchedAt: number | null): boolean {
+  return false; // Always revalidate to guarantee live pricing across devices
 }
 
 async function fetchCategoriesFromNetwork(): Promise<Category[]> {
-  const localCustomCats: Category[] = typeof window !== 'undefined'
-    ? JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]')
-    : [];
-
   try {
     const { data, error } = await withTimeout(
       supabase.from('categories').select(CATEGORY_FIELDS).order('name')
     );
     if (error) throw error;
-    const dbCats = (data && data.length > 0) ? (data as Category[]) : [];
-    
-    // Merge: DB categories first (valid UUIDs), then custom, then fallback
-    const merged: Category[] = [];
-    for (const c of dbCats) {
-      if (!merged.some((m) => m.id === c.id || m.name.toLowerCase() === c.name.toLowerCase())) {
-        merged.push(c);
-      }
-    }
+    const dbCats = data && data.length > 0 ? (data as Category[]) : [];
+
+    const localCustomCats: Category[] =
+      typeof window !== 'undefined'
+        ? JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]')
+        : [];
+
+    // Database is authoritative
+    const merged: Category[] = [...dbCats];
     for (const c of localCustomCats) {
       if (!merged.some((m) => m.id === c.id || m.name.toLowerCase() === c.name.toLowerCase())) {
         merged.push(c);
@@ -88,6 +82,10 @@ async function fetchCategoriesFromNetwork(): Promise<Category[]> {
     return merged;
   } catch (err) {
     console.warn('Network category fetch error, returning local + fallback categories:', err);
+    const localCustomCats: Category[] =
+      typeof window !== 'undefined'
+        ? JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]')
+        : [];
     const merged = [...localCustomCats];
     for (const fb of FALLBACK_CATEGORIES) {
       if (!merged.some((m) => m.id === fb.id || m.name.toLowerCase() === fb.name.toLowerCase())) {
@@ -99,12 +97,10 @@ async function fetchCategoriesFromNetwork(): Promise<Category[]> {
 }
 
 async function fetchProductsFromNetwork(): Promise<Product[]> {
-  const localCustomProds: Product[] = typeof window !== 'undefined'
-    ? JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]')
-    : [];
-  const deletedIds: string[] = typeof window !== 'undefined'
-    ? JSON.parse(localStorage.getItem('elitebath_deleted_product_ids') || '[]')
-    : [];
+  const deletedIds: string[] =
+    typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('elitebath_deleted_product_ids') || '[]')
+      : [];
 
   try {
     const { data, error } = await withTimeout(
@@ -116,21 +112,45 @@ async function fetchProductsFromNetwork(): Promise<Product[]> {
     if (error) throw error;
     const parsed = parseProducts(data as Record<string, unknown>[] | null);
 
-    // Merge: custom local products first, then DB products, then fallback products (excluding deleted)
-    const merged = [...localCustomProds.filter((p) => !deletedIds.includes(p.id))];
+    // Database products are 100% AUTHORITATIVE (instant sync across all devices)
+    const merged: Product[] = [];
     for (const p of parsed) {
-      if (!deletedIds.includes(p.id) && !merged.some((m) => m.id === p.id || m.slug === p.slug)) {
+      if (!deletedIds.includes(p.id)) {
         merged.push(p);
       }
     }
-    for (const fb of FALLBACK_PRODUCTS) {
-      if (!deletedIds.includes(fb.id) && !merged.some((m) => m.id === fb.id || m.slug === fb.slug)) {
-        merged.push(fb);
+
+    // Append any purely offline custom products that haven't synced to DB yet
+    if (typeof window !== 'undefined') {
+      const localCustomProds: Product[] = JSON.parse(
+        localStorage.getItem('elitebath_custom_products') || '[]'
+      );
+      for (const cp of localCustomProds) {
+        if (
+          !deletedIds.includes(cp.id) &&
+          !merged.some((m) => m.id === cp.id || m.slug.toLowerCase() === cp.slug.toLowerCase())
+        ) {
+          merged.push(cp);
+        }
       }
     }
+
+    // Only fallback if completely empty
+    if (merged.length === 0) {
+      for (const fb of FALLBACK_PRODUCTS) {
+        if (!deletedIds.includes(fb.id)) {
+          merged.push(fb);
+        }
+      }
+    }
+
     return merged;
   } catch (err) {
-    console.warn('Network product fetch error, returning local + fallback products:', err);
+    console.warn('Network product fetch error, falling back to local storage:', err);
+    const localCustomProds: Product[] =
+      typeof window !== 'undefined'
+        ? JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]')
+        : [];
     const merged = [...localCustomProds.filter((p) => !deletedIds.includes(p.id))];
     for (const fb of FALLBACK_PRODUCTS) {
       if (!deletedIds.includes(fb.id) && !merged.some((m) => m.id === fb.id || m.slug === fb.slug)) {
@@ -142,46 +162,37 @@ async function fetchProductsFromNetwork(): Promise<Product[]> {
 }
 
 async function fetchProductDetailFromNetwork(id: string): Promise<Product | null> {
-  // First check local custom products
-  if (typeof window !== 'undefined') {
-    const localCustom: Product[] = JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]');
-    const matched = localCustom.find((p) => p.id === id);
-    if (matched) return matched;
-  }
-
+  // Query Supabase database FIRST for authoritative current price and stock
   try {
     const { data, error } = await withTimeout(
       supabase.from('products').select(PRODUCT_DETAIL_SELECT).eq('id', id).maybeSingle()
     );
-    if (error) throw error;
-    if (data) return parseProduct(data as Record<string, unknown>);
+    if (!error && data) return parseProduct(data as Record<string, unknown>);
   } catch (err) {
     console.warn('Product detail by ID fetch error:', err);
   }
+
+  // Fallback to local custom products if DB is unreachable
+  if (typeof window !== 'undefined') {
+    const localCustom: Product[] = JSON.parse(
+      localStorage.getItem('elitebath_custom_products') || '[]'
+    );
+    const matched = localCustom.find((p) => p.id === id);
+    if (matched) return matched;
+  }
+
   return FALLBACK_PRODUCTS.find((p) => p.id === id) ?? null;
 }
 
 async function fetchProductDetailBySlugFromNetwork(slug: string): Promise<Product | null> {
   const cleanSlug = slug.toLowerCase().trim();
 
-  // First check local custom products
-  if (typeof window !== 'undefined') {
-    const localCustom: Product[] = JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]');
-    const matched = localCustom.find(
-      (p) =>
-        p.slug.toLowerCase() === cleanSlug ||
-        sanitizeSlug(p.slug, p.name).toLowerCase() === cleanSlug ||
-        p.id.toLowerCase() === cleanSlug
-    );
-    if (matched) return matched;
-  }
-
+  // Query Supabase database FIRST for live authoritative price and stock
   try {
     const { data, error } = await withTimeout(
       supabase.from('products').select(PRODUCT_DETAIL_SELECT).eq('slug', cleanSlug).maybeSingle()
     );
-    if (error) throw error;
-    if (data) return parseProduct(data as Record<string, unknown>);
+    if (!error && data) return parseProduct(data as Record<string, unknown>);
   } catch (err) {
     console.warn('Product detail by slug fetch error:', err);
   }
@@ -194,6 +205,20 @@ async function fetchProductDetailBySlugFromNetwork(slug: string): Promise<Produc
       );
       if (!error && data) return parseProduct(data as Record<string, unknown>);
     } catch (_) {}
+  }
+
+  // Fallback to local custom products if DB is unreachable
+  if (typeof window !== 'undefined') {
+    const localCustom: Product[] = JSON.parse(
+      localStorage.getItem('elitebath_custom_products') || '[]'
+    );
+    const matched = localCustom.find(
+      (p) =>
+        p.slug.toLowerCase() === cleanSlug ||
+        sanitizeSlug(p.slug, p.name).toLowerCase() === cleanSlug ||
+        p.id.toLowerCase() === cleanSlug
+    );
+    if (matched) return matched;
   }
 
   return (
@@ -264,24 +289,8 @@ export const useCatalogStore = create<CatalogState>()(
         return promise;
       },
 
-      fetchProducts: async (force = false) => {
+      fetchProducts: async (_force = false) => {
         const state = get();
-        if (!force && state.products.length > 0 && isFresh(state.productsFetchedAt)) {
-          return state.products;
-        }
-
-        if (!force && state.products.length > 0 && !state.productsLoading) {
-          void (async () => {
-            try {
-              const products = await fetchProductsFromNetwork();
-              set({ products, productsFetchedAt: Date.now() });
-            } catch (err) {
-              console.error('Background product refresh failed:', err);
-            }
-          })();
-          return state.products;
-        }
-
         if (state.productsPromise) return state.productsPromise;
 
         set({ productsLoading: true });
@@ -303,20 +312,26 @@ export const useCatalogStore = create<CatalogState>()(
         return promise;
       },
 
-      getProductBySlug: async (slug, force = false) => {
+      getProductBySlug: async (slug, _force = false) => {
         const cacheKey = slug.toLowerCase().trim();
-        const cached = get().productDetailsBySlug[cacheKey];
-        if (!force && cached && isFresh(cached.fetchedAt)) {
-          return cached.product;
+
+        // 1. Immediately query live database for authoritative price & variants
+        const liveProduct = await fetchProductDetailBySlugFromNetwork(cacheKey);
+        if (liveProduct) {
+          set((state) => ({
+            products: state.products.some((p) => p.id === liveProduct.id)
+              ? state.products.map((p) => (p.id === liveProduct.id ? liveProduct : p))
+              : [liveProduct, ...state.products],
+            productDetailsBySlug: {
+              ...state.productDetailsBySlug,
+              [cacheKey]: { product: liveProduct, fetchedAt: Date.now() },
+            },
+          }));
+          return liveProduct;
         }
 
-        // 1. First check in-memory store products
+        // 2. Check in-memory store products
         let product: Product | null = findProductBySlug(get().products, cacheKey) || null;
-
-        // 2. If not found in memory, query by slug
-        if (!product) {
-          product = await fetchProductDetailBySlugFromNetwork(cacheKey);
-        }
 
         // 3. If still not found, fetch all products and check again
         if (!product) {
@@ -324,7 +339,7 @@ export const useCatalogStore = create<CatalogState>()(
           product = findProductBySlug(products, cacheKey) || null;
         }
 
-        // 4. If we have a product from memory or list, try to fetch enriched variants/images if missing
+        // 4. Enrich variants if missing
         if (product && (!product.variants || product.variants.length === 0)) {
           const enriched = await fetchProductDetailFromNetwork(product.id);
           if (enriched) {
@@ -457,11 +472,48 @@ export const useCatalogStore = create<CatalogState>()(
       name: 'elite-bath-catalog',
       partialize: (state) => ({
         categories: state.categories,
-        products: state.products,
         categoriesFetchedAt: state.categoriesFetchedAt,
-        productsFetchedAt: state.productsFetchedAt,
-        productDetailsBySlug: state.productDetailsBySlug,
+        // DO NOT persist products or productDetailsBySlug so prices are always fresh from DB!
       }),
     }
   )
 );
+
+// Realtime synchronizer: instantly sync live prices & stock across all connected devices
+if (typeof window !== 'undefined') {
+  // Purge any legacy stale catalog from localStorage
+  try {
+    const rawCatalog = localStorage.getItem('elite-bath-catalog');
+    if (rawCatalog) {
+      const parsed = JSON.parse(rawCatalog);
+      if (parsed?.state?.products) {
+        delete parsed.state.products;
+        delete parsed.state.productDetailsBySlug;
+        localStorage.setItem('elite-bath-catalog', JSON.stringify(parsed));
+      }
+    }
+  } catch (_) {}
+
+  // Subscribe to real-time changes in products or product_variants
+  try {
+    supabase
+      .channel('catalog-realtime-sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products' },
+        () => {
+          useCatalogStore.getState().fetchProducts(true);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'product_variants' },
+        () => {
+          useCatalogStore.getState().fetchProducts(true);
+        }
+      )
+      .subscribe();
+  } catch (e) {
+    console.warn('Realtime catalog subscription warning:', e);
+  }
+}

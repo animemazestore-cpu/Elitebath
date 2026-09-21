@@ -41,7 +41,7 @@ export const RefundPolicy: React.FC = () => (
       </p>
       <ul className="list-disc pl-5 space-y-1">
         <li>If your product arrives broken, cracked, chipped, or scratched during shipping, we will dispatch an immediate <strong>free priority replacement</strong>.</li>
-        <li>To initiate a transit claim, record a brief unboxing video upon uncrating the parcel and notify us at <a href="mailto:care@elitebathcollections.com" className="text-primary font-bold hover:underline">care@elitebathcollections.com</a> or via your Dashboard within <strong>7 days of delivery</strong>.</li>
+        <li>To initiate a transit claim, record a brief unboxing video upon uncrating the parcel and notify us at <a href="mailto:muhammad1211junaid@gmail.com" className="text-primary font-bold hover:underline">muhammad1211junaid@gmail.com</a> or via your Dashboard within <strong>7 days of delivery</strong>.</li>
       </ul>
     </Section>
 
@@ -82,7 +82,7 @@ export const RefundPolicy: React.FC = () => (
 
     <Section title="6. How to Submit a Return or Replacement Request" icon={<HelpCircle className="h-4 w-4 text-primary" />}>
       <p>
-        Log into your account, visit your <a href="/dashboard" className="text-primary font-bold hover:underline">Customer Dashboard</a>, and navigate to the <strong>Orders & Replacements</strong> tab to submit your request, or email our concierge team directly at <a href="mailto:care@elitebathcollections.com" className="text-primary font-bold hover:underline">care@elitebathcollections.com</a> with your Order ID and photos.
+        Log into your account, visit your <a href="/dashboard" className="text-primary font-bold hover:underline">Customer Dashboard</a>, and navigate to the <strong>Orders & Replacements</strong> tab to submit your request, or email our concierge team directly at <a href="mailto:muhammad1211junaid@gmail.com" className="text-primary font-bold hover:underline">muhammad1211junaid@gmail.com</a> or call <a href="tel:+917055435358" className="text-primary font-bold hover:underline">+91 70554 35358</a> with your Order ID and photos.
       </p>
     </Section>
   </PolicyPage>

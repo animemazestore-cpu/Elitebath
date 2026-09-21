@@ -80,19 +80,37 @@ export const Contact: React.FC = () => {
 
             <div className="flex items-start space-x-3 text-xs text-gray-700">
               <Phone className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <strong className="block text-gray-900 font-bold">Direct Phone & WhatsApp</strong>
-                <a href="tel:+919876543210" className="hover:text-primary transition-colors">+91 98765 43210</a>
-                <span className="text-gray-400 block text-[11px]">Mon – Sat, 10:00 AM – 7:00 PM IST</span>
+              <div className="space-y-1.5">
+                <strong className="block text-gray-900 font-bold">Direct Phone & WhatsApp Support</strong>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <a href="tel:+917055435358" className="font-semibold text-primary hover:underline">+91 70554 35358</a>
+                    <span className="text-gray-300">|</span>
+                    <a href="https://wa.me/917055435358" target="_blank" rel="noopener noreferrer" className="text-[11px] text-emerald-600 hover:underline font-medium">WhatsApp</a>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a href="tel:+919084339649" className="font-semibold text-primary hover:underline">+91 90843 39649</a>
+                    <span className="text-gray-300">|</span>
+                    <a href="https://wa.me/919084339649" target="_blank" rel="noopener noreferrer" className="text-[11px] text-emerald-600 hover:underline font-medium">WhatsApp</a>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <a href="tel:+916399525356" className="font-semibold text-primary hover:underline">+91 63995 25356</a>
+                    <span className="text-gray-300">|</span>
+                    <a href="https://wa.me/916399525356" target="_blank" rel="noopener noreferrer" className="text-[11px] text-emerald-600 hover:underline font-medium">WhatsApp</a>
+                  </div>
+                </div>
+                <span className="text-gray-400 block text-[11px] pt-0.5">Mon – Sat, 9:00 AM – 8:00 PM IST</span>
               </div>
             </div>
 
             <div className="flex items-start space-x-3 text-xs text-gray-700">
               <Mail className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <div>
-                <strong className="block text-gray-900 font-bold">Official Inquiries</strong>
-                <a href="mailto:care@elitebathcollections.com" className="hover:text-primary transition-colors block">care@elitebathcollections.com</a>
-                <a href="mailto:architects@elitebathcollections.com" className="text-gray-500 hover:text-primary text-[11px] block">architects@elitebathcollections.com</a>
+                <strong className="block text-gray-900 font-bold">Email Inquiries & Orders</strong>
+                <a href="mailto:muhammad1211junaid@gmail.com" className="hover:text-primary transition-colors block font-semibold text-primary break-all">
+                  muhammad1211junaid@gmail.com
+                </a>
+                <span className="text-gray-400 block text-[11px] mt-0.5">24/7 client concierge support</span>
               </div>
             </div>
 

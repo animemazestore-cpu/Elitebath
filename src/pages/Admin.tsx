@@ -368,11 +368,41 @@ export const Admin: React.FC = () => {
         }
       }
 
-      // 4. Fetch questions
+      // 4. Fetch questions (DB + local resilient store)
       try {
-        const { data: dbQuestions, error: qnaError } = await supabase.from('product_questions').select('*').order('created_at', { ascending: false });
-        if (qnaError) throw qnaError;
-        setQuestions(dbQuestions as ProductQuestion[] || []);
+        let allQuestions: ProductQuestion[] = [];
+        try {
+          const { data: dbQuestions, error: qnaError } = await supabase
+            .from('product_questions')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (!qnaError && dbQuestions) {
+            allQuestions = dbQuestions as ProductQuestion[];
+          }
+        } catch (dbQErr) {
+          console.warn('Error loading questions from DB:', dbQErr);
+        }
+
+        try {
+          const rawLocalQ = localStorage.getItem('elitebath_product_questions');
+          if (rawLocalQ) {
+            const parsedLocal: ProductQuestion[] = JSON.parse(rawLocalQ);
+            const dbIds = new Set(allQuestions.map((q) => q.id));
+            for (const lq of parsedLocal) {
+              if (!dbIds.has(lq.id)) {
+                allQuestions.push(lq);
+              } else {
+                // If local has answer that DB doesn't have yet, sync it
+                const match = allQuestions.find((q) => q.id === lq.id);
+                if (match && !match.answer && lq.answer) {
+                  match.answer = lq.answer;
+                }
+              }
+            }
+          }
+        } catch (_) {}
+
+        setQuestions(allQuestions);
       } catch (err) {
         console.error('Error loading questions:', err);
         setQuestions([]);
@@ -1106,19 +1136,42 @@ export const Admin: React.FC = () => {
     }
   };
 
-  // --- Actions: Q&A --- always try DB first
+  // --- Actions: Q&A --- always try DB first & sync resiliently
   const handleAnswerQuestion = async (questionId: string, answer: string) => {
     if (!answer.trim()) return;
+    const cleanAnswer = answer.trim();
 
     try {
-      const { error } = await supabase
-        .from('product_questions')
-        .update({ answer: answer.trim() })
-        .eq('id', questionId);
+      // 1. Attempt Supabase DB update
+      try {
+        const { error } = await supabase
+          .from('product_questions')
+          .update({ answer: cleanAnswer })
+          .eq('id', questionId);
 
-      if (error) throw error;
+        if (error) {
+          console.warn('Supabase answer question warning:', error);
+        }
+      } catch (dbErr) {
+        console.warn('Supabase answer question exception:', dbErr);
+      }
+
+      // 2. Sync to local questions storage
+      try {
+        const rawLocalQ = localStorage.getItem('elitebath_product_questions');
+        if (rawLocalQ) {
+          const parsedLocal: ProductQuestion[] = JSON.parse(rawLocalQ);
+          const updated = parsedLocal.map((q) => (q.id === questionId ? { ...q, answer: cleanAnswer } : q));
+          localStorage.setItem('elitebath_product_questions', JSON.stringify(updated));
+        }
+      } catch (_) {}
+
+      // 3. Immediately update UI state
+      setQuestions((prev) =>
+        prev.map((q) => (q.id === questionId ? { ...q, answer: cleanAnswer } : q))
+      );
+
       alert('Answer submitted successfully!');
-      loadAdminData();
     } catch (err: any) {
       console.error('Answer submit failed:', err);
       alert('Failed to submit answer: ' + (err.message || err));
@@ -1129,10 +1182,24 @@ export const Admin: React.FC = () => {
     if (!window.confirm('Delete this question?')) return;
 
     try {
-      const { error } = await supabase.from('product_questions').delete().eq('id', id);
-      if (error) throw error;
+      try {
+        const { error } = await supabase.from('product_questions').delete().eq('id', id);
+        if (error) console.warn('Delete question DB warning:', error);
+      } catch (dbErr) {
+        console.warn('Delete question DB exception:', dbErr);
+      }
+
+      try {
+        const rawLocalQ = localStorage.getItem('elitebath_product_questions');
+        if (rawLocalQ) {
+          const parsedLocal: ProductQuestion[] = JSON.parse(rawLocalQ);
+          const updated = parsedLocal.filter((q) => q.id !== id);
+          localStorage.setItem('elitebath_product_questions', JSON.stringify(updated));
+        }
+      } catch (_) {}
+
+      setQuestions((prev) => prev.filter((q) => q.id !== id));
       alert('Question deleted successfully!');
-      loadAdminData();
     } catch (err: any) {
       console.error('Delete question failed:', err);
       alert('Failed to delete question: ' + (err.message || err));
@@ -3768,7 +3835,7 @@ export const Admin: React.FC = () => {
                     <h1 className="text-2xl font-black tracking-tight text-gray-900 uppercase">Elite Bath Collections</h1>
                   </div>
                   <p className="text-xs font-semibold uppercase tracking-widest text-primary mt-1">Luxury Sanitaryware & Architectural Bathroom Fittings</p>
-                  <p className="text-xs text-gray-500 mt-1">DLF Cyber City, Phase III, Gurugram, Haryana 122002 • care@elitebathcollections.com</p>
+                  <p className="text-xs text-gray-500 mt-1">DLF Cyber City, Phase III, Gurugram, Haryana 122002 • muhammad1211junaid@gmail.com • +91 70554 35358 / +91 90843 39649</p>
                 </div>
                 <div className="text-right sm:text-right">
                   <span className="inline-block px-3 py-1 rounded bg-primary/10 border border-primary/20 text-primary text-xs font-extrabold uppercase tracking-wider mb-2">

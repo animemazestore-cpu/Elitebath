@@ -88,7 +88,7 @@ export const PrivacyPolicy: React.FC = () => (
 
     <Section title="7. Your Rights & Data Governance" icon={<RefreshCw className="h-4 w-4 text-primary" />}>
       <p>
-        You retain full rights under applicable data protection laws to inspect, amend, or request the deletion of your account and personal records. To exercise these rights or request data removal, please contact our Data Governance Officer at <a href="mailto:care@elitebathcollections.com" className="text-primary font-bold hover:underline">care@elitebathcollections.com</a>.
+        You retain full rights under applicable data protection laws to inspect, amend, or request the deletion of your account and personal records. To exercise these rights or request data removal, please contact our team at <a href="mailto:muhammad1211junaid@gmail.com" className="text-primary font-bold hover:underline">muhammad1211junaid@gmail.com</a> or call <a href="tel:+917055435358" className="text-primary font-bold hover:underline">+91 70554 35358</a>.
       </p>
     </Section>
   </PolicyPage>
