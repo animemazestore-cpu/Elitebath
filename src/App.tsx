@@ -5,6 +5,8 @@ import { useCatalogStore } from './store/useCatalogStore';
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
 import { AppDownloadPopup } from './components/common/AppDownloadPopup';
+import { FloatingConcierge } from './components/common/FloatingConcierge';
+import { TelegramAdBanner } from './components/common/TelegramAdBanner';
 
 // Import Pages
 import { Home } from './pages/Home';
@@ -64,6 +66,7 @@ export const App: React.FC = () => {
             <Route path="/contact" element={<Contact />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/track" element={<TrackOrder />} />
+            <Route path="/track-order" element={<TrackOrder />} />
 
             {/* Static pages routes */}
             <Route path="/about" element={<AboutUs />} />
@@ -77,6 +80,12 @@ export const App: React.FC = () => {
 
         <Footer />
       </div>
+
+      {/* Global Concierge & Support Floating Widget */}
+      <FloatingConcierge />
+
+      {/* Telegram Ad Banner (safe area, closeable, 1 at a time) */}
+      <TelegramAdBanner />
 
       {/* Global App Download Popup */}
       <AppDownloadPopup />

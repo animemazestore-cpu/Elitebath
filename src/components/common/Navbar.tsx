@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Heart, Search, User, Menu, X, ShieldAlert, LogOut } from 'lucide-react';
+import { ShoppingCart, Heart, Search, User, Menu, X, ShieldAlert, LogOut, ArrowRight } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCartStore } from '../../store/useCartStore';
 import { useWishlistStore } from '../../store/useWishlistStore';
+import { useCatalogStore } from '../../store/useCatalogStore';
 import { supabase } from '../../lib/supabase';
 
 export const Navbar: React.FC = () => {
@@ -11,10 +12,55 @@ export const Navbar: React.FC = () => {
   const { user, profile, signOut } = useAuthStore();
   const cartItems = useCartStore((state) => state.getTotalItems());
   const wishlistCount = useWishlistStore((state) => state.items.length);
+  const products = useCatalogStore((state) => state.products);
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
+
+  // Instant search results matching name, description, category, finish, brand, material
+  const searchResults = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return [];
+    return products.filter((p) => {
+      const nameMatch = p.name?.toLowerCase().includes(query);
+      const descMatch = p.description?.toLowerCase().includes(query);
+      const catMatch = p.category?.name?.toLowerCase().includes(query);
+      const finishMatch = p.finish?.toLowerCase().includes(query);
+      const brandMatch = p.brand?.toLowerCase().includes(query);
+      const materialMatch = p.material?.toLowerCase().includes(query);
+      return nameMatch || descMatch || catMatch || finishMatch || brandMatch || materialMatch;
+    }).slice(0, 6);
+  }, [products, searchQuery]);
+
+  // Handle clicking outside or pressing Escape to close search dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const clickedDesktop = searchContainerRef.current?.contains(target);
+      const clickedMobile = mobileSearchRef.current?.contains(target);
+      if (!clickedDesktop && !clickedMobile) {
+        setIsSearchFocused(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsSearchFocused(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const DEFAULT_ANNOUNCEMENT = '✨ Exclusive Offer: Use code ELITE10 for 10% discount! 🚚 FREE Shipping on sanitaryware above ₹999!';
 
@@ -62,7 +108,16 @@ export const Navbar: React.FC = () => {
     if (searchQuery.trim()) {
       navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery('');
+      setIsSearchFocused(false);
+      setIsMobileMenuOpen(false);
     }
+  };
+
+  const handleSelectProduct = (slug: string) => {
+    navigate(`/product/${slug}`);
+    setSearchQuery('');
+    setIsSearchFocused(false);
+    setIsMobileMenuOpen(false);
   };
 
   return (
@@ -104,25 +159,113 @@ export const Navbar: React.FC = () => {
           {/* Navigation Links */}
           <div className="hidden md:flex space-x-8">
             <Link to="/shop" className="text-gray-600 hover:text-primary font-medium transition-colors">Shop</Link>
-            <Link to="/track" className="text-gray-600 hover:text-primary font-medium transition-colors">Track Order</Link>
+            <Link to="/track-order" className="text-gray-600 hover:text-primary font-medium transition-colors">Track Order</Link>
             <Link to="/contact" className="text-gray-600 hover:text-primary font-medium transition-colors">Contact</Link>
             <Link to="/faq" className="text-gray-600 hover:text-primary font-medium transition-colors">FAQ</Link>
             <Link to="/about" className="text-gray-600 hover:text-primary font-medium transition-colors">About Us</Link>
           </div>
 
-          {/* Search Form */}
-          <form onSubmit={handleSearchSubmit} className="hidden lg:flex items-center relative w-64 xl:w-80">
-            <input
-              type="text"
-              placeholder="Search faucets, showers, basins..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-300 rounded-full py-2 pl-4 pr-10 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-gray-900 placeholder-gray-500"
-            />
-            <button type="submit" className="absolute right-3 top-2.5 text-gray-400 hover:text-primary">
-              <Search className="h-4 w-4" />
-            </button>
-          </form>
+          {/* Search Form with Instant Live Dropdown */}
+          <div ref={searchContainerRef} className="hidden lg:block relative w-64 xl:w-80">
+            <form onSubmit={handleSearchSubmit} className="flex items-center relative w-full">
+              <input
+                type="text"
+                placeholder="Search faucets, showers, basins..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setIsSearchFocused(true);
+                }}
+                onFocus={() => setIsSearchFocused(true)}
+                className="w-full bg-gray-50 border border-gray-300 rounded-full py-2 pl-4 pr-10 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 text-gray-900 placeholder-gray-500 transition-all"
+              />
+              <button type="submit" className="absolute right-3 top-2.5 text-gray-400 hover:text-primary">
+                <Search className="h-4 w-4" />
+              </button>
+            </form>
+
+            {/* Live Instant Search Dropdown */}
+            {isSearchFocused && searchQuery.trim().length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50 animate-fadeInUp">
+                <div className="px-4 py-2.5 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                  <span className="font-semibold text-gray-700">Matching Products ({searchResults.length})</span>
+                  <span className="text-[10px] uppercase tracking-wider text-primary font-bold">Live Catalog</span>
+                </div>
+
+                {searchResults.length > 0 ? (
+                  <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+                    {searchResults.map((product) => {
+                      const mainImg = product.main_image_url || '/logo.png';
+                      return (
+                        <div
+                          key={product.id}
+                          onClick={() => handleSelectProduct(product.slug)}
+                          className="p-3 flex items-center gap-3 hover:bg-primary/5 cursor-pointer transition-colors group"
+                        >
+                          <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden flex-shrink-0 border border-gray-200 p-0.5">
+                            <img
+                              src={mainImg}
+                              alt={product.name}
+                              className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-200"
+                            />
+                          </div>
+                          <div className="flex-grow min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                                {product.finish || product.category?.name || 'Sanitary'}
+                              </span>
+                              {product.stock <= 5 && product.stock > 0 && (
+                                <span className="text-[10px] font-semibold text-amber-600">
+                                  Only {product.stock} left
+                                </span>
+                              )}
+                            </div>
+                            <h4 className="text-xs font-bold text-gray-900 truncate group-hover:text-primary transition-colors mt-0.5">
+                              {product.name}
+                            </h4>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs font-extrabold text-primary">
+                                ₹{product.price.toLocaleString('en-IN')}
+                              </span>
+                            </div>
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-gray-300 group-hover:text-primary group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-5 text-center">
+                    <p className="text-xs text-gray-500">
+                      No products found for "<span className="text-gray-900 font-bold">{searchQuery}</span>"
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigate('/shop');
+                        setSearchQuery('');
+                        setIsSearchFocused(false);
+                      }}
+                      className="mt-2 text-xs font-bold text-primary hover:underline inline-flex items-center gap-1"
+                    >
+                      Browse full catalog <ArrowRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+
+                {searchResults.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleSearchSubmit}
+                    className="w-full py-2.5 px-4 bg-gray-50 hover:bg-primary/10 border-t border-gray-100 text-xs font-bold text-primary text-center flex items-center justify-center gap-1.5 transition-colors"
+                  >
+                    <span>View all matching results</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Icons & Actions */}
           <div className="hidden md:flex items-center space-x-6">
@@ -259,18 +402,85 @@ export const Navbar: React.FC = () => {
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden bg-white border-b border-gray-200 px-4 pt-2 pb-6 space-y-4">
-          <form onSubmit={handleSearchSubmit} className="flex items-center relative w-full mb-4">
-            <input
-              type="text"
-              placeholder="Search anime, products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-300 rounded-full py-2.5 pl-4 pr-10 text-sm focus:outline-none focus:border-primary text-gray-900"
-            />
-            <button type="submit" className="absolute right-3 top-3 text-gray-400">
-              <Search className="h-4 w-4" />
-            </button>
-          </form>
+          <div ref={mobileSearchRef} className="relative w-full mb-4">
+            <form onSubmit={handleSearchSubmit} className="flex items-center relative w-full">
+              <input
+                type="text"
+                placeholder="Search faucets, showers, basins..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setIsSearchFocused(true);
+                }}
+                onFocus={() => setIsSearchFocused(true)}
+                className="w-full bg-gray-50 border border-gray-300 rounded-full py-2.5 pl-4 pr-10 text-sm focus:outline-none focus:border-primary text-gray-900"
+              />
+              <button type="submit" className="absolute right-3 top-3 text-gray-400">
+                <Search className="h-4 w-4" />
+              </button>
+            </form>
+
+            {/* Mobile Live Search Dropdown */}
+            {isSearchFocused && searchQuery.trim().length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50 animate-fadeInUp">
+                <div className="px-3.5 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                  <span className="font-semibold text-gray-700">Matching Products ({searchResults.length})</span>
+                  <span className="text-[10px] uppercase tracking-wider text-primary font-bold">Catalog</span>
+                </div>
+
+                {searchResults.length > 0 ? (
+                  <div className="max-h-64 overflow-y-auto divide-y divide-gray-100">
+                    {searchResults.map((product) => {
+                      const mainImg = product.main_image_url || '/logo.png';
+                      return (
+                        <div
+                          key={product.id}
+                          onClick={() => handleSelectProduct(product.slug)}
+                          className="p-2.5 flex items-center gap-2.5 hover:bg-primary/5 cursor-pointer transition-colors group"
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-gray-50 overflow-hidden flex-shrink-0 border border-gray-200 p-0.5">
+                            <img
+                              src={mainImg}
+                              alt={product.name}
+                              className="w-full h-full object-cover rounded"
+                            />
+                          </div>
+                          <div className="flex-grow min-w-0">
+                            <h4 className="text-xs font-bold text-gray-900 truncate">
+                              {product.name}
+                            </h4>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs font-extrabold text-primary">
+                                ₹{product.price.toLocaleString('en-IN')}
+                              </span>
+                            </div>
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center">
+                    <p className="text-xs text-gray-500">
+                      No products found for "{searchQuery}"
+                    </p>
+                  </div>
+                )}
+
+                {searchResults.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleSearchSubmit}
+                    className="w-full py-2 px-3 bg-gray-50 hover:bg-primary/10 border-t border-gray-100 text-xs font-bold text-primary text-center flex items-center justify-center gap-1"
+                  >
+                    <span>View all results</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
           <Link
             to="/shop"
@@ -280,7 +490,7 @@ export const Navbar: React.FC = () => {
             Shop
           </Link>
           <Link
-            to="/track"
+            to="/track-order"
             onClick={() => setIsMobileMenuOpen(false)}
             className="block text-gray-700 hover:text-primary text-base font-semibold py-2"
           >
