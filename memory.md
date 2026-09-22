@@ -542,6 +542,15 @@ Persistent memory file for all AI agents and developers working on the Elite Bat
 - **Contrast & Legibility Balance**: Adjusted the mobile overlay gradient to `from-white/60 via-white/45 to-white/95`, ensuring the luxury freestanding tub, brass rain showers, and marble aesthetics are distinctly visible while preserving pristine typographic legibility for the main headings and call-to-action buttons.
 - **Build Status**: Verified with `tsc -b && vite build` (0 errors, build time 3.34s).
 
+---
+
+## Chunk 6: Auth Polish & Hash Disambiguation (COMPLETED)
+- **Supabase Hash Disambiguation**: Differentiated `#access_token=...&type=signup` (Email Confirmation) from `#access_token=...&type=recovery` (Password Reset). Fixed an issue where email verification links redirected to the "Set New Password" screen by strictly requiring `type=recovery` or `reset=true` for password reset mode.
+- **Button Copy Refinement**: Changed signup button text from `Sign Up with Email Verification` to clean `Sign Up`.
+- **Database Script**: Added `supabase_services_setup.sql` for easy table setup and RLS configuration.
+- **Build & Git Status**: Verified cleanly with `tsc -b && vite build` (0 errors) and pushed to remote `origin main`.
+
+
 
 
 
