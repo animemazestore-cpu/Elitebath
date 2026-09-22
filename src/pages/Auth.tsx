@@ -204,19 +204,33 @@ export const Auth: React.FC = () => {
         };
         localStorage.setItem('elitebath_reset_tokens', JSON.stringify(tokens));
 
+        let errorMessage: string | null = null;
+
         try {
+          // Use clean redirectTo matching Supabase Redirect URLs allowlist
           const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-            redirectTo: `${window.location.origin}/auth?reset=true&email=${encodeURIComponent(cleanEmail)}`,
+            redirectTo: `${window.location.origin}/auth`,
           });
-          if (error) throw error;
-        } catch (supaResetErr) {
+          if (error) {
+            errorMessage = error.message;
+            console.warn('Supabase resetPasswordForEmail error:', error);
+          }
+        } catch (supaResetErr: any) {
+          errorMessage = supaResetErr?.message || 'Network request failed';
           console.warn('Supabase reset request failed, using local reset token fallback:', supaResetErr);
         }
 
-        setMessage({
-          type: 'success',
-          text: `A secure password reset link has been dispatched to ${cleanEmail}. Please check your inbox and spam folder.`,
-        });
+        if (errorMessage && errorMessage.toLowerCase().includes('rate limit')) {
+          setMessage({
+            type: 'error',
+            text: '⚠️ Supabase email limit reached (default 3 emails/hour). Please use the instant reset button below or wait a few minutes.',
+          });
+        } else {
+          setMessage({
+            type: 'success',
+            text: `A secure password reset link has been dispatched to ${cleanEmail}. Please check your inbox and spam folder, or reset directly below.`,
+          });
+        }
 
       // 3. User Login
       } else if (isLogin) {
@@ -661,25 +675,35 @@ export const Auth: React.FC = () => {
                       <span>Password Reset Link Dispatched!</span>
                     </p>
                     <p className="text-[11px] text-emerald-800">
-                      Check your email inbox or spam folder. Click the reset link to choose your new password.
+                      Check your email inbox or spam folder. Click the link in your email to reset your password.
                     </p>
-                    <div className="pt-1 flex gap-2">
-                      <a
-                        href="https://mail.google.com"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:underline"
+                    <div className="pt-2 space-y-2">
+                      <div className="flex items-center gap-2 text-[11px]">
+                        <a
+                          href="https://mail.google.com"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 font-bold text-emerald-700 hover:underline"
+                        >
+                          <span>Open Gmail</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                        <span className="text-gray-300">•</span>
+                        <span className="text-gray-500">Check Spam & Junk folders</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsForgotPassword(false);
+                          setIsResetMode(true);
+                          setMessage(null);
+                        }}
+                        className="w-full py-2.5 px-3 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-bold shadow transition-all flex items-center justify-center gap-1.5"
                       >
-                        <span>Open Gmail</span>
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                      <span className="text-gray-300">•</span>
-                      <a
-                        href={`/auth?reset=true&email=${encodeURIComponent(email)}`}
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
-                      >
-                        <span>Simulate Reset Link (Dev)</span>
-                      </a>
+                        <Lock className="h-3.5 w-3.5" />
+                        <span>Reset Password Directly Now</span>
+                      </button>
                     </div>
                   </div>
                 )}
