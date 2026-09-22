@@ -30,7 +30,13 @@ export const Auth: React.FC = () => {
   const { user, signIn } = useAuthStore();
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [isResetMode, setIsResetMode] = useState(false);
+  // Initialize isResetMode SYNCHRONOUSLY from URL hash or query param to prevent redirect race condition
+  const [isResetMode, setIsResetMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+    return hash.includes('type=recovery') || search.includes('reset=true');
+  });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -41,12 +47,28 @@ export const Auth: React.FC = () => {
   const [verificationPendingEmail, setVerificationPendingEmail] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // If user is already authenticated, redirect (unless resetting password)
+  // Listen for Supabase's PASSWORD_RECOVERY event
   useEffect(() => {
-    if (user && !isResetMode) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsResetMode(true);
+      }
+    });
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // If user is already authenticated, redirect (ONLY if NOT in reset mode and NOT recovery url)
+  useEffect(() => {
+    const isRecovery =
+      (typeof window !== 'undefined' && window.location.hash.includes('type=recovery')) ||
+      searchParams.get('reset') === 'true';
+
+    if (user && !isResetMode && !isRecovery) {
       navigate(redirect);
     }
-  }, [user, navigate, redirect, isResetMode]);
+  }, [user, navigate, redirect, isResetMode, searchParams]);
 
   // Handle incoming verification link / token or password reset
   useEffect(() => {
@@ -166,9 +188,21 @@ export const Auth: React.FC = () => {
           }
         }
 
+        // Clean up temporary recovery session so user explicitly signs in with new password
+        try {
+          await supabase.auth.signOut();
+        } catch {
+          // ignore
+        }
+
+        // Clean URL hash so refreshing does not re-enter recovery mode
+        if (typeof window !== 'undefined') {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+
         setMessage({
           type: 'success',
-          text: 'Your password has been successfully reset! Redirecting to login...',
+          text: '🎉 Password has been successfully updated! Please sign in with your new password.',
         });
 
         setTimeout(() => {
@@ -176,9 +210,8 @@ export const Auth: React.FC = () => {
           setIsLogin(true);
           setPassword('');
           setConfirmPassword('');
-          setMessage(null);
-          navigate('/auth');
-        }, 2500);
+          navigate('/auth', { replace: true });
+        }, 2000);
 
       // 2. Forgot Password Request
       } else if (isForgotPassword) {
@@ -638,11 +671,19 @@ export const Auth: React.FC = () => {
                 <Button
                   variant="outline"
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     setIsResetMode(false);
                     setIsLogin(true);
                     setMessage(null);
-                    navigate('/auth');
+                    try {
+                      await supabase.auth.signOut();
+                    } catch {
+                      // ignore
+                    }
+                    if (typeof window !== 'undefined') {
+                      window.history.replaceState(null, '', window.location.pathname);
+                    }
+                    navigate('/auth', { replace: true });
                   }}
                 >
                   Cancel
