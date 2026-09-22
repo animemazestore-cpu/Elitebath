@@ -32,7 +32,8 @@ function razorpayDevApiPlugin(): Plugin {
                 const fee = Number(it.product?.shipping_fee || 0);
                 shipping += fee * Math.max(1, Number(it.quantity ?? 1));
               }
-              const total = Math.max(0, subtotal - discount) + shipping;
+              const serviceFee = Number(data.serviceFee || 0);
+              const total = Math.max(0, subtotal - discount) + shipping + serviceFee;
               const deliveryDate = new Date();
               deliveryDate.setDate(deliveryDate.getDate() + 5);
 
@@ -46,6 +47,7 @@ function razorpayDevApiPlugin(): Plugin {
                 subtotal,
                 discountAmount: discount,
                 shippingCharge: shipping,
+                serviceFee,
                 total,
                 estimatedDeliveryDate: deliveryDate.toISOString(),
               };
