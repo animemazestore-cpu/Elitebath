@@ -26,6 +26,7 @@ export interface AddItemOptions {
 
 interface CartState {
   items: CartItem[];
+  selectedServiceIds: string[];
   addItem: (
     product: Product,
     quantity?: number,
@@ -39,6 +40,9 @@ interface CartState {
   ) => void;
   removeItem: (productId: string, variantIdentifier?: string) => void;
   updateQuantity: (productId: string, quantity: number, variantIdentifier?: string) => void;
+  toggleService: (serviceId: string) => void;
+  setSelectedServices: (serviceIds: string[]) => void;
+  clearServices: () => void;
   clearCart: () => void;
   getTotalAmount: () => number;
   getTotalItems: () => number;
@@ -52,6 +56,23 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      selectedServiceIds: [],
+
+      toggleService: (serviceId: string) => {
+        const current = get().selectedServiceIds || [];
+        const updated = current.includes(serviceId)
+          ? current.filter((id) => id !== serviceId)
+          : [...current, serviceId];
+        set({ selectedServiceIds: updated });
+      },
+
+      setSelectedServices: (serviceIds: string[]) => {
+        set({ selectedServiceIds: serviceIds });
+      },
+
+      clearServices: () => {
+        set({ selectedServiceIds: [] });
+      },
 
       addItem: (
         product,
@@ -142,7 +163,7 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ items: [] });
+        set({ items: [], selectedServiceIds: [] });
       },
 
       getTotalAmount: () => {

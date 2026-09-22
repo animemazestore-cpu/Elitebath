@@ -33,14 +33,17 @@ import { checkRateLimit, recordRateLimitAttempt } from '../lib/rateLimiter';
 export const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { items, getTotalAmount, clearCart } = useCartStore();
+  const {
+    items,
+    getTotalAmount,
+    clearCart,
+    selectedServiceIds = [],
+    toggleService,
+  } = useCartStore();
   const { services, createBooking } = useServiceStore();
 
   // Multi-Step Checkout Navigation: 1 (Preview) -> 2 (Address) -> 3 (Payment) -> 4 (Confirmation)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
-
-  // Selected Additional Services (e.g., Fitting Service, Service Agent)
-  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
 
   // Filter active checkout add-on services from the services store
   const availableServices = services.filter(
@@ -143,12 +146,6 @@ export const Checkout: React.FC = () => {
     }
   }, [currentStep, selectedServices.length, autoRedirectCancelled]);
 
-  // Toggle service selection during checkout
-  const toggleService = (serviceId: string) => {
-    setSelectedServiceIds((prev) =>
-      prev.includes(serviceId) ? prev.filter((id) => id !== serviceId) : [...prev, serviceId]
-    );
-  };
 
   // Generate WhatsApp Coordination Link
   const getWhatsAppCoordinationUrl = () => {

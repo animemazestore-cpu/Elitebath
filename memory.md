@@ -557,8 +557,21 @@ Persistent memory file for all AI agents and developers working on the Elite Bat
 - **Synchronous Mode Initialization**: Initialized `isResetMode` directly from the URL hash (`type=recovery`) and search params (`reset=true`) synchronously at mount time.
 - **Supabase Event Listener**: Added listener for `PASSWORD_RECOVERY` auth event.
 - **Strict Redirect Prevention**: Guarded the dashboard redirect effect to ensure recovery links NEVER auto-login or redirect.
-- **Clean Post-Reset Signout**: After a user saves their new password, the temporary recovery session is cleanly signed out (`await supabase.auth.signOut()`) and the URL hash is removed, prompting them to explicitly log in with their new credentials.
 - **Build & Git Status**: Verified with `tsc -b && vite build` (0 errors) and pushed to remote `origin main`.
+
+---
+
+## Chunk 8: Full Cart & Checkout Services Price Synchronization (COMPLETED)
+- **Shared Persistent State**: Lifted `selectedServiceIds`, `toggleService`, `setSelectedServices`, and `clearServices` into `useCartStore` with localStorage persistence under `elite-bath-cart`.
+- **Cart Page Integration**:
+  - Integrated `useServiceStore` and `useCartStore` in `src/pages/Cart.tsx`.
+  - Added optional "Expert Installation & Services" add-on cards in Cart with one-click toggles.
+  - Included `servicesTotal` in the Cart Order Summary as a distinct line item and dynamically added to Cart total.
+  - Synchronized across Cart, Checkout Step 1, Step 2, Step 3, and Razorpay payload.
+- **Bi-Directional Sync**: Selecting or toggling services in either Cart or Checkout reflects in real-time across both pages.
+- **Product Price Invariance**: Product prices remain strictly untouched while service fees are seamlessly calculated and passed to payment.
+- **Build & Git Status**: Verified cleanly with `tsc -b && vite build` (0 errors).
+
 
 
 
