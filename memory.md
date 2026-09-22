@@ -550,6 +550,17 @@ Persistent memory file for all AI agents and developers working on the Elite Bat
 - **Database Script**: Added `supabase_services_setup.sql` for easy table setup and RLS configuration.
 - **Build & Git Status**: Verified cleanly with `tsc -b && vite build` (0 errors) and pushed to remote `origin main`.
 
+---
+
+## Chunk 7: Password Reset Isolation & Anti-Auto-Login (COMPLETED)
+- **Root Cause Fixed**: When opening a password reset recovery link from Gmail (`#access_token=...&type=recovery`), Supabase automatically issues a temporary recovery session. Because `isResetMode` was initialized to `false`, an initial redirect race condition (`user && !isResetMode`) automatically redirected the user to `/dashboard` before they could enter a new password.
+- **Synchronous Mode Initialization**: Initialized `isResetMode` directly from the URL hash (`type=recovery`) and search params (`reset=true`) synchronously at mount time.
+- **Supabase Event Listener**: Added listener for `PASSWORD_RECOVERY` auth event.
+- **Strict Redirect Prevention**: Guarded the dashboard redirect effect to ensure recovery links NEVER auto-login or redirect.
+- **Clean Post-Reset Signout**: After a user saves their new password, the temporary recovery session is cleanly signed out (`await supabase.auth.signOut()`) and the URL hash is removed, prompting them to explicitly log in with their new credentials.
+- **Build & Git Status**: Verified with `tsc -b && vite build` (0 errors) and pushed to remote `origin main`.
+
+
 
 
 
