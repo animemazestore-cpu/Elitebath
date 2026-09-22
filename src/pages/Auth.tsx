@@ -50,21 +50,26 @@ export const Auth: React.FC = () => {
 
   // Handle incoming verification link / token or password reset
   useEffect(() => {
+    const hash = window.location.hash || '';
     const hasResetParam = searchParams.get('reset') === 'true';
-    const hasRecoveryHash =
-      window.location.hash.includes('type=recovery') ||
-      window.location.hash.includes('access_token=');
+    const isRecoveryHash = hash.includes('type=recovery');
 
-    if (hasResetParam || hasRecoveryHash) {
+    // ONLY enter password reset mode if explicitly reset=true or recovery hash
+    if (hasResetParam || isRecoveryHash) {
       setIsResetMode(true);
+      return;
     }
 
-    // Check if coming from email verification link (?verified=true or ?verify=true)
+    // Check if coming from email verification link (?verified=true, ?verify=true, or type=signup in hash)
     const isVerified =
-      searchParams.get('verified') === 'true' || searchParams.get('verify') === 'true';
+      searchParams.get('verified') === 'true' ||
+      searchParams.get('verify') === 'true' ||
+      hash.includes('type=signup') ||
+      hash.includes('type=email_change');
     const verifyEmailParam = searchParams.get('email');
 
     if (isVerified) {
+      setIsResetMode(false);
       if (verifyEmailParam) {
         // Mark local user as verified if present
         const localUsers = JSON.parse(
@@ -457,7 +462,7 @@ export const Auth: React.FC = () => {
                 ? 'Enter your registered email to receive a secure password reset link'
                 : isLogin
                 ? 'Sign in to access order tracking, invoices, and saved sanitary fittings'
-                : 'Sign up with Gmail/Email verification to access your luxury account'}
+                : 'Sign up to access your luxury account'}
             </p>
           </div>
         )}
@@ -752,7 +757,7 @@ export const Auth: React.FC = () => {
                 ) : (
                   <span className="flex items-center justify-center space-x-2 font-bold text-xs">
                     <UserPlus className="h-4 w-4" />
-                    <span>Sign Up with Email Verification</span>
+                    <span>Sign Up</span>
                   </span>
                 )}
               </Button>
