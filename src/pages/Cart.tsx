@@ -21,7 +21,11 @@ export const Cart: React.FC = () => {
     selectedServiceIds = [],
     toggleService,
   } = useCartStore();
-  const { services } = useServiceStore();
+  const { services, initializeServices } = useServiceStore();
+
+  useEffect(() => {
+    void initializeServices();
+  }, [initializeServices]);
 
   const availableServices = services.filter(
     (s) => s.is_active && (s.is_checkout_addon || s.category === 'Fitting' || s.category === 'Inspection')

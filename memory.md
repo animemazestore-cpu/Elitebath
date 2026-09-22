@@ -572,6 +572,19 @@ Persistent memory file for all AI agents and developers working on the Elite Bat
 - **Product Price Invariance**: Product prices remain strictly untouched while service fees are seamlessly calculated and passed to payment.
 - **Build & Git Status**: Verified cleanly with `tsc -b && vite build` (0 errors).
 
+---
+
+## Chunk 9: Live Database Service Price Synchronization (COMPLETED)
+- **Root Cause Identified**: The admin changed prices in Supabase / Admin (e.g. ₹1 for Fitting, ₹2 for Service Agent), but `initializeServices()` was never invoked on app or page mount. The client was reading from initial cached default values (`DEFAULT_SERVICES`) without polling the database.
+- **Global & Page-Level Live Initialization**:
+  - `src/App.tsx`: Added `initializeServices()` on application startup alongside `checkSession()` and `initializeCatalog()`.
+  - Added on-mount `initializeServices()` in `src/pages/Cart.tsx`, `src/pages/Checkout.tsx`, `src/pages/Services.tsx`, and `src/pages/Admin.tsx`.
+- **Cross-Tab & Window Live Sync**:
+  - Added `storage` and custom `elitebath_services_updated` event dispatchers in `useServiceStore.ts` so when an admin modifies prices or toggles services, all open tabs and windows update instantly without requiring a page reload.
+  - Ensured numeric cast `price: Number(item.price)` and attribute preservation (`is_checkout_addon`).
+- **Build & Git Status**: Verified with `tsc -b && vite build` (0 errors).
+
+
 
 
 

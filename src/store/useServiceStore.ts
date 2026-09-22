@@ -111,15 +111,35 @@ export const useServiceStore = create<ServiceState>((set, get) => ({
   initializeServices: async () => {
     set({ loading: true });
     try {
-      // 1. Try fetching from Supabase table if available
+      // 1. Try fetching live services from Supabase
       const { data, error } = await supabase
         .from('services')
         .select('*')
         .order('created_at', { ascending: true });
 
       if (!error && data && data.length > 0) {
-        set({ services: data });
-        localStorage.setItem('elitebath_services', JSON.stringify(data));
+        const formattedServices: ServiceItem[] = data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          short_description: item.short_description || item.description,
+          description: item.description,
+          price: Number(item.price ?? 0),
+          category: item.category,
+          estimated_duration: item.estimated_duration,
+          features: Array.isArray(item.features)
+            ? item.features
+            : typeof item.features === 'string'
+            ? JSON.parse(item.features || '[]')
+            : [],
+          icon_name: item.icon_name,
+          image_url: item.image_url,
+          is_active: Boolean(item.is_active),
+          is_checkout_addon: item.is_checkout_addon ?? (item.category === 'Fitting' || item.category === 'Inspection'),
+          created_at: item.created_at
+        }));
+
+        set({ services: formattedServices });
+        localStorage.setItem('elitebath_services', JSON.stringify(formattedServices));
       } else {
         // Use cached or fallback
         const existing = localStorage.getItem('elitebath_services');
@@ -149,6 +169,7 @@ export const useServiceStore = create<ServiceState>((set, get) => ({
   addService: async (serviceData) => {
     const newService: ServiceItem = {
       ...serviceData,
+      price: Number(serviceData.price ?? 0),
       id: `srv-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       created_at: new Date().toISOString()
     };
@@ -162,18 +183,31 @@ export const useServiceStore = create<ServiceState>((set, get) => ({
     const updated = [...get().services, newService];
     set({ services: updated });
     localStorage.setItem('elitebath_services', JSON.stringify(updated));
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('elitebath_services_updated'));
+    }
   },
 
   updateService: async (id, updates) => {
+    const formattedUpdates = {
+      ...updates,
+      ...(updates.price !== undefined ? { price: Number(updates.price) } : {})
+    };
+
     try {
-      await supabase.from('services').update(updates).eq('id', id);
+      await supabase.from('services').update(formattedUpdates).eq('id', id);
     } catch (err) {
       console.warn('Supabase service update failed, saved locally:', err);
     }
 
-    const updated = get().services.map((s) => (s.id === id ? { ...s, ...updates } : s));
+    const updated = get().services.map((s) => (s.id === id ? { ...s, ...formattedUpdates } : s));
     set({ services: updated });
     localStorage.setItem('elitebath_services', JSON.stringify(updated));
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('elitebath_services_updated'));
+    }
   },
 
   toggleServiceStatus: async (id) => {
@@ -227,3 +261,25 @@ export const useServiceStore = create<ServiceState>((set, get) => ({
     localStorage.setItem('elitebath_service_bookings', JSON.stringify(updated));
   }
 }));
+
+// Cross-tab and window synchronization
+if (typeof window !== 'undefined') {
+  const syncFromStorage = () => {
+    try {
+      const cached = localStorage.getItem('elitebath_services');
+      if (cached) {
+        useServiceStore.setState({ services: JSON.parse(cached) });
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'elitebath_services') {
+      syncFromStorage();
+    }
+  });
+
+  window.addEventListener('elitebath_services_updated', syncFromStorage);
+}

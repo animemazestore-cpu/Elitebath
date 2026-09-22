@@ -40,7 +40,12 @@ export const Checkout: React.FC = () => {
     selectedServiceIds = [],
     toggleService,
   } = useCartStore();
-  const { services, createBooking } = useServiceStore();
+  const { services, createBooking, initializeServices } = useServiceStore();
+
+  // Fetch fresh services and pricing on mount
+  useEffect(() => {
+    void initializeServices();
+  }, [initializeServices]);
 
   // Multi-Step Checkout Navigation: 1 (Preview) -> 2 (Address) -> 3 (Payment) -> 4 (Confirmation)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);

@@ -34,7 +34,12 @@ export const Admin: React.FC = () => {
     updateService,
     deleteService,
     updateBookingStatus,
+    initializeServices,
   } = useServiceStore();
+
+  useEffect(() => {
+    void initializeServices();
+  }, [initializeServices]);
 
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
@@ -3648,6 +3653,7 @@ export const Admin: React.FC = () => {
 
                 if (editingService) {
                   updateService(editingService.id, {
+                    ...editingService,
                     title: serviceForm.title,
                     short_description: serviceForm.short_description || serviceForm.description,
                     description: serviceForm.description,

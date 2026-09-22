@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Wrench, 
   ShieldCheck, 
@@ -17,8 +17,12 @@ import { Input } from '../components/common/Input';
 import { checkRateLimit, recordRateLimitAttempt } from '../lib/rateLimiter';
 
 export const Services: React.FC = () => {
-  const { services, createBooking } = useServiceStore();
+  const { services, createBooking, initializeServices } = useServiceStore();
   const activeServices = services.filter((s) => s.is_active);
+
+  useEffect(() => {
+    void initializeServices();
+  }, [initializeServices]);
 
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [activeModalService, setActiveModalService] = useState<ServiceItem | null>(null);
