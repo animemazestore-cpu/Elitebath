@@ -469,6 +469,79 @@ Persistent memory file for all AI agents and developers working on the Elite Bat
 - **Database Schema**: `supabase_setup.sql` updated with `product-images` bucket creation and public RLS upload/read/update policies.
 - **Build Status**: Verified with `tsc -b && vite build` (0 errors).
 
+---
+
+## Chunk 1: Services System (COMPLETED)
+- **New Types & Model**: `src/types/services.ts` defining `ServiceItem`, `ServiceBooking`, and `ServiceBookingStatus` (`PENDING`, `CONFIRMED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
+- **Store & Persistence**: `src/store/useServiceStore.ts` with default sanitary services (Fitting Service ₹799, Service Agent Consultation ₹499, Deep Descaling & Hydro-Sanitization ₹1,299, Old Fixture Dismantling & Eco-Disposal ₹399), Supabase integration, and localStorage fallbacks (`elitebath_services`, `elitebath_service_bookings`).
+- **Dedicated Services Page**: `src/pages/Services.tsx` with:
+  - Hero header with luxury branding and certified technician badge
+  - Category filters ('All', 'Fitting', 'Inspection', 'Maintenance', 'Consultation')
+  - Comprehensive service cards with pricing, duration, bulleted features, and action buttons
+  - Interactive direct booking modal with customer details, schedule date/slot selector, address, notes, and direct WhatsApp technician routing
+  - Service guarantee banners (90-day leak-proof guarantee, certified plumbing engineers, prompt service).
+- **Admin Control Panel Tab**: `src/pages/Admin.tsx`:
+  - Added `Services` to activeTab union and navigation pills/drawer
+  - Metrics row: Active Services, Total Bookings, Pending Requests, Completed
+  - Full CRUD for services (Add/Edit service modal with title, price, duration, category, description, and feature list; enable/disable toggle; delete service)
+  - Bookings management table: Customer contact, schedule, service details, inline booking status dropdown (`PENDING`, `CONFIRMED`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`), and 1-click WhatsApp customer coordination button.
+- **Routing & Navigation**: Added `/services` route to `src/App.tsx`, and navigation links to `src/components/common/Navbar.tsx` (desktop & mobile) and `src/components/common/Footer.tsx`.
+- **Build Status**: Verified with `tsc -b && vite build` (0 errors, build time ~19s).
+
+---
+
+## Chunk 2: Multi-Step Checkout & Checkout Services Selection (COMPLETED)
+- **4-Step Wizard Flow**: `src/pages/Checkout.tsx` divided into 4 sequential steps:
+  1. `Product Preview & Services`: Full line items review with thumbnails and variant tags, plus optional installation/agent service checkboxes.
+  2. `Address & Customer Information`: Full Name, Phone, Email, Address, Landmark, City, State, Pincode (6-digit check), Country.
+  3. `Payment`: Review of destination address, items, and services, plus Razorpay gateway card with 256-bit encryption.
+  4. `Order Confirmation`: Order ID, delivery timeline, order details, and conditional WhatsApp Service Coordination.
+- **Data Preservation**: Moving backward or forward across steps preserves all entered customer inputs, selected services, and applied coupons without data loss.
+- **Step Validation**: Strict validation before advancing to Payment (mobile phone >= 10 digits, valid email format, 6-digit pincode, address lines).
+- **Product Price Invariance**: Product prices and subtotal remain 100% unchanged. Selected services (Fitting Service ₹799, Service Agent ₹499) are calculated strictly as independent line items in the order breakdown and payload.
+- **Conditional WhatsApp Coordination**: After payment confirmation, if services were selected, customer is shown a dedicated WhatsApp Service Coordination section with countdown and 1-click coordinator button (prefilling Order ID, customer details, and selected services). If no services were selected, WhatsApp coordination is omitted.
+- **Store & Backend Integration**: Updated `api/razorpay-create-order.ts` and `src/lib/razorpay.ts` to accept and verify `services` and `serviceFee`; automatically registers service bookings with the order ID in `useServiceStore`.
+- **Build Status**: Verified with `tsc -b && vite build` (0 errors, build time 3.65s).
+
+---
+
+## Chunk 3: Gmail Verification & Secure Forgot Password Flow (COMPLETED)
+- **Mandatory Email Verification**:
+  - `src/pages/Auth.tsx` & `src/store/useAuthStore.ts`: Require email verification during signup before users can access accounts.
+  - Dedicated Verification Pending Screen: Animated envelope icon, clear instruction banner, direct "Open Gmail" link (`https://mail.google.com`), spam/junk advisory, and resend verification email with a 60-second cooldown timer.
+  - Test/Dev verification simulation button for testing in headless or offline environments.
+  - Intercepts login attempts with unverified emails (`email_not_confirmed`) and automatically routes the user to the verification pending view.
+  - Supports verification query param callback (`/auth?verified=true&email=...`) to activate accounts and switch directly to login with success feedback.
+- **Secure Password Reset Flow**:
+  - Implemented secure password recovery via `supabase.auth.resetPasswordForEmail` with redirect to `/auth?reset=true`.
+  - Fallback token generation with 15-minute expiration stored in `elitebath_reset_tokens`.
+  - Clean Set New Password interface with requirements validation (minimum 8 characters, letters, and numbers), password confirmation, and clean redirect to sign-in upon password update.
+
+---
+
+## Chunk 4: Rate Limiting & Abuse Prevention (COMPLETED)
+- **Rate Limiting Engine**: `src/lib/rateLimiter.ts` using sliding window algorithm:
+  - `checkRateLimit(key, { maxRequests, windowSeconds, actionName })`
+  - `recordRateLimitAttempt(key, config)`
+  - `resetRateLimit(key)`
+- **Protected Sensitive Actions**:
+  - User Login: Max 5 attempts / 60s (`auth_login`)
+  - User Registration: Max 3 attempts / 60s (`auth_signup`)
+  - Password Reset: Max 3 requests / 60s (`auth_forgot`)
+  - Password Update: Max 5 attempts / 60s (`auth_set_password`)
+  - Verification Email Resend: Max 2 requests / 60s (`auth_resend`)
+  - Checkout & Order Placement: Max 5 attempts / 60s (`checkout_payment`)
+  - Service Booking: Max 4 requests / 60s (`service_booking`)
+- **User Experience**: Clean inline countdown notices informing users of exact wait seconds when limits are approached or reached.
+- **Build Status**: Verified with `tsc -b && vite build` (0 errors, build time 3.42s).
+
+---
+
+## Chunk 5: Mobile Hero Background Opacity (COMPLETED)
+- **Enhanced Mobile Visual Presence**: `src/pages/Home.tsx` mobile hero background (`/hero_sanitary.jpg`) updated from a faint 20% opacity (`opacity-20`) to a vivid, high-clarity 45%-50% opacity (`opacity-45 sm:opacity-50`) with `contrast-110 saturate-105`.
+- **Contrast & Legibility Balance**: Adjusted the mobile overlay gradient to `from-white/60 via-white/45 to-white/95`, ensuring the luxury freestanding tub, brass rain showers, and marble aesthetics are distinctly visible while preserving pristine typographic legibility for the main headings and call-to-action buttons.
+- **Build Status**: Verified with `tsc -b && vite build` (0 errors, build time 3.34s).
+
 
 
 

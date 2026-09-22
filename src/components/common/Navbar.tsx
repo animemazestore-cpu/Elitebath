@@ -159,6 +159,7 @@ export const Navbar: React.FC = () => {
           {/* Navigation Links */}
           <div className="hidden md:flex space-x-8">
             <Link to="/shop" className="text-gray-600 hover:text-primary font-medium transition-colors">Shop</Link>
+            <Link to="/services" className="text-gray-600 hover:text-primary font-medium transition-colors">Services</Link>
             <Link to="/track-order" className="text-gray-600 hover:text-primary font-medium transition-colors">Track Order</Link>
             <Link to="/contact" className="text-gray-600 hover:text-primary font-medium transition-colors">Contact</Link>
             <Link to="/faq" className="text-gray-600 hover:text-primary font-medium transition-colors">FAQ</Link>
@@ -488,6 +489,13 @@ export const Navbar: React.FC = () => {
             className="block text-gray-700 hover:text-primary text-base font-semibold py-2"
           >
             Shop
+          </Link>
+          <Link
+            to="/services"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="block text-gray-700 hover:text-primary text-base font-semibold py-2"
+          >
+            Services
           </Link>
           <Link
             to="/track-order"

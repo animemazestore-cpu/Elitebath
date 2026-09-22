@@ -147,11 +147,35 @@ export const useAuthStore = create<AuthState>((set, get) => {
       
       try {
         // Try Supabase Auth first
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          // If Supabase specifically indicates email is not confirmed, strictly enforce verification!
+          const msg = (error.message || '').toLowerCase();
+          if (msg.includes('email not confirmed') || msg.includes('not confirmed') || (error as any).code === 'email_not_confirmed') {
+            set({ loading: false });
+            const unconfirmedErr: any = new Error('Your email address has not been verified yet. Please check your Gmail/Email inbox and click the verification link before accessing your account.');
+            unconfirmedErr.code = 'email_not_confirmed';
+            throw unconfirmedErr;
+          }
+          throw error;
+        }
+
+        // Check if user session has confirmed email
+        if (data?.user && !data.user.email_confirmed_at && !data.user.confirmed_at && !data.user.user_metadata?.email_verified) {
+          // If unconfirmed, sign them out immediately and require verification
+          await supabase.auth.signOut();
+          set({ user: null, profile: null, loading: false });
+          const unconfirmedErr: any = new Error('Your email address has not been verified yet. Please check your Gmail/Email inbox and click the verification link before accessing your account.');
+          unconfirmedErr.code = 'email_not_confirmed';
+          throw unconfirmedErr;
+        }
+
         // Successful login will be handled by the onAuthStateChange listener
         return;
       } catch (supabaseErr: any) {
+        if (supabaseErr.code === 'email_not_confirmed') {
+          throw supabaseErr;
+        }
         console.warn('Supabase authentication failed, checking mock/local accounts:', supabaseErr.message);
         
         // 1. Mock Admin account
@@ -185,10 +209,17 @@ export const useAuthStore = create<AuthState>((set, get) => {
         }
 
         // 3. Locally registered accounts fallback
-        const localUsers = JSON.parse(localStorage.getItem('animemaze_local_users') || '[]');
+        const localUsers = JSON.parse(localStorage.getItem('animemaze_local_users') || localStorage.getItem('elitebath_local_users') || '[]');
         const matchedLocal = localUsers.find((u: any) => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
         
         if (matchedLocal) {
+          // Strictly enforce email verification on local accounts
+          if (matchedLocal.is_verified === false) {
+            set({ loading: false });
+            const unconfirmedErr: any = new Error('Your email address has not been verified yet. Please check your Gmail/Email inbox and click the verification link before accessing your account.');
+            unconfirmedErr.code = 'email_not_confirmed';
+            throw unconfirmedErr;
+          }
           localStorage.setItem('animemaze_mock_session', 'true');
           localStorage.setItem('animemaze_mock_user_id', matchedLocal.id);
           const userObj: User = {

@@ -78,15 +78,15 @@ export const Home: React.FC = () => {
         <HeroSkeleton />
       ) : (
         <section className="relative bg-gradient-to-b from-gray-50/60 via-white to-white border-b border-gray-200 overflow-hidden">
-          {/* Mobile Seamless Faded Hero Background (spans entire section without card boxes) */}
+          {/* Mobile Enhanced Hero Background (Increased opacity for vivid visibility while preserving text contrast) */}
           <div className="block lg:hidden absolute inset-0 z-0 pointer-events-none overflow-hidden">
             <img
               src="/hero_sanitary.jpg"
               alt=""
-              className="w-full h-full object-cover object-[center_35%] opacity-20 filter contrast-105"
+              className="w-full h-full object-cover object-[center_35%] opacity-45 sm:opacity-50 filter contrast-110 saturate-105"
               loading="eager"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/50 to-white" />
+            <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-white/45 to-white/95" />
           </div>
 
           {/* Desktop Subtle Background Layer */}

@@ -19,6 +19,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Contact } from './pages/Contact';
 import { Admin } from './pages/Admin';
 import { TrackOrder } from './pages/TrackOrder';
+import { Services } from './pages/Services';
 
 // Import Static Pages
 import { AboutUs } from './pages/static/AboutUs';
@@ -70,6 +71,7 @@ export const App: React.FC = () => {
             <Route path="/admin" element={<Admin />} />
             <Route path="/track" element={<TrackOrder />} />
             <Route path="/track-order" element={<TrackOrder />} />
+            <Route path="/services" element={<Services />} />
 
             {/* Static pages routes */}
             <Route path="/about" element={<AboutUs />} />

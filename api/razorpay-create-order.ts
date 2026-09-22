@@ -27,7 +27,7 @@ export default async function handler(req: Request) {
 
   try {
     const body = await req.json();
-    const { items, shippingAddress, couponCode, user_id } = body;
+    const { items, shippingAddress, couponCode, user_id, serviceFee, services } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return new Response(
@@ -39,7 +39,7 @@ export default async function handler(req: Request) {
       );
     }
 
-    // 1. Server-side subtotal calculation
+    // 1. Server-side subtotal calculation (Product prices remain strictly unchanged)
     let subtotal = 0;
     for (const item of items) {
       const unitPrice = Number(item.variantPrice ?? item.product?.price ?? 0);
@@ -78,8 +78,16 @@ export default async function handler(req: Request) {
       shippingCharge += fee * Math.max(1, Number(item.quantity ?? 1));
     }
 
-    // 4. Final total in rupees and paise
-    const finalTotal = Math.max(0, subtotal - discountAmount) + shippingCharge;
+    // 4. Additional Services fee (Fitting Service, Service Agent)
+    let servicesTotal = 0;
+    if (typeof serviceFee === 'number' && serviceFee >= 0) {
+      servicesTotal = serviceFee;
+    } else if (Array.isArray(services)) {
+      servicesTotal = services.reduce((sum: number, s: any) => sum + (Number(s.price) || 0), 0);
+    }
+
+    // 5. Final total in rupees and paise (product price remains unchanged)
+    const finalTotal = Math.max(0, subtotal - discountAmount) + shippingCharge + servicesTotal;
     const amountInPaise = Math.round(finalTotal * 100);
 
     // 5. Razorpay Key Configuration
@@ -166,6 +174,7 @@ export default async function handler(req: Request) {
         subtotal,
         discountAmount,
         shippingCharge,
+        serviceFee: servicesTotal,
         total: finalTotal,
         estimatedDeliveryDate: estimatedDeliveryDate.toISOString(),
       }),

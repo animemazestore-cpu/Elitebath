@@ -20,6 +20,12 @@ export interface RazorpayOrderPayload {
   };
   couponCode?: string;
   user_id?: string;
+  services?: Array<{
+    id: string;
+    title: string;
+    price: number;
+  }>;
+  serviceFee?: number;
 }
 
 export interface RazorpayOrderResponse {
@@ -32,6 +38,7 @@ export interface RazorpayOrderResponse {
   subtotal: number;
   discountAmount: number;
   shippingCharge: number;
+  serviceFee?: number;
   total: number;
   estimatedDeliveryDate: string;
   error?: string;
@@ -145,7 +152,10 @@ export async function createRazorpayOrder(
       (sum, it) => sum + (Number(it.product?.shipping_fee) || 0) * (Number(it.quantity) || 1),
       0
     );
-    const finalTotal = Math.max(0, subtotal - discount) + shipping;
+
+    // Optional additional services fee
+    const servicesFee = payload.serviceFee ?? (payload.services ? payload.services.reduce((s, srv) => s + srv.price, 0) : 0);
+    const finalTotal = Math.max(0, subtotal - discount) + shipping + servicesFee;
     const deliveryDate = new Date();
     deliveryDate.setDate(deliveryDate.getDate() + 5);
 
@@ -159,6 +169,7 @@ export async function createRazorpayOrder(
       subtotal,
       discountAmount: discount,
       shippingCharge: shipping,
+      serviceFee: servicesFee,
       total: finalTotal,
       estimatedDeliveryDate: deliveryDate.toISOString(),
     };
