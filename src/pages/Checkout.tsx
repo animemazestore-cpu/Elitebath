@@ -357,7 +357,7 @@ export const Checkout: React.FC = () => {
           
         },
         theme: {
-          color: '#166534',
+          color: '#1e3a8a',
         },
         modal: {
           ondismiss: () => {
