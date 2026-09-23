@@ -10,7 +10,7 @@ const PolicyPage: React.FC<{ title: string; children: React.ReactNode }> = ({ ti
           <span>Customer Assurance</span>
         </div>
         <h1 className="text-3xl font-extrabold text-gray-900">{title}</h1>
-        <p className="text-xs text-gray-500 mt-2">Effective Date: June 20, 2026 • Elite Bath Collections Care Guarantee</p>
+        <p className="text-xs text-gray-500 mt-2">Effective Date: June 20, 2026 • TRYVOAL Care Guarantee</p>
       </div>
       <div className="space-y-8 text-sm text-gray-600 leading-relaxed">
         {children}
@@ -32,12 +32,12 @@ const Section: React.FC<{ title: string; icon?: React.ReactNode; children: React
 export const RefundPolicy: React.FC = () => (
   <PolicyPage title="Refund, Replacement & Return Policy">
     <p>
-      At <strong>Elite Bath Collections</strong>, customer satisfaction and quality assurance are central to our brand. We understand that purchasing architectural sanitaryware and bathroom fittings online requires complete confidence in transit protection, fitment accuracy, and finish excellence.
+      At <strong>TRYVOAL</strong>, customer satisfaction and quality assurance are central to our brand. We understand that purchasing luxury apparel and crafted garments online requires complete confidence in transit protection, fitment accuracy, and finish excellence.
     </p>
 
     <Section title="1. 100% Transit Breakage Guarantee" icon={<ShieldCheck className="h-4 w-4 text-primary" />}>
       <p>
-        Because ceramic wash basins, commodes, and tempered shower glass panels require specialized handling, every single shipment is fully covered under our <strong>Transit Breakage Guarantee</strong>:
+        Every single shipment is dispatched in reinforced, weatherproof matte packaging and fully covered under our <strong>Transit Damage Guarantee</strong>:
       </p>
       <ul className="list-disc pl-5 space-y-1">
         <li>If your product arrives broken, cracked, chipped, or scratched during shipping, we will dispatch an immediate <strong>free priority replacement</strong>.</li>
@@ -65,7 +65,7 @@ export const RefundPolicy: React.FC = () => (
 
     <Section title="4. Complimentary Reverse Freight Logistics" icon={<RefreshCw className="h-4 w-4 text-primary" />}>
       <p>
-        For approved returns or replacements, Elite Bath Collections arranges complimentary reverse freight pickup from your delivery address via our heavy-goods carrier partners. If reverse pickup is unavailable in certain remote pincodes, our concierge will coordinate and reimburse verified shipping costs.
+        For approved returns or replacements, TRYVOAL arranges complimentary reverse freight pickup from your delivery address via our doorstep courier partners. If reverse pickup is unavailable in certain remote pincodes, our concierge will coordinate and reimburse verified shipping costs.
       </p>
     </Section>
 

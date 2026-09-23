@@ -651,7 +651,7 @@ export const ProductDetail: React.FC = () => {
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase">
                 <Sparkles className="h-3 w-3" />
-                <span>{product.brand || 'Elite Bath Collections'}</span>
+                <span>{product.brand || 'TRYVOAL'}</span>
               </span>
               {currentSku && (
                 <span className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-mono font-medium">
@@ -980,12 +980,12 @@ export const ProductDetail: React.FC = () => {
                 )}
               </div>
 
-              {/* Sanitary Trust Features Strip */}
+              {/* Apparel Trust Features Strip */}
               <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-gray-100 text-center">
                 <div className="p-2.5 bg-gray-50/80 rounded-xl border border-gray-100 flex flex-col items-center">
                   <ShieldCheck className="h-4 w-4 text-primary mb-1" />
-                  <span className="text-[10px] font-bold text-gray-800">10-Yr Warranty</span>
-                  <span className="text-[9px] text-gray-500">Anti-Tarnish Plating</span>
+                  <span className="text-[10px] font-bold text-gray-800">7-Day Exchange</span>
+                  <span className="text-[9px] text-gray-500">Doorstep Pickup</span>
                 </div>
                 <div className="p-2.5 bg-gray-50/80 rounded-xl border border-gray-100 flex flex-col items-center">
                   <Truck className="h-4 w-4 text-primary mb-1" />
@@ -998,8 +998,8 @@ export const ProductDetail: React.FC = () => {
                 </div>
                 <div className="p-2.5 bg-gray-50/80 rounded-xl border border-gray-100 flex flex-col items-center">
                   <Sparkles className="h-4 w-4 text-primary mb-1" />
-                  <span className="text-[10px] font-bold text-gray-800">100% Solid Brass</span>
-                  <span className="text-[9px] text-gray-500">Lead-Free Ingot</span>
+                  <span className="text-[10px] font-bold text-gray-800">240+ GSM Cotton</span>
+                  <span className="text-[9px] text-gray-500">Pre-Shrunk Bio-Washed</span>
                 </div>
               </div>
             </div>

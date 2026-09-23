@@ -7,52 +7,22 @@ import type { Product, Category, Order, ProductQuestion, Review, NewsletterSubsc
 import { sanitizeSlug } from '../lib/persistence';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
-import { ShieldCheck, Plus, Edit, Trash2, Check, X, CreditCard, ShoppingBag, List, MessageSquare, Star, Mail, Download, RefreshCcw, Tag, Megaphone, Calendar, Copy, MapPin, Menu, AlertTriangle, Search, Sliders, X as CloseIcon, Truck, Printer, QrCode, Package, Clock, ExternalLink, CheckCircle2, Wrench } from 'lucide-react';
+import { ShieldCheck, Plus, Edit, Trash2, Check, X, CreditCard, ShoppingBag, List, MessageSquare, Star, Mail, Download, RefreshCcw, Tag, Megaphone, Calendar, Copy, MapPin, Menu, AlertTriangle, Search, Sliders, X as CloseIcon, Truck, Printer, QrCode, Package, Clock, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { ProductVariantEditor } from '../components/admin/ProductVariantEditor';
 import type { OptionDraft, VariantDraft } from '../components/admin/ProductVariantEditor';
 import { ImageUploadZone } from '../components/admin/ImageUploadZone';
 import { deleteProductImagesFromStorage } from '../lib/storage';
 import { FALLBACK_CATEGORIES, FALLBACK_PRODUCTS } from '../lib/catalogQueries';
-import { useServiceStore } from '../store/useServiceStore';
-import type { ServiceItem } from '../types/services';
 
 export const Admin: React.FC = () => {
   const navigate = useNavigate();
   const { user, profile, initialized } = useAuthStore();
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'verification' | 'products' | 'categories' | 'orders' | 'inventory' | 'questions' | 'reviews' | 'subscribers' | 'replacements' | 'coupons' | 'announcement' | 'services'>('verification');
+  const [activeTab, setActiveTab] = useState<'verification' | 'products' | 'categories' | 'orders' | 'inventory' | 'questions' | 'reviews' | 'subscribers' | 'replacements' | 'coupons' | 'announcement'>('verification');
   
   // Mobile drawer state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Services Management State
-  const {
-    services: adminServices,
-    bookings: adminBookings,
-    addService,
-    updateService,
-    deleteService,
-    updateBookingStatus,
-    initializeServices,
-  } = useServiceStore();
-
-  useEffect(() => {
-    void initializeServices();
-  }, [initializeServices]);
-
-  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
-  const [editingService, setEditingService] = useState<ServiceItem | null>(null);
-  const [serviceForm, setServiceForm] = useState({
-    title: '',
-    short_description: '',
-    description: '',
-    price: 0,
-    category: 'Fitting' as 'Fitting' | 'Inspection' | 'Maintenance' | 'Consultation',
-    estimated_duration: '',
-    is_active: true,
-    featuresText: '',
-  });
 
   // Database Data States
   const [products, setProducts] = useState<Product[]>([]);
@@ -81,7 +51,7 @@ export const Admin: React.FC = () => {
     main_image_url: '',
     additional_images: '',
     sku: '',
-    brand: 'Elite Bath Collections',
+    brand: 'TRYVOAL',
     material: '',
     finish: '',
     warranty_info: '',
@@ -123,7 +93,7 @@ export const Admin: React.FC = () => {
   const [couponForm, setCouponForm] = useState({ code: '', type: 'PERCENT' as 'PERCENT' | 'FIXED', value: 0, minOrder: 0, active: true });
 
   // Announcement State
-  const [announcementText, setAnnouncementText] = useState('✨ Exclusive Offer: Use code ELITE10 for 10% discount! 🚚 FREE Shipping on sanitaryware above ₹999!');
+  const [announcementText, setAnnouncementText] = useState('✨ Launch Offer: Use code TRYVOAL10 for 10% off! 🚚 FREE Express Shipping across India!');
 
   // Order Management Filter & Modal States
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
@@ -356,7 +326,7 @@ export const Admin: React.FC = () => {
             items: (lo.items || []).map((it: any) => ({
               ...it,
               product: it.product || {
-                name: it.product_name || 'Sanitaryware Item',
+                name: it.product_name || 'Apparel Item',
                 main_image_url: it.image_url || '/placeholder.jpg',
                 sku: it.sku || (it.selected_variant_id ? `EBC-${it.selected_variant_id.slice(0, 8).toUpperCase()}` : null),
                 price: it.price || 0
@@ -382,7 +352,7 @@ export const Admin: React.FC = () => {
               items: (lo.items || []).map((it: any) => ({
                 ...it,
                 product: it.product || {
-                  name: it.product_name || 'Sanitaryware Item',
+                  name: it.product_name || 'Apparel Item',
                   main_image_url: it.image_url || '/placeholder.jpg',
                   sku: it.sku || null,
                   price: it.price || 0
@@ -693,7 +663,7 @@ export const Admin: React.FC = () => {
         main_image_url: productForm.main_image_url.trim(),
         additional_images: addImgs,
         sku: productForm.sku.trim() || null,
-        brand: productForm.brand.trim() || 'Elite Bath Collections',
+        brand: productForm.brand.trim() || 'TRYVOAL',
         material: productForm.material.trim() || null,
         finish: productForm.finish.trim() || null,
         warranty_info: productForm.warranty_info.trim() || null,
@@ -807,7 +777,7 @@ export const Admin: React.FC = () => {
       main_image_url: prod.main_image_url,
       additional_images: Array.isArray(prod.additional_images) ? prod.additional_images.join(', ') : '',
       sku: prod.sku || '',
-      brand: prod.brand || 'Elite Bath Collections',
+      brand: prod.brand || 'TRYVOAL',
       material: prod.material || '',
       finish: prod.finish || '',
       warranty_info: prod.warranty_info || '',
@@ -1385,7 +1355,6 @@ export const Admin: React.FC = () => {
             { id: 'reviews', label: 'Reviews' },
             { id: 'replacements', label: 'Returns' },
             { id: 'coupons', label: 'Coupons' },
-            { id: 'services', label: 'Services' },
             { id: 'announcement', label: 'Notice' },
             { id: 'subscribers', label: 'Subscribers' },
           ] as const).map((t) => (
@@ -1438,7 +1407,7 @@ export const Admin: React.FC = () => {
 
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-            {(['verification', 'products', 'categories', 'orders', 'inventory', 'questions', 'reviews', 'subscribers', 'replacements', 'coupons', 'services', 'announcement'] as const).map((tab) => (
+            {(['verification', 'products', 'categories', 'orders', 'inventory', 'questions', 'reviews', 'subscribers', 'replacements', 'coupons', 'announcement'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => {
@@ -1666,7 +1635,7 @@ export const Admin: React.FC = () => {
                     <span>Products Library</span>
                   </h2>
                   <p className="text-xs text-gray-500">
-                    Manage sanitaryware collections, base specifications, and multi-attribute product variants.
+                    Manage apparel collections, base specifications, and multi-attribute product variants.
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
@@ -1693,7 +1662,7 @@ export const Admin: React.FC = () => {
                       main_image_url: '',
                       additional_images: '',
                       sku: '',
-                      brand: 'Elite Bath Collections',
+                      brand: 'TRYVOAL',
                       material: '',
                       finish: '',
                       warranty_info: '',
@@ -1841,7 +1810,7 @@ export const Admin: React.FC = () => {
                               </span>
                             )}
                             <span className="text-[10px] text-gray-400">
-                              {prod.brand || 'Elite Bath'}
+                              {prod.brand || 'TRYVOAL'}
                             </span>
                           </div>
                         </td>
@@ -2069,7 +2038,7 @@ export const Admin: React.FC = () => {
                       <span>Customer Orders & Luxury Fulfillment</span>
                     </h2>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      Track consignments, manage order statuses, review sanitaryware variants, and generate dispatch slips
+                      Track consignments, manage order statuses, review apparel variants, and generate dispatch slips
                     </p>
                   </div>
                   <span className="text-xs font-semibold px-3 py-1 bg-gray-100 text-gray-700 rounded-full border border-gray-200">
@@ -2224,7 +2193,7 @@ export const Admin: React.FC = () => {
                           <p className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">Items ({order.items?.length || 0}):</p>
                           <div className="space-y-1.5">
                             {order.items?.map((item, idx) => {
-                              const itemName = item.product?.name || (item as any).product_name || 'Sanitaryware Item';
+                              const itemName = item.product?.name || (item as any).product_name || 'Apparel Item';
                               const itemImg = item.product?.main_image_url || (item as any).image_url || '/placeholder.jpg';
                               return (
                                 <div key={item.id || idx} className="flex items-center gap-2.5 bg-white p-2 rounded-xl border border-gray-200">
@@ -2440,12 +2409,12 @@ export const Admin: React.FC = () => {
                               </div>
                             </td>
 
-                            {/* Ordered Items & Sanitaryware Variants */}
+                            {/* Ordered Items & Apparel Variants */}
                             <td className="px-4 py-4 align-top text-xs max-w-[280px]">
                               <div className="space-y-2.5">
                                 {order.items?.map((item, idx) => {
                                   const itemSku = item.variant?.sku || item.product?.sku || (item.selected_variant_id ? `EBC-${item.selected_variant_id.slice(0, 8).toUpperCase()}` : 'EBC-SAN');
-                                  const itemName = item.product?.name || (item as any).product_name || 'Sanitaryware Item';
+                                  const itemName = item.product?.name || (item as any).product_name || 'Apparel Item';
                                   const itemImg = item.product?.main_image_url || (item as any).image_url || '/placeholder.jpg';
                                   return (
                                     <div key={item.id || `${order.id}-item-${idx}`} className="flex items-start space-x-2.5 bg-gray-50/60 p-1.5 rounded-lg border border-gray-100">
@@ -3350,444 +3319,6 @@ export const Admin: React.FC = () => {
             </div>
           )}
 
-          {/* TAB: Services Management & Customer Bookings */}
-          {activeTab === 'services' && (
-            <div className="space-y-8">
-              {/* Header with Stats & Actions */}
-              <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-                    <Wrench className="h-6 w-6 text-primary" />
-                    <span>Bathroom Services & Booking Management</span>
-                  </h2>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Manage available services (Fitting, Service Agent, Maintenance) and customer service bookings.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <a
-                    href="/services"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                  >
-                    <span>View Public Page</span>
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setEditingService(null);
-                      setServiceForm({
-                        title: '',
-                        short_description: '',
-                        description: '',
-                        price: 499,
-                        category: 'Fitting',
-                        estimated_duration: '1 - 2 hours',
-                        is_active: true,
-                        featuresText: 'Certified sanitary technician\nLeak-proof seal testing\nClean cleanup guarantee',
-                      });
-                      setIsServiceModalOpen(true);
-                    }}
-                    className="flex items-center gap-1.5"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Add Service</span>
-                  </Button>
-                </div>
-              </div>
-
-              {/* Quick Metrics */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                  <p className="text-xs font-semibold text-gray-500">Active Services</p>
-                  <p className="text-2xl font-black text-gray-900 mt-1">
-                    {adminServices.filter((s) => s.is_active).length}
-                  </p>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                  <p className="text-xs font-semibold text-gray-500">Total Bookings</p>
-                  <p className="text-2xl font-black text-primary mt-1">
-                    {adminBookings.length}
-                  </p>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                  <p className="text-xs font-semibold text-gray-500">Pending Requests</p>
-                  <p className="text-2xl font-black text-amber-500 mt-1">
-                    {adminBookings.filter((b) => b.status === 'PENDING').length}
-                  </p>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                  <p className="text-xs font-semibold text-gray-500">Completed</p>
-                  <p className="text-2xl font-black text-emerald-600 mt-1">
-                    {adminBookings.filter((b) => b.status === 'COMPLETED').length}
-                  </p>
-                </div>
-              </div>
-
-              {/* Service Catalog List */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-                  <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-                    <Package className="h-4 w-4 text-primary" />
-                    <span>Service Catalog ({adminServices.length})</span>
-                  </h3>
-                </div>
-
-                <div className="divide-y divide-gray-100">
-                  {adminServices.map((service) => (
-                    <div key={service.id} className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-gray-50/50 transition-colors">
-                      <div className="space-y-1.5 max-w-xl">
-                        <div className="flex items-center gap-2.5">
-                          <h4 className="font-bold text-gray-900 text-base">{service.title}</h4>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            service.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
-                          }`}>
-                            {service.is_active ? 'Active' : 'Disabled'}
-                          </span>
-                          <span className="text-[11px] text-gray-500 font-medium px-2 py-0.5 bg-gray-100 rounded-md">
-                            {service.category}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-600 leading-relaxed">{service.description}</p>
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 pt-1">
-                          <span className="flex items-center gap-1 font-bold text-primary">
-                            ₹{service.price.toLocaleString('en-IN')}
-                          </span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3 text-gray-400" />
-                            {service.estimated_duration}
-                          </span>
-                          <span>•</span>
-                          <span>{service.features.length} features included</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 self-start md:self-center">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            updateService(service.id, { is_active: !service.is_active });
-                          }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                            service.is_active
-                              ? 'border-amber-200 text-amber-700 hover:bg-amber-50'
-                              : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
-                          }`}
-                        >
-                          {service.is_active ? 'Disable' : 'Enable'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingService(service);
-                            setServiceForm({
-                              title: service.title,
-                              short_description: service.short_description || service.description,
-                              description: service.description,
-                              price: service.price,
-                              category: service.category,
-                              estimated_duration: service.estimated_duration,
-                              is_active: service.is_active,
-                              featuresText: service.features.join('\n'),
-                            });
-                            setIsServiceModalOpen(true);
-                          }}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors flex items-center gap-1"
-                        >
-                          <Edit className="h-3.5 w-3.5" />
-                          <span>Edit</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (window.confirm(`Delete service "${service.title}"?`)) {
-                              deleteService(service.id);
-                            }
-                          }}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-danger hover:bg-red-50 transition-colors"
-                          title="Delete Service"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Customer Bookings Table */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <span>Customer Service Bookings ({adminBookings.length})</span>
-                    </h3>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      Bookings received from the Services booking modal and Checkout coordination.
-                    </p>
-                  </div>
-                </div>
-
-                {adminBookings.length === 0 ? (
-                  <div className="p-10 text-center text-gray-500 text-sm">
-                    No customer service bookings recorded yet.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs text-gray-600">
-                      <thead className="bg-gray-50 text-[11px] uppercase font-bold text-gray-500 tracking-wider border-b border-gray-100">
-                        <tr>
-                          <th className="p-4">Customer</th>
-                          <th className="p-4">Service</th>
-                          <th className="p-4">Schedule & Address</th>
-                          <th className="p-4">Status</th>
-                          <th className="p-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {adminBookings.map((b) => (
-                          <tr key={b.id} className="hover:bg-gray-50/70 transition-colors">
-                            <td className="p-4 align-top">
-                              <p className="font-bold text-gray-900 text-sm">{b.customer_name}</p>
-                              <p className="text-gray-500">{b.customer_phone}</p>
-                              {b.customer_email && <p className="text-[11px] text-gray-400">{b.customer_email}</p>}
-                              {b.order_id && (
-                                <span className="inline-block mt-1 px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px] font-mono">
-                                  Order #{b.order_id.slice(0, 8)}
-                                </span>
-                              )}
-                            </td>
-                            <td className="p-4 align-top">
-                              <p className="font-bold text-gray-900">{b.service_title}</p>
-                              <p className="text-primary font-semibold">₹{b.service_price.toLocaleString('en-IN')}</p>
-                              {b.notes && (
-                                <p className="text-[11px] text-gray-500 italic mt-1 max-w-xs">"{b.notes}"</p>
-                              )}
-                            </td>
-                            <td className="p-4 align-top max-w-xs">
-                              <div className="flex items-center gap-1 text-gray-800 font-medium">
-                                <Calendar className="h-3 w-3 text-primary" />
-                                <span>{b.preferred_date}</span>
-                                {b.preferred_time_slot && <span>({b.preferred_time_slot})</span>}
-                              </div>
-                              <p className="text-[11px] text-gray-500 mt-1 line-clamp-2">
-                                {b.address}, {b.city}, {b.pincode}
-                              </p>
-                            </td>
-                            <td className="p-4 align-top">
-                              <select
-                                value={b.status}
-                                onChange={(e) => updateBookingStatus(b.id, e.target.value as any)}
-                                className={`text-xs font-bold rounded-lg px-2.5 py-1.5 border focus:outline-none ${
-                                  b.status === 'CONFIRMED'
-                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                    : b.status === 'IN_PROGRESS'
-                                    ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                    : b.status === 'COMPLETED'
-                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                    : b.status === 'CANCELLED'
-                                    ? 'bg-red-50 text-red-700 border-red-200'
-                                    : 'bg-gray-100 text-gray-700 border-gray-300'
-                                }`}
-                              >
-                                <option value="PENDING">Pending</option>
-                                <option value="CONFIRMED">Confirmed</option>
-                                <option value="IN_PROGRESS">In Progress</option>
-                                <option value="COMPLETED">Completed</option>
-                                <option value="CANCELLED">Cancelled</option>
-                              </select>
-                            </td>
-                            <td className="p-4 align-top text-right space-x-2">
-                              <a
-                                href={`https://wa.me/${b.customer_phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                                  `Hello ${b.customer_name}, this is Elite Bath Collections regarding your booked service "${b.service_title}" scheduled for ${b.preferred_date}.`
-                                )}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all"
-                              >
-                                <span>WhatsApp</span>
-                              </a>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-        </div>
-      )}
-
-      {/* SERVICE MODAL (Add/Edit) */}
-      {isServiceModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-xl bg-white border border-gray-200 rounded-2xl p-6 shadow-2xl max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
-              <h3 className="text-lg font-bold text-gray-900">
-                {editingService ? 'Edit Service' : 'Add New Sanitary Service'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsServiceModalOpen(false)}
-                className="p-1 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100"
-              >
-                <CloseIcon className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const features = serviceForm.featuresText
-                  .split('\n')
-                  .map((f) => f.trim())
-                  .filter(Boolean);
-
-                if (editingService) {
-                  updateService(editingService.id, {
-                    ...editingService,
-                    title: serviceForm.title,
-                    short_description: serviceForm.short_description || serviceForm.description,
-                    description: serviceForm.description,
-                    price: Number(serviceForm.price),
-                    category: serviceForm.category,
-                    estimated_duration: serviceForm.estimated_duration,
-                    is_active: serviceForm.is_active,
-                    features,
-                  });
-                } else {
-                  addService({
-                    title: serviceForm.title,
-                    short_description: serviceForm.short_description || serviceForm.description,
-                    description: serviceForm.description,
-                    price: Number(serviceForm.price),
-                    category: serviceForm.category,
-                    estimated_duration: serviceForm.estimated_duration,
-                    is_active: serviceForm.is_active,
-                    features,
-                  });
-                }
-                setIsServiceModalOpen(false);
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
-                  Service Title
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={serviceForm.title}
-                  onChange={(e) => setServiceForm({ ...serviceForm, title: e.target.value })}
-                  placeholder="e.g. Premium Fitting & Hydro-Testing"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:border-primary"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
-                    Price (₹)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    required
-                    value={serviceForm.price}
-                    onChange={(e) => setServiceForm({ ...serviceForm, price: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:border-primary"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
-                    Estimated Duration
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={serviceForm.estimated_duration}
-                    onChange={(e) => setServiceForm({ ...serviceForm, estimated_duration: e.target.value })}
-                    placeholder="e.g. 1 - 2 hours"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:border-primary"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
-                  Category
-                </label>
-                <select
-                  value={serviceForm.category}
-                  onChange={(e) => setServiceForm({ ...serviceForm, category: e.target.value as any })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:border-primary"
-                >
-                  <option value="Fitting">Fitting & Installation</option>
-                  <option value="Inspection">Service Agent / Inspection</option>
-                  <option value="Maintenance">Maintenance & Descaling</option>
-                  <option value="Consultation">Design Consultation</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
-                  Description
-                </label>
-                <textarea
-                  rows={2}
-                  required
-                  value={serviceForm.description}
-                  onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
-                  placeholder="Summary of what is included in this service..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:border-primary resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1">
-                  Included Features (1 per line)
-                </label>
-                <textarea
-                  rows={3}
-                  value={serviceForm.featuresText}
-                  onChange={(e) => setServiceForm({ ...serviceForm, featuresText: e.target.value })}
-                  placeholder="Certified technician&#10;Leak-proof testing&#10;Old fixture removal"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:border-primary font-mono text-xs"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="serviceActiveCheck"
-                  checked={serviceForm.is_active}
-                  onChange={(e) => setServiceForm({ ...serviceForm, is_active: e.target.checked })}
-                  className="rounded text-primary focus:ring-primary h-4 w-4"
-                />
-                <label htmlFor="serviceActiveCheck" className="text-xs font-medium text-gray-700 cursor-pointer">
-                  Service is currently Active & bookable by customers
-                </label>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <Button variant="outline" type="button" onClick={() => setIsServiceModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {editingService ? 'Update Service' : 'Create Service'}
-                </Button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
 
@@ -3798,7 +3329,7 @@ export const Admin: React.FC = () => {
             <div className="flex items-center justify-between pb-4 mb-6 border-b border-gray-200">
               <div>
                 <h3 className="text-xl font-extrabold text-gray-900">
-                  {editingProduct ? 'Edit Sanitaryware Product' : 'Add New Sanitaryware Product'}
+                  {editingProduct ? 'Edit Apparel Product' : 'Add New Apparel Product'}
                 </h3>
                 <p className="text-xs text-gray-500">
                   Configure base specifications, warranty, inventory, and multi-attribute product variants.
@@ -3846,7 +3377,7 @@ export const Admin: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">
-                      Sanitary Category
+                      Apparel Category
                     </label>
                     <select
                       value={productForm.category_id}
@@ -3866,7 +3397,7 @@ export const Admin: React.FC = () => {
                     <Input
                       label="Brand"
                       type="text"
-                      placeholder="Elite Bath Collections"
+                      placeholder="TRYVOAL"
                       value={productForm.brand}
                       onChange={(e) => setProductForm({ ...productForm, brand: e.target.value })}
                     />
@@ -4083,7 +3614,7 @@ export const Admin: React.FC = () => {
                 label="Category Name"
                 type="text"
                 required
-                placeholder="e.g. Luxury Showers"
+                placeholder="e.g. Heavyweight Tees"
                 value={categoryForm.name}
                 onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
               />
@@ -4300,10 +3831,10 @@ export const Admin: React.FC = () => {
               <div className="flex flex-col sm:flex-row justify-between items-start border-b border-gray-200 pb-6 gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <img src="/logo.png" alt="Elite Bath Collections" className="h-10 w-auto object-contain" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
-                    <h1 className="text-2xl font-black tracking-tight text-gray-900 uppercase">Elite Bath Collections</h1>
+                    <img src="/logo.png" alt="TRYVOAL" className="h-10 w-auto object-contain" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+                    <h1 className="text-2xl font-black tracking-tight text-gray-900 uppercase">TRYVOAL</h1>
                   </div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-primary mt-1">Luxury Sanitaryware & Architectural Bathroom Fittings</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-primary mt-1">Modern Luxury Streetwear & Premium Apparel</p>
                   <p className="text-xs text-gray-500 mt-1">Under pass flyover, Buxar, Distt. Hapur, Uttar Pradesh • muhammad1211junaid@gmail.com • +91 70554 35358 / +91 90843 39649 / +91 63995 25356</p>
                 </div>
                 <div className="text-right sm:text-right">
@@ -4373,7 +3904,7 @@ export const Admin: React.FC = () => {
                       <tr key={item.id || idx}>
                         <td className="px-4 py-3 font-bold text-gray-400">{idx + 1}</td>
                         <td className="px-4 py-3 font-semibold text-gray-900 max-w-[200px]">
-                          {item.product?.name || (item as any).product_name || 'Sanitaryware Fitting'}
+                          {item.product?.name || (item as any).product_name || 'Apparel Item'}
                         </td>
                         <td className="px-4 py-3">
                           {item.selected_variant ? (
@@ -4418,11 +3949,11 @@ export const Admin: React.FC = () => {
               <div className="border-t border-gray-200 pt-4 text-[10px] text-gray-500 flex flex-col sm:flex-row justify-between gap-4">
                 <div>
                   <p className="font-semibold text-gray-700">Quality Inspection Certificate:</p>
-                  <p>All sanitary fittings are pressure-tested and inspected for zero ceramic defects prior to packing.</p>
+                  <p>All garments undergo comprehensive quality inspection for zero weave, stitching, or color defects prior to dispatch.</p>
                 </div>
                 <div className="text-right sm:text-right">
                   <p className="font-semibold text-gray-700">Authorized Signatory</p>
-                  <p className="mt-4 text-gray-400">Elite Bath Logistics Team</p>
+                  <p className="mt-4 text-gray-400">TRYVOAL Logistics Team</p>
                 </div>
               </div>
             </div>

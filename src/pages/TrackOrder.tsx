@@ -177,7 +177,7 @@ export const TrackOrder: React.FC = () => {
           price: 0,
           selected_variant: iv.selected_variant,
           product: {
-            name: 'Sanitaryware Product',
+            name: 'Apparel Item',
             main_image_url: '/placeholder.jpg',
             price: 0
           }
@@ -192,7 +192,7 @@ export const TrackOrder: React.FC = () => {
           price: Number(item.product.price || item.price || 0),
           main_image_url: item.product.main_image_url || item.image_url || '/placeholder.jpg'
         } : {
-          name: item.product_name || 'Sanitaryware Fitting',
+          name: item.product_name || 'Apparel Item',
           main_image_url: item.image_url || '/placeholder.jpg',
           price: Number(item.price || 0)
         }
@@ -438,7 +438,7 @@ export const TrackOrder: React.FC = () => {
                       </div>
                       <div>
                         <p className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-1">
-                          {item.product?.name || 'Sanitary Product'}
+                          {item.product?.name || 'Apparel Item'}
                         </p>
                         <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mt-0.5">
                           <span>

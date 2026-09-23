@@ -62,7 +62,7 @@ export interface Product {
   created_at: string;
   category?: Category; // Joined category details
 
-  // Sanitaryware specifications & variant architecture
+  // Apparel specifications & variant architecture
   sku?: string | null;
   brand?: string | null;
   material?: string | null;

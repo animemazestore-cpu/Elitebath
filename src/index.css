@@ -4,18 +4,18 @@
 
 :root {
   --background: #ffffff;
-  --surface: #f8faf9;
-  --surface-muted: #f1f5f2;
-  --border: #e2e8e4;
-  --text-primary: #17211b;
-  --text-secondary: #647067;
-  --text-muted: #94a19a;
+  --surface: #f8fafc;
+  --surface-muted: #f1f5f9;
+  --border: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
 
-  --primary: #166534;
-  --primary-hover: #14532d;
-  --primary-soft: #dcfce7;
+  --primary: #1e3a8a;
+  --primary-hover: #172554;
+  --primary-soft: #eff6ff;
 
-  --secondary: #4d7c5a;
+  --secondary: #2563eb;
   --success: #15803d;
   --warning: #d97706;
   --danger: #dc2626;
@@ -50,7 +50,7 @@
 }
 
 @layer components {
-  /* Clean Sanitary Card Style */
+  /* Clean Apparel Card Style */
   .glass-card {
     background: #FFFFFF;
     border: 1px solid #E2E8E4;
@@ -88,7 +88,7 @@
     color: #94A19A;
   }
 
-  /* Refined Sanitary Buttons */
+  /* Refined Apparel Buttons */
   .btn-primary {
     background: #166534;
     color: #FFFFFF;
@@ -200,4 +200,75 @@
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+
+/* TRYVOAL Fashion Keyframe Animations for Mobile & Desktop */
+@keyframes float-badge-1 {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1.5deg);
+  }
+}
+
+@keyframes float-badge-2 {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(8px) rotate(-1.5deg);
+  }
+}
+
+@keyframes orb-pulse-1 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.65;
+  }
+  50% {
+    transform: translate(25px, 35px) scale(1.22);
+    opacity: 0.95;
+  }
+}
+
+@keyframes orb-pulse-2 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(-30px, -20px) scale(1.18);
+    opacity: 0.9;
+  }
+}
+
+@keyframes zoom-pulse-slow {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.animate-float-1 {
+  animation: float-badge-1 4.5s ease-in-out infinite;
+}
+
+.animate-float-2 {
+  animation: float-badge-2 5.5s ease-in-out infinite 0.8s;
+}
+
+.animate-orb-1 {
+  animation: orb-pulse-1 8s ease-in-out infinite;
+}
+
+.animate-orb-2 {
+  animation: orb-pulse-2 10s ease-in-out infinite 1.2s;
+}
+
+.animate-pulse-slow {
+  animation: zoom-pulse-slow 18s ease-in-out infinite;
 }

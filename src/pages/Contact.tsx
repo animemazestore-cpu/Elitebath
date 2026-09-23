@@ -49,13 +49,13 @@ export const Contact: React.FC = () => {
       <div className="text-center space-y-3 mb-12">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider">
           <Building className="h-3.5 w-3.5" />
-          <span>Client Concierge & Trade Support</span>
+          <span>TRYVOAL Concierge & Studio Support</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900">
-          Connect With Elite Bath Collections
+          Connect With TRYVOAL
         </h1>
         <p className="text-gray-600 text-sm sm:text-base max-w-xl mx-auto">
-          Whether planning an architect-designed villa, seeking technical plumbing specifications, or requesting finish samples, our luxury concierges are at your service.
+          Whether inquiring about capsule drops, sizing consultations, bulk orders, or fabric details, our styling concierge is at your service.
         </p>
       </div>
 
@@ -63,9 +63,9 @@ export const Contact: React.FC = () => {
         {/* Left Information Card */}
         <div className="md:col-span-5 bg-gray-50 border border-gray-200 p-8 rounded-2xl flex flex-col justify-between space-y-8 shadow-sm">
           <div>
-            <h2 className="text-xl font-extrabold text-gray-900">Corporate Showroom & Concierge</h2>
+            <h2 className="text-xl font-extrabold text-gray-900">Studio Showroom & Concierge</h2>
             <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">
-              Experience our tactile PVD finishes, precision ceramic cartridges, and freestanding baths in person or schedule a virtual walkthrough.
+              Experience our tactile heavyweight organic fabrics, relaxed tailoring cuts, and handcrafted leather accessories in person or connect with our stylists.
             </p>
           </div>
 
@@ -118,14 +118,14 @@ export const Contact: React.FC = () => {
               <Clock className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
               <div>
                 <strong className="block text-gray-900 font-bold">Guaranteed Response</strong>
-                <span>Technical plumbing and quote responses within 12-24 business hours.</span>
+                <span>Styling recommendations and order inquiries answered within 12-24 business hours.</span>
               </div>
             </div>
           </div>
 
           <div className="p-4 bg-white border border-gray-200 rounded-xl text-[11px] text-gray-500 leading-relaxed">
-            <strong className="text-gray-800 block mb-1">Architects & Interior Designers:</strong>
-            Mention your project square footage or CAD rough-in schedule in your message for dedicated trade discount schedules.
+            <strong className="text-gray-800 block mb-1">Stylists & Retail Partners:</strong>
+            Mention your boutique or agency requirements in your inquiry for dedicated wholesale capsule pricing.
           </div>
         </div>
 
@@ -138,7 +138,7 @@ export const Contact: React.FC = () => {
               </div>
               <h2 className="text-2xl font-bold text-gray-900">Message Received</h2>
               <p className="text-sm text-gray-600 max-w-sm leading-relaxed">
-                Thank you for contacting Elite Bath Collections. A specialized architectural concierge will review your inquiry and connect with you shortly.
+                Thank you for contacting TRYVOAL. Our client concierge will review your inquiry and connect with you shortly.
               </p>
               <Button size="sm" onClick={() => setSuccess(false)}>Send Another Message</Button>
             </div>

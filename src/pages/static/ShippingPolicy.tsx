@@ -10,7 +10,7 @@ const PolicyPage: React.FC<{ title: string; children: React.ReactNode }> = ({ ti
           <span>Fulfillment & Logistics</span>
         </div>
         <h1 className="text-3xl font-extrabold text-gray-900">{title}</h1>
-        <p className="text-xs text-gray-500 mt-2">Effective Date: June 20, 2026 • Elite Bath Collections Logistics Division</p>
+        <p className="text-xs text-gray-500 mt-2">Effective Date: June 20, 2026 • TRYVOAL Logistics Division</p>
       </div>
       <div className="space-y-8 text-sm text-gray-600 leading-relaxed">
         {children}
@@ -32,7 +32,7 @@ const Section: React.FC<{ title: string; icon?: React.ReactNode; children: React
 export const ShippingPolicy: React.FC = () => (
   <PolicyPage title="Shipping & Heavy-Goods Logistics Policy">
     <p>
-      Elite Bath Collections delivers architectural sanitaryware, porcelain commodes, basins, and luxury brassware nationwide across India. Because sanitaryware involves heavy, delicate, and precision-engineered ceramics, we enforce rigorous logistics, custom wooden crating, and 100% transit insurance.
+      TRYVOAL delivers luxury heavyweight apparel, premium shirts, and crafted accessories nationwide across India. Every garment consignment is carefully packaged in weatherproof, recyclable luxury matte packaging with 100% transit insurance.
     </p>
 
     <Section title="1. Protective Packaging & Wooden Crating" icon={<Package className="h-4 w-4 text-primary" />}>
@@ -41,7 +41,7 @@ export const ShippingPolicy: React.FC = () => (
       </p>
       <ul className="list-disc pl-5 space-y-1">
         <li><strong>Ceramic Commodes & Basins:</strong> High-density expanded polystyrene (EPS) form-fitted cushions, encased in reinforced pine-wood protective crates to eliminate impact vibration.</li>
-        <li><strong>Designer Brassware & Showers:</strong> High-durability honeycomb carton cores, interior velvet/microfiber wraps, and shock-dampening foam buffers to shield PVD coatings against scratches.</li>
+        <li><strong>Garments & Fine Apparel:</strong> Breathable, moisture-resistant inner wraps and rigid luxury cartons to prevent creasing and atmospheric damage.</li>
         <li><strong>Tamper-Evident Security Seals:</strong> All master crates and cartons are stamped with branded tamper-evident tape and inspection stamps.</li>
       </ul>
     </Section>
@@ -70,7 +70,7 @@ export const ShippingPolicy: React.FC = () => (
 
     <Section title="4. 100% Transit Insurance & Safe Delivery Guarantee" icon={<ShieldCheck className="h-4 w-4 text-primary" />}>
       <p>
-        Every consignment dispatched by Elite Bath Collections is fully insured against theft, loss, and physical breakage in transit at no additional fee to the customer. In the rare event of transit damage, you are fully covered under our replacement guarantee.
+        Every consignment dispatched by TRYVOAL is fully insured against theft, loss, and physical breakage in transit at no additional fee to the customer. In the rare event of transit damage, you are fully covered under our replacement guarantee.
       </p>
     </Section>
 
@@ -87,7 +87,7 @@ export const ShippingPolicy: React.FC = () => (
       <ol className="list-decimal pl-5 space-y-1">
         <li>Inspect the exterior wooden crate and carton seals for any visible puncture or transit crushing before signing the Proof of Delivery (POD).</li>
         <li>If noticeable external damage is present, note "Package Received Damaged" on the courier delivery sheet.</li>
-        <li>Record a brief continuous unboxing video while uncrating the ceramic and brassware items. If any product is broken, contact our concierge at <a href="mailto:muhammad1211junaid@gmail.com" className="text-primary font-bold hover:underline">muhammad1211junaid@gmail.com</a> or call <a href="tel:+917055435358" className="text-primary font-bold hover:underline">+91 70554 35358</a> within 7 days for an immediate priority replacement.</li>
+        <li>Record a brief continuous unboxing video while unpackaging the ceramic and brassware items. If any product is broken, contact our concierge at <a href="mailto:muhammad1211junaid@gmail.com" className="text-primary font-bold hover:underline">muhammad1211junaid@gmail.com</a> or call <a href="tel:+917055435358" className="text-primary font-bold hover:underline">+91 70554 35358</a> within 7 days for an immediate priority replacement.</li>
       </ol>
     </Section>
   </PolicyPage>

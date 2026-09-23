@@ -10,7 +10,7 @@ const PolicyPage: React.FC<{ title: string; children: React.ReactNode }> = ({ ti
           <span>Trust & Governance</span>
         </div>
         <h1 className="text-3xl font-extrabold text-gray-900">{title}</h1>
-        <p className="text-xs text-gray-500 mt-2">Effective Date: June 20, 2026 • Elite Bath Collections Pvt. Ltd.</p>
+        <p className="text-xs text-gray-500 mt-2">Effective Date: June 20, 2026 • TRYVOAL Apparel Studio Pvt. Ltd.</p>
       </div>
       <div className="space-y-8 text-sm text-gray-600 leading-relaxed">
         {children}
@@ -32,17 +32,17 @@ const Section: React.FC<{ title: string; icon?: React.ReactNode; children: React
 export const PrivacyPolicy: React.FC = () => (
   <PolicyPage title="Privacy & Data Protection Policy">
     <p>
-      At <strong>Elite Bath Collections</strong> ("we", "us", or "our"), we are committed to safeguarding the privacy, confidentiality, and security of our clients, architects, and visitors. This Privacy Policy details how we collect, process, and protect your personal information across our e-commerce platform and concierge services.
+      At <strong>TRYVOAL</strong> ("we", "us", or "our"), we are committed to safeguarding the privacy, confidentiality, and security of our clients, architects, and visitors. This Privacy Policy details how we collect, process, and protect your personal information across our e-commerce platform and concierge services.
     </p>
 
     <Section title="1. Information We Collect" icon={<Eye className="h-4 w-4 text-primary" />}>
       <p>
-        When you interact with Elite Bath Collections, we may collect the following categories of information:
+        When you interact with TRYVOAL, we may collect the following categories of information:
       </p>
       <ul className="list-disc pl-5 space-y-1">
         <li><strong>Contact & Identity Data:</strong> Full name, email address, contact telephone number, and company/firm name for architectural trade accounts.</li>
         <li><strong>Delivery & Logistics Data:</strong> Shipping address, landmark, city, state, postal code, and delivery access instructions for heavy-goods freight.</li>
-        <li><strong>Transaction Data:</strong> Order references, purchased sanitaryware items, custom finish specifications, invoice numbers, and payment confirmation status.</li>
+        <li><strong>Transaction Data:</strong> Order references, purchased apparel and accessories, custom finish specifications, invoice numbers, and payment confirmation status.</li>
         <li><strong>Technical & Account Credentials:</strong> Account login authentication data, encrypted passwords (managed via Supabase Auth), IP address, and browser attributes.</li>
       </ul>
     </Section>

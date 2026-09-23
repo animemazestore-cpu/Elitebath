@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, ShoppingBag, ArrowRight, ShieldCheck, Wrench, Clock } from 'lucide-react';
+import { Trash2, ShoppingBag, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { useServiceStore } from '../store/useServiceStore';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/common/Button';
 import { CartItemSkeleton } from '../components/skeleton/CartItemSkeleton';
@@ -18,20 +17,7 @@ export const Cart: React.FC = () => {
     clearCart,
     getTotalAmount,
     getTotalItems,
-    selectedServiceIds = [],
-    toggleService,
   } = useCartStore();
-  const { services, initializeServices } = useServiceStore();
-
-  useEffect(() => {
-    void initializeServices();
-  }, [initializeServices]);
-
-  const availableServices = services.filter(
-    (s) => s.is_active && (s.is_checkout_addon || s.category === 'Fitting' || s.category === 'Inspection')
-  );
-  const selectedServices = services.filter((s) => selectedServiceIds.includes(s.id));
-  const servicesTotal = selectedServices.reduce((sum, s) => sum + s.price, 0);
 
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<any>(() => {
@@ -158,7 +144,7 @@ export const Cart: React.FC = () => {
   const shippingCharge = items.reduce((sum, item) => {
     return sum + (Number(item.product.shipping_fee) || 0) * item.quantity;
   }, 0);
-  const total = Math.max(0, subtotal - discountAmount) + shippingCharge + servicesTotal;
+  const total = Math.max(0, subtotal - discountAmount) + shippingCharge;
 
   const handleCheckoutClick = () => {
     if (!user) {
@@ -174,10 +160,10 @@ export const Cart: React.FC = () => {
         <div className="w-16 h-16 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center mx-auto mb-6 text-primary">
           <ShoppingBag className="h-8 w-8" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Cart is Empty</h2>
-        <p className="text-gray-500 mb-8 text-sm">Explore our curated collection of architectural faucets, rainfall showers, designer basins, and luxury bath accessories.</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Bag is Empty</h2>
+        <p className="text-gray-500 mb-8 text-sm">Explore our curated collection of luxury heavyweight t-shirts, tailored linen shirts, and minimalist accessories.</p>
         <Link to="/shop">
-          <Button fullWidth>Browse Sanitary Collections</Button>
+          <Button fullWidth>Browse TRYVOAL Collections</Button>
         </Link>
       </div>
     );
@@ -279,71 +265,6 @@ export const Cart: React.FC = () => {
               );
             })}
           </div>
-
-          {/* Optional Services & Fitting Add-ons in Cart */}
-          {availableServices.length > 0 && (
-            <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-                <div>
-                  <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                    <Wrench className="h-4 w-4 text-primary" />
-                    <span>Expert Installation & Services (Optional)</span>
-                  </h3>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Select certified plumbing mounting or on-site consultation. Product prices remain unchanged.
-                  </p>
-                </div>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                  Syncs with Checkout
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {availableServices.map((service) => {
-                  const isSelected = selectedServiceIds.includes(service.id);
-                  return (
-                    <div
-                      key={service.id}
-                      onClick={() => toggleService(service.id)}
-                      className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
-                        isSelected
-                          ? 'border-primary bg-primary/5 shadow-xs'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => {}}
-                        className="rounded text-primary focus:ring-primary h-4 w-4 mt-0.5 cursor-pointer"
-                      />
-                      <div className="flex-grow min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <h4 className="text-xs font-bold text-gray-900 truncate">
-                            {service.title}
-                          </h4>
-                          <span className="text-xs font-black text-primary whitespace-nowrap">
-                            +₹{service.price.toLocaleString('en-IN')}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-gray-500 line-clamp-2 mt-1 leading-normal">
-                          {service.short_description || service.description}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2 text-[10px] text-gray-400 font-medium">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {service.estimated_duration}
-                          </span>
-                          <span>•</span>
-                          <span>WhatsApp support</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Order Summary sidebar */}
@@ -365,21 +286,13 @@ export const Cart: React.FC = () => {
               )}
 
               <div className="flex justify-between">
-                <span>Insured Shipping:</span>
+                <span>Insured Express Shipping:</span>
                 {shippingCharge === 0 ? (
                   <span className="text-success font-bold">FREE</span>
                 ) : (
                   <span className="text-gray-900 font-semibold">₹{shippingCharge.toLocaleString('en-IN')}</span>
                 )}
               </div>
-
-              {/* Additional Services Line Item */}
-              {selectedServices.length > 0 && (
-                <div className="flex justify-between text-primary font-semibold border-t border-gray-100 pt-2">
-                  <span>Additional Services ({selectedServices.length}):</span>
-                  <span>+₹{servicesTotal.toLocaleString('en-IN')}</span>
-                </div>
-              )}
             </div>
 
             {/* Coupon input */}
@@ -401,7 +314,7 @@ export const Cart: React.FC = () => {
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="ELITE10, LUXURY20..."
+                    placeholder="TRYVOAL10, LUXURY20..."
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value)}
                     className="flex-grow bg-white border border-gray-300 rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-primary text-gray-900 placeholder-gray-500 uppercase"
@@ -432,7 +345,7 @@ export const Cart: React.FC = () => {
           <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
             <ShieldCheck className="h-5 w-5 text-success flex-shrink-0" />
             <p className="text-[10px] text-gray-500 leading-normal">
-              Safe & secure ordering. 100% genuine architectural sanitaryware backed by comprehensive transit insurance and manufacturer warranty.
+              Safe & secure ordering. 100% authentic luxury apparel crafted from premium organic fabrics, backed by insured shipping and seamless returns.
             </p>
           </div>
         </div>

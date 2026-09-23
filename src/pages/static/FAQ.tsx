@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, HelpCircle, ShieldCheck, Truck, Sparkles, Wrench } from 'lucide-react';
+import { ChevronDown, ChevronUp, HelpCircle, ShieldCheck, Truck, Sparkles, RefreshCw } from 'lucide-react';
 
 interface FAQItemProps {
   question: string;
@@ -41,44 +41,44 @@ const FAQItem: React.FC<FAQItemProps> = ({ question, answer, category }) => {
 export const FAQ: React.FC = () => {
   const faqs = [
     {
-      category: "Materials & Craftsmanship",
-      question: "What materials and finishes are used in Elite Bath Collections fittings?",
-      answer: "Every fitting in our collection is forged from high-purity, lead-free brass or surgical-grade 304/316 stainless steel. Our ceramics are crafted from premium vitreous china fired at 1280°C with anti-bacterial self-cleaning glazes. For our designer finishes (Matte Black, Brushed Gold, Rose Gold, Gunmetal), we utilize Physical Vapor Deposition (PVD) and multi-tier electroplating, delivering unmatched resistance against corrosion, tarnishing, and hard-water deposits."
+      category: "Fabrics & Quality",
+      question: "What fabrics and GSM weights are used in TRYVOAL garments?",
+      answer: "Our signature t-shirts are crafted from 240+ GSM ring-spun combed organic cotton, providing substantial weight, crisp structure, and zero see-through opacity. Our shirts feature 100% fine European flax linen and durable 180 GSM oxford weaves. Accessories use 16 oz heavy cotton canvas and vegetable-tanned full-grain leather."
     },
     {
-      category: "Plumbing & Technical",
-      question: "What are the recommended water pressure requirements for your rain showers and faucets?",
-      answer: "Our faucets and rain showers operate optimally between 1.5 bar to 3.5 bar (approx. 22 to 50 PSI). While they function adequately on standard overhead gravity tanks (minimum 1.0 bar), we recommend pressure booster pumps or pressure-regulating valves for multi-flow thermostatic shower panels and cascade waterfall spouts to experience the full luxury flow."
+      category: "Sizing & Fit",
+      question: "How do TRYVOAL t-shirts and shirts fit?",
+      answer: "Our core collection is engineered with a relaxed, modern drop-shoulder silhouette. It offers a slightly oversized drape through the chest and shoulders while maintaining a clean, structured length. If you prefer a tailored regular fit, we recommend sizing down one size. Detailed chest and length measurements are provided on every product page."
+    },
+    {
+      category: "Garment Care",
+      question: "How should I wash and care for my TRYVOAL apparel?",
+      answer: "Machine wash cold (30°C or below) on a gentle cycle with like colors, inside out. Avoid bleach or harsh chemical detergents. Air-dry flat or tumble dry on low heat. Warm iron on reverse if necessary. Because all garments are pre-shrunk and silicon bio-washed, you experience minimal to zero post-wash shrinkage."
+    },
+    {
+      category: "Exchanges & Returns",
+      question: "How does the 7-day doorstep size exchange work?",
+      answer: "If the size doesn't fit you perfectly, you can request an exchange within 7 days of delivery through your Dashboard or by contacting concierge support. We arrange reverse pickup directly from your doorstep and dispatch your requested replacement size promptly at zero extra cost."
+    },
+    {
+      category: "Shipping & Delivery",
+      question: "How long does delivery take across India?",
+      answer: "All orders are processed and dispatched within 24 to 48 hours from our fulfillment hub. Metro deliveries typically arrive within 2 to 4 business days, while non-metro and regional locations take 4 to 6 business days. Express tracking updates are sent via email and SMS."
     },
     {
       category: "Payment & Security",
-      question: "What payment methods are supported on Elite Bath Collections?",
-      answer: "We support 100% secure online transactions via the Razorpay payment gateway, accepting all major Credit Cards (Visa, Mastercard, RuPay, Amex), Debit Cards, UPI (Google Pay, PhonePe, Paytm, BHIM), NetBanking across 50+ banks, and flexible EMI plans. We also provide a Direct UPI QR option for fast mobile checkouts with instant verification."
+      question: "What payment methods are supported on TRYVOAL?",
+      answer: "We support 100% secure online transactions via Razorpay, accepting all major Credit Cards (Visa, Mastercard, RuPay, Amex), Debit Cards, UPI (Google Pay, PhonePe, Paytm, BHIM), NetBanking across 50+ banks, and 0-payment checkout flows when promotional vouchers or credits are applied."
     },
     {
-      category: "Packaging & Logistics",
-      question: "How are fragile ceramic basins, commodes, and luxury fittings packaged for safe transit?",
-      answer: "We employ specialized heavy-goods packaging protocols. Ceramic washbasins and commodes are encased in customized high-density EPS foam cushions and secured inside reinforced wooden crates. Brassware and shower systems are individually wrapped in scratch-resistant microfiber pouches and shock-absorbing cartons. Every shipment is 100% insured against transit damage from our warehouse to your doorstep."
+      category: "Sustainability & Craft",
+      question: "Are TRYVOAL products sustainably produced?",
+      answer: "Yes. We operate small-batch production schedules to eliminate overproduction waste. We use OEKO-TEX certified reactive dyes that are gentle on skin and aquatic systems, and your order arrives in 100% plastic-free, recyclable matte packaging."
     },
     {
-      category: "Warranty & Longevity",
-      question: "What is the warranty coverage on your bathroom fittings and sanitaryware?",
-      answer: "We stand behind the engineering of our products with industry-leading warranties: a 10-Year Comprehensive Warranty on solid brass faucet bodies and ceramic disc cartridges, a 5-Year Warranty on thermostatic mixer valves and digital shower displays, and a 10-Year Warranty against glaze discoloration or crazing on all vitreous china sanitaryware."
-    },
-    {
-      category: "Installation & Maintenance",
-      question: "Do you supply installation templates and plumbing guidelines?",
-      answer: "Yes, each product includes a 1:1 scale drilling template, plumbing rough-in diagrams, and standard thread specification guides (compatible with standard 1/2-inch and 3/4-inch BSP plumbing connections in India). Our concierge technical support team is also available to assist your licensed plumber or project contractor."
-    },
-    {
-      category: "Trade & Architectural Projects",
-      question: "Do you accept bulk trade or customized orders for villas, hotels, and interior projects?",
-      answer: "Absolutely. Our Architectural & Trade division collaborates with architects, interior designers, builders, and hospitality developers. We offer volume-tiered commercial pricing, bespoke finish batch matching, and dedicated project managers for residential developments and commercial luxury bathrooms."
-    },
-    {
-      category: "Returns & Transit Claims",
-      question: "What should I do if my package arrives damaged or incomplete?",
-      answer: "In the unlikely event of transit breakage or packaging compromise, simply record an unboxing video and notify our concierge support at muhammad1211junaid@gmail.com or via your Dashboard within 7 days of delivery. We will initiate an immediate expedited replacement at zero additional cost."
+      category: "Wholesale & Collabs",
+      question: "Do you offer bulk orders for teams, brands, or retail boutiques?",
+      answer: "Yes. Our Studio division accepts custom corporate capsules, brand collaborations, and select retail partnerships. Contact our styling concierge at muhammad1211junaid@gmail.com with your quantities and timeline."
     }
   ];
 
@@ -88,13 +88,13 @@ export const FAQ: React.FC = () => {
       <div className="text-center space-y-3 mb-12">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider">
           <HelpCircle className="h-3.5 w-3.5" />
-          <span>Customer Help Center</span>
+          <span>Client Help Center</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900">
           Frequently Asked Questions
         </h1>
         <p className="text-gray-600 text-sm sm:text-base max-w-xl mx-auto">
-          Everything you need to know about our architectural sanitaryware, technical specifications, insured shipping, and lifetime warranty coverage.
+          Everything you need to know about our luxury heavyweight apparel, fabric specifications, sizing guide, and express doorstep delivery.
         </p>
       </div>
 
@@ -102,23 +102,23 @@ export const FAQ: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
         <div className="bg-white p-4 rounded-xl border border-gray-200 text-center shadow-sm">
           <ShieldCheck className="h-6 w-6 text-primary mx-auto mb-1.5" />
-          <p className="font-bold text-xs text-gray-900">10-Year Warranty</p>
-          <p className="text-[10px] text-gray-500">Brass & Ceramics</p>
+          <p className="font-bold text-xs text-gray-900">240+ GSM Cotton</p>
+          <p className="text-[10px] text-gray-500">Organic ring-spun</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-gray-200 text-center shadow-sm">
           <Truck className="h-6 w-6 text-primary mx-auto mb-1.5" />
-          <p className="font-bold text-xs text-gray-900">Insured Crating</p>
-          <p className="text-[10px] text-gray-500">Zero transit breakage</p>
+          <p className="font-bold text-xs text-gray-900">Insured Shipping</p>
+          <p className="text-[10px] text-gray-500">Fast pan-India delivery</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-gray-200 text-center shadow-sm">
           <Sparkles className="h-6 w-6 text-primary mx-auto mb-1.5" />
-          <p className="font-bold text-xs text-gray-900">PVD Finishes</p>
-          <p className="text-[10px] text-gray-500">Tarnish-resistant</p>
+          <p className="font-bold text-xs text-gray-900">Pre-Shrunk</p>
+          <p className="text-[10px] text-gray-500">Bio-washed drape</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-gray-200 text-center shadow-sm">
-          <Wrench className="h-6 w-6 text-primary mx-auto mb-1.5" />
-          <p className="font-bold text-xs text-gray-900">Tech Support</p>
-          <p className="text-[10px] text-gray-500">Plumber guidelines</p>
+          <RefreshCw className="h-6 w-6 text-primary mx-auto mb-1.5" />
+          <p className="font-bold text-xs text-gray-900">7-Day Exchanges</p>
+          <p className="text-[10px] text-gray-500">Doorstep size swap</p>
         </div>
       </div>
 
@@ -136,16 +136,16 @@ export const FAQ: React.FC = () => {
 
       {/* Still Have Questions CTA */}
       <div className="mt-12 bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center space-y-4">
-        <h3 className="text-lg font-bold text-gray-900">Still have questions regarding your project?</h3>
+        <h3 className="text-lg font-bold text-gray-900">Still have questions regarding sizing or fabrics?</h3>
         <p className="text-sm text-gray-600 max-w-md mx-auto">
-          Our specialized sanitaryware concierges are available to assist with technical drawings, plumbing compatibility, and finish selections.
+          Our styling concierge team is available to assist with chest measurements, fabric details, and order tracking.
         </p>
         <div className="flex flex-wrap justify-center gap-4 pt-2">
           <a
             href="/contact"
             className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-primary text-white hover:bg-primary-hover shadow-sm transition-colors"
           >
-            Contact Customer Concierge
+            Contact Styling Concierge
           </a>
           <a
             href="mailto:muhammad1211junaid@gmail.com"

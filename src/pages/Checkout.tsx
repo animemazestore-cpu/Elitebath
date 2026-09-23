@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
-import { useServiceStore } from '../store/useServiceStore';
 import { supabase } from '../lib/supabase';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
@@ -12,16 +11,12 @@ import {
   Lock,
   Truck,
   CheckCircle2,
-  Wrench,
   ChevronRight,
   ArrowLeft,
   ArrowRight,
   MapPin,
-  MessageCircle,
   Check,
   Package,
-  Clock,
-  Sparkles,
 } from 'lucide-react';
 import {
   loadRazorpaySDK,
@@ -37,26 +32,11 @@ export const Checkout: React.FC = () => {
     items,
     getTotalAmount,
     clearCart,
-    selectedServiceIds = [],
-    toggleService,
   } = useCartStore();
-  const { services, createBooking, initializeServices } = useServiceStore();
 
-  // Fetch fresh services and pricing on mount
-  useEffect(() => {
-    void initializeServices();
-  }, [initializeServices]);
 
   // Multi-Step Checkout Navigation: 1 (Preview) -> 2 (Address) -> 3 (Payment) -> 4 (Confirmation)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
-
-  // Filter active checkout add-on services from the services store
-  const availableServices = services.filter(
-    (s) => s.is_active && (s.is_checkout_addon || s.category === 'Fitting' || s.category === 'Inspection')
-  );
-
-  const selectedServices = services.filter((s) => selectedServiceIds.includes(s.id));
-  const servicesTotal = selectedServices.reduce((sum, s) => sum + s.price, 0);
 
   // Applied Coupon from cart/storage
   const [appliedCoupon] = useState<any>(() => {
@@ -90,8 +70,8 @@ export const Checkout: React.FC = () => {
     return sum + (Number(item.product.shipping_fee) || 0) * item.quantity;
   }, 0);
 
-  // Total order amount: Subtotal - Discount + Shipping + Services Total
-  const total = Math.max(0, subtotal - discountAmount) + shippingCharge + servicesTotal;
+  // Total order amount: Subtotal - Discount + Shipping
+  const total = Math.max(0, subtotal - discountAmount) + shippingCharge;
 
   // Step 2: Customer Delivery & Address Information (Preserved across all step navigation)
   const [fullName, setFullName] = useState(user?.user_metadata?.full_name || '');
@@ -112,10 +92,6 @@ export const Checkout: React.FC = () => {
   const [orderPaymentId, setOrderPaymentId] = useState<string | null>(null);
   const [orderDeliveryDate, setOrderDeliveryDate] = useState<string | null>(null);
 
-  // WhatsApp auto-redirect countdown state (for Step 4)
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [autoRedirectCancelled, setAutoRedirectCancelled] = useState(false);
-
   // Redirect if cart is empty and no active completed order
   useEffect(() => {
     if (items.length === 0 && !orderCreatedId && !loading && currentStep !== 4) {
@@ -131,48 +107,6 @@ export const Checkout: React.FC = () => {
       localStorage.removeItem('animemaze_applied_coupon');
     }
   }, [paymentStatus, clearCart]);
-
-  // Handle WhatsApp auto-redirect for service coordination in Step 4
-  useEffect(() => {
-    if (currentStep === 4 && selectedServices.length > 0 && !autoRedirectCancelled) {
-      setCountdown(5);
-      const interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev === null || prev <= 1) {
-            clearInterval(interval);
-            triggerWhatsAppCoordination();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }
-  }, [currentStep, selectedServices.length, autoRedirectCancelled]);
-
-
-  // Generate WhatsApp Coordination Link
-  const getWhatsAppCoordinationUrl = () => {
-    const servicesListText = selectedServices
-      .map((s) => `• ${s.title} (₹${s.price.toLocaleString('en-IN')})`)
-      .join('\n');
-
-    const message = `*Elite Bath Collections — Service Coordination Request*\n\n` +
-      `Hello, I have placed Order *#${orderCreatedId || 'NEW'}* and selected additional installation/inspection service(s):\n\n` +
-      `*Selected Services:*\n${servicesListText}\n\n` +
-      `*Customer Name:* ${fullName}\n` +
-      `*Phone Number:* ${phone}\n` +
-      `*Delivery Address:* ${address}${landmark ? `, Near ${landmark}` : ''}, ${city}, ${state} - ${pincode}\n\n` +
-      `Please coordinate the certified technician visit according to the order delivery schedule.`;
-
-    return `https://wa.me/917055435358?text=${encodeURIComponent(message)}`;
-  };
-
-  const triggerWhatsAppCoordination = () => {
-    const url = getWhatsAppCoordinationUrl();
-    window.open(url, '_blank');
-  };
 
   // Save Confirmed Order to DB and Local Storage
   const persistConfirmedOrder = async (
@@ -193,11 +127,6 @@ export const Checkout: React.FC = () => {
       paymentMethod: paymentMethodUsed,
       paymentId,
       order_ref: orderId,
-      selected_services: selectedServices.map((s) => ({
-        id: s.id,
-        title: s.title,
-        price: s.price,
-      })),
       item_variants: items.map((item) => ({
         product_id: item.product.id,
         selected_variant: item.selectedVariant || null,
@@ -209,27 +138,7 @@ export const Checkout: React.FC = () => {
     const estDelivery = new Date();
     estDelivery.setDate(estDelivery.getDate() + 5);
 
-    // 1. Record customer service bookings in useServiceStore
-    for (const service of selectedServices) {
-      createBooking({
-        service_id: service.id,
-        service_title: service.title,
-        service_price: service.price,
-        customer_name: fullName,
-        customer_phone: phone,
-        customer_email: email,
-        address: `${address}${landmark ? `, Near ${landmark}` : ''}`,
-        city,
-        state,
-        pincode,
-        preferred_date: estDelivery.toISOString().split('T')[0],
-        preferred_time_slot: 'Morning (10:00 AM - 1:00 PM)',
-        notes: `Selected during checkout with Order #${orderId}`,
-        order_id: orderId,
-      });
-    }
-
-    // 2. Persist order in Supabase
+    // 1. Persist order in Supabase
     try {
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId);
       const { data: insertedOrder, error: orderError } = await supabase
@@ -275,7 +184,6 @@ export const Checkout: React.FC = () => {
         payment_id: paymentId,
         shipping_address: shippingAddressJson,
         estimated_delivery_date: estDelivery.toISOString(),
-        selected_services: selectedServices,
         items: items.map((item, idx) => ({
           id: `item-${Date.now()}-${idx}`,
           product_id: item.product.id,
@@ -383,7 +291,7 @@ export const Checkout: React.FC = () => {
         );
       }
 
-      // 2. Create server-side order with services fee as distinct line item
+      // 2. Create server-side order
       const serverOrder = await createRazorpayOrder({
         items: items.map((it) => ({
           product: {
@@ -399,12 +307,6 @@ export const Checkout: React.FC = () => {
           selectedVariantId: it.selectedVariantId,
           selectedAttributes: it.selectedAttributes,
         })),
-        services: selectedServices.map((s) => ({
-          id: s.id,
-          title: s.title,
-          price: s.price,
-        })),
-        serviceFee: servicesTotal,
         shippingAddress: {
           fullName,
           phone,
@@ -440,7 +342,7 @@ export const Checkout: React.FC = () => {
         key: serverOrder.keyId,
         amount: serverOrder.amount,
         currency: serverOrder.currency || 'INR',
-        name: 'Elite Bath Collections',
+        name: 'TRYVOAL',
         description: `Order Ref: ${orderRefId}`,
         image: '/logo.png',
         ...(isRealOrderId ? { order_id: serverOrder.razorpayOrderId } : {}),
@@ -452,7 +354,7 @@ export const Checkout: React.FC = () => {
         notes: {
           order_id: orderRefId,
           user_id: user?.id || 'guest',
-          services: selectedServices.map((s) => s.title).join(', '),
+          
         },
         theme: {
           color: '#166534',
@@ -582,67 +484,12 @@ export const Checkout: React.FC = () => {
                 Order & Payment Confirmed
               </span>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-                Thank You for Choosing Elite Bath!
+                Thank You for Choosing TRYVOAL!
               </h1>
               <p className="text-xs sm:text-sm text-gray-600 max-w-md mx-auto">
-                Your luxury sanitaryware order has been secured and dispatched for quality inspection and reinforced wooden crating.
+                Your luxury apparel order has been confirmed and forwarded for precision quality inspection and express dispatch.
               </p>
             </div>
-
-            {/* CONDITIONAL WHATSAPP SERVICE COORDINATION */}
-            {selectedServices.length > 0 && (
-              <div className="bg-emerald-50 border-2 border-emerald-500/30 rounded-2xl p-6 text-left space-y-4 relative overflow-hidden shadow-sm">
-                <div className="flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-md">
-                    <MessageCircle className="h-5 w-5" />
-                  </div>
-                  <div className="space-y-1 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-extrabold text-emerald-950 text-base">
-                        WhatsApp Service Coordination
-                      </h3>
-                      <span className="px-2 py-0.5 bg-emerald-200 text-emerald-900 font-bold text-[10px] rounded-full uppercase tracking-wider">
-                        Action Needed
-                      </span>
-                    </div>
-                    <p className="text-xs text-emerald-800 leading-relaxed">
-                      You added <strong>{selectedServices.length} service(s)</strong> ({selectedServices.map((s) => s.title).join(', ')}). Our certified service supervisor will coordinate plumbing technicians to match your delivery.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Auto redirect prompt */}
-                {countdown !== null && countdown > 0 && !autoRedirectCancelled && (
-                  <div className="bg-white/80 border border-emerald-200 rounded-xl p-3 flex items-center justify-between text-xs text-emerald-900">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Sparkles className="h-3.5 w-3.5 text-emerald-600 animate-pulse" />
-                      Redirecting to WhatsApp for service coordination in <strong>{countdown}s</strong>...
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setAutoRedirectCancelled(true)}
-                      className="text-[11px] font-bold text-emerald-700 hover:underline"
-                    >
-                      Stay on page
-                    </button>
-                  </div>
-                )}
-
-                <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={triggerWhatsAppCoordination}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md hover:shadow-lg transition-all"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    <span>Coordinate Services on WhatsApp</span>
-                  </button>
-                  <span className="text-[11px] text-emerald-700 font-medium">
-                    Order details will be pre-filled automatically
-                  </span>
-                </div>
-              </div>
-            )}
 
             {/* Order Details Grid */}
             <div className="bg-gray-50/80 rounded-2xl border border-gray-200 p-6 text-left space-y-5 text-xs text-gray-600">
@@ -687,25 +534,7 @@ export const Checkout: React.FC = () => {
                 <p className="text-gray-500 mt-0.5">Contact: {phone} • {email}</p>
               </div>
 
-              {/* Selected Services breakdown if any */}
-              {selectedServices.length > 0 && (
-                <div className="pt-3 border-t border-gray-200">
-                  <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block mb-1.5">
-                    Included Services
-                  </span>
-                  <div className="space-y-1">
-                    {selectedServices.map((srv) => (
-                      <div key={srv.id} className="flex justify-between font-medium">
-                        <span className="flex items-center gap-1 text-gray-800">
-                          <Wrench className="h-3 w-3 text-primary" />
-                          {srv.title}
-                        </span>
-                        <span className="font-bold text-gray-900">₹{srv.price.toLocaleString('en-IN')}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              
             </div>
 
             {/* CTAs */}
@@ -740,10 +569,10 @@ export const Checkout: React.FC = () => {
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-            Elite Bath Checkout
+            TRYVOAL Checkout
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Premium sanitaryware checkout with certified fittings, insured crating, and 256-bit payment encryption.
+            Premium apparel checkout with doorstep exchange guarantee, insured transit, and 256-bit payment encryption.
           </p>
         </div>
 
@@ -799,7 +628,7 @@ export const Checkout: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-7 space-y-6">
             {/* ============================================================= */}
-            {/* STEP 1: PRODUCT PREVIEW & SERVICES SELECTION                   */}
+            {/* STEP 1: ORDER REVIEW                                          */}
             {/* ============================================================= */}
             {currentStep === 1 && (
               <div className="bg-white border border-gray-200 p-6 sm:p-8 rounded-2xl shadow-card space-y-6">
@@ -807,10 +636,10 @@ export const Checkout: React.FC = () => {
                   <div>
                     <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                       <Package className="h-5 w-5 text-primary" />
-                      <span>Step 1: Product Preview & Services</span>
+                      <span>Step 1: Order Review</span>
                     </h2>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      Review ordered items and optionally select certified plumbing and service agent add-ons.
+                      Review your ordered apparel items and configure sizes or quantities.
                     </p>
                   </div>
                   <Link
@@ -862,68 +691,6 @@ export const Checkout: React.FC = () => {
                       </div>
                     );
                   })}
-                </div>
-
-                {/* Additional Services Selection */}
-                <div className="pt-4 border-t border-gray-100 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
-                      <Wrench className="h-4 w-4 text-primary" />
-                      <span>Additional Expert Services (Optional)</span>
-                    </h3>
-                    <span className="text-[10px] text-primary font-semibold">
-                      Product prices remain unchanged
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    Select certified sanitary services for your order. Service coordination is managed via WhatsApp upon order confirmation.
-                  </p>
-
-                  <div className="space-y-3 pt-1">
-                    {availableServices.map((service) => {
-                      const isSelected = selectedServiceIds.includes(service.id);
-                      return (
-                        <div
-                          key={service.id}
-                          onClick={() => toggleService(service.id)}
-                          className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3.5 ${
-                            isSelected
-                              ? 'border-primary bg-primary/5 shadow-xs'
-                              : 'border-gray-200 hover:border-gray-300 bg-white'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => {}} // Handled by div container
-                            className="rounded text-primary focus:ring-primary h-4 w-4 mt-0.5 cursor-pointer"
-                          />
-                          <div className="flex-grow min-w-0">
-                            <div className="flex items-center justify-between">
-                              <h4 className="text-xs sm:text-sm font-bold text-gray-900">
-                                {service.title}
-                              </h4>
-                              <span className="text-xs sm:text-sm font-extrabold text-primary">
-                                +₹{service.price.toLocaleString('en-IN')}
-                              </span>
-                            </div>
-                            <p className="text-xs text-gray-600 mt-1 leading-relaxed">
-                              {service.description}
-                            </p>
-                            <div className="flex items-center gap-2 mt-2 text-[10px] text-gray-500">
-                              <span className="flex items-center gap-1 font-medium">
-                                <Clock className="h-3 w-3 text-gray-400" />
-                                {service.estimated_duration}
-                              </span>
-                              <span>•</span>
-                              <span>WhatsApp coordination included</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
                 </div>
 
                 {/* Continue CTA */}
@@ -1107,33 +874,6 @@ export const Checkout: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Selected Services Review Box if any */}
-                {selectedServices.length > 0 && (
-                  <div className="bg-emerald-50/70 rounded-xl p-4 border border-emerald-200 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
-                        <Wrench className="h-3.5 w-3.5 text-emerald-600" />
-                        <span>Included Additional Services ({selectedServices.length})</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setCurrentStep(1)}
-                        className="text-[11px] font-bold text-emerald-700 hover:underline"
-                      >
-                        Change
-                      </button>
-                    </div>
-                    <div className="space-y-1">
-                      {selectedServices.map((srv) => (
-                        <div key={srv.id} className="flex justify-between text-xs">
-                          <span className="text-emerald-900">{srv.title}</span>
-                          <span className="font-bold text-emerald-950">₹{srv.price.toLocaleString('en-IN')}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {/* Razorpay Gateway Card */}
                 <div className="p-5 rounded-xl border-2 border-primary bg-primary/5 shadow-xs space-y-3">
                   <div className="flex items-center justify-between">
@@ -1264,7 +1004,7 @@ export const Checkout: React.FC = () => {
                 )}
 
                 <div className="flex justify-between items-center">
-                  <span>Insured Shipping & Crating:</span>
+                  <span>Insured Express Shipping:</span>
                   {shippingCharge === 0 ? (
                     <span className="text-success font-bold uppercase text-[11px]">FREE</span>
                   ) : (
@@ -1272,13 +1012,7 @@ export const Checkout: React.FC = () => {
                   )}
                 </div>
 
-                {/* Services Total (as distinct line item, keeping product prices untouched) */}
-                {selectedServices.length > 0 && (
-                  <div className="flex justify-between text-primary font-semibold">
-                    <span>Additional Services ({selectedServices.length}):</span>
-                    <span>+₹{servicesTotal.toLocaleString('en-IN')}</span>
-                  </div>
-                )}
+                
               </div>
 
               {/* Total Order Amount */}
@@ -1332,7 +1066,7 @@ export const Checkout: React.FC = () => {
 
               <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400 font-medium pt-1">
                 <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-                <span>10-Year Ceramic Cartridge Warranty • 100% Transit Safe</span>
+                <span>100% Authentic Luxury Apparel • Insured Safe Transit</span>
               </div>
             </div>
           </div>

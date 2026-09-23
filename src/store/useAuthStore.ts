@@ -17,17 +17,17 @@ interface AuthState {
 const MOCK_ADMIN_USER: User = {
   id: '00000000-0000-0000-0000-000000000000',
   app_metadata: {},
-  user_metadata: { full_name: 'Elite Bath Administrator' },
+  user_metadata: { full_name: 'TRYVOAL Administrator' },
   aud: 'authenticated',
   created_at: new Date().toISOString(),
-  email: 'admin@elitebath.com',
+  email: 'admin@tryvoal.com',
   role: 'authenticated'
 };
 
 const MOCK_ADMIN_PROFILE: Profile = {
   id: '00000000-0000-0000-0000-000000000000',
-  email: 'admin@elitebath.com',
-  full_name: 'Elite Bath Administrator',
+  email: 'admin@tryvoal.com',
+  full_name: 'TRYVOAL Administrator',
   avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
   role: 'admin',
   created_at: new Date().toISOString()
@@ -36,17 +36,17 @@ const MOCK_ADMIN_PROFILE: Profile = {
 const MOCK_USER: User = {
   id: '11111111-1111-1111-1111-111111111111',
   app_metadata: {},
-  user_metadata: { full_name: 'Elite Bath Customer' },
+  user_metadata: { full_name: 'TRYVOAL Customer' },
   aud: 'authenticated',
   created_at: new Date().toISOString(),
-  email: 'customer@elitebath.com',
+  email: 'customer@tryvoal.com',
   role: 'authenticated'
 };
 
 const MOCK_USER_PROFILE: Profile = {
   id: '11111111-1111-1111-1111-111111111111',
-  email: 'customer@elitebath.com',
-  full_name: 'Elite Bath Customer',
+  email: 'customer@tryvoal.com',
+  full_name: 'TRYVOAL Customer',
   avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
   role: 'user',
   created_at: new Date().toISOString()
@@ -179,7 +179,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
         console.warn('Supabase authentication failed, checking mock/local accounts:', supabaseErr.message);
         
         // 1. Mock Admin account
-        if ((email === 'admin@elitebath.com' || email === 'admin@animemaze.com') && password === 'admin123') {
+        if ((email === 'admin@tryvoal.com' || email === 'admin@animemaze.com') && password === 'admin123') {
           localStorage.setItem('animemaze_mock_session', 'true');
           localStorage.setItem('animemaze_mock_user_id', 'mock-admin-id');
           localStorage.setItem('animemaze_cached_session', JSON.stringify(MOCK_ADMIN_USER));
@@ -194,7 +194,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
         }
         
         // 2. Mock default User account
-        if ((email === 'customer@elitebath.com' || email === 'user@animemaze.com') && password === 'user123') {
+        if ((email === 'customer@tryvoal.com' || email === 'user@animemaze.com') && password === 'user123') {
           localStorage.setItem('animemaze_mock_session', 'true');
           localStorage.setItem('animemaze_mock_user_id', 'mock-user-id');
           localStorage.setItem('animemaze_cached_session', JSON.stringify(MOCK_USER));

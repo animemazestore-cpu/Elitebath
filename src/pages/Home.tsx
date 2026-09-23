@@ -11,6 +11,38 @@ import { CategoryCardSkeleton } from '../components/product/CategoryCardSkeleton
 import { HeroSkeleton } from '../components/skeleton/HeroSkeleton';
 import { ProductImage } from '../components/product/ProductImage';
 
+
+const HERO_EDITORIAL_LOOKS = [
+  {
+    id: 1,
+    tag: 'LOOK 01 // HEAVYWEIGHT 240 GSM',
+    title: 'Heavyweight Boxy Silhouette',
+    image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1400&auto=format&fit=crop',
+    subtitle: 'Jet black relaxed drop-shoulder tailoring',
+  },
+  {
+    id: 2,
+    tag: 'LOOK 02 // VINTAGE MINERAL WASH',
+    title: 'Textured Streetwear Drape',
+    image: 'https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?q=80&w=1400&auto=format&fit=crop',
+    subtitle: 'Pre-shrunk ring-spun combed cotton',
+  },
+  {
+    id: 3,
+    tag: 'LOOK 03 // RIVIERA RELAXED LINEN',
+    title: 'Pure European Flax Shirt',
+    image: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?q=80&w=1400&auto=format&fit=crop',
+    subtitle: 'Breezy camp-collar resort silhouette',
+  },
+  {
+    id: 4,
+    tag: 'LOOK 04 // STUDIO CAPSULE',
+    title: 'Minimalist Architectural Form',
+    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1400&auto=format&fit=crop',
+    subtitle: 'Crafted apparel & full-grain accessories',
+  },
+];
+
 export const Home: React.FC = () => {
   const navigate = useNavigate();
   const categories = useCatalogStore((s) => s.categories);
@@ -21,8 +53,15 @@ export const Home: React.FC = () => {
 
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
-  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
   const [heroLoading, setHeroLoading] = useState(true);
+  const [activeLookIndex, setActiveLookIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveLookIndex((prev) => (prev + 1) % HERO_EDITORIAL_LOOKS.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     void initializeCatalog();
@@ -66,9 +105,9 @@ export const Home: React.FC = () => {
   };
 
   const trustPoints = [
-    { icon: ShieldCheck, label: '100% Genuine, tested sanitary fittings & valves' },
-    { icon: Truck, label: 'Fast & tracked delivery across India' },
-    { icon: Package, label: 'Heavy-duty protective transit packaging' },
+    { icon: ShieldCheck, label: '240+ GSM Pre-Shrunk Combed Cotton' },
+    { icon: Truck, label: 'Express insured delivery across India' },
+    { icon: Package, label: 'Zero-plastic matte luxury packaging' },
   ];
 
   return (
@@ -77,43 +116,75 @@ export const Home: React.FC = () => {
       {heroLoading ? (
         <HeroSkeleton />
       ) : (
-        <section className="relative bg-gradient-to-b from-gray-50/60 via-white to-white border-b border-gray-200 overflow-hidden">
-          {/* Mobile Enhanced Hero Background (Increased opacity for vivid visibility while preserving text contrast) */}
+        <section className="relative bg-gradient-to-b from-blue-50/40 via-white to-white border-b border-gray-200 overflow-hidden">
+          {/* Animated Real Editorial Streetwear Background (Mobile & Tablet) */}
           <div className="block lg:hidden absolute inset-0 z-0 pointer-events-none overflow-hidden">
-            <img
-              src="/hero_sanitary.jpg"
-              alt=""
-              className="w-full h-full object-cover object-[center_35%] opacity-45 sm:opacity-50 filter contrast-110 saturate-105"
-              loading="eager"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-white/45 to-white/95" />
+            {/* Multi-Photo Ken Burns Smooth Cinematic Crossfade */}
+            {HERO_EDITORIAL_LOOKS.map((look, index) => {
+              const isActive = index === activeLookIndex;
+              return (
+                <div
+                  key={look.id}
+                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                    isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                  }`}
+                >
+                  <div
+                    className={`w-full h-full transform transition-transform duration-[6000ms] ease-out ${
+                      isActive ? 'scale-110 translate-y-[-1%]' : 'scale-100 translate-y-0'
+                    }`}
+                  >
+                    <img
+                      src={look.image}
+                      alt={look.title}
+                      className="w-full h-full object-cover object-[center_18%] filter contrast-110 brightness-95 saturate-105"
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Premium Subtle Gradient Overlay (Ensures real photo is vivid while text has razor-sharp contrast) */}
+            <div className="absolute inset-0 z-20 bg-gradient-to-b from-white/70 via-white/50 to-white/92 pointer-events-none" />
           </div>
 
-          {/* Desktop Subtle Background Layer */}
-          <div className="hidden lg:block absolute inset-0 z-0 opacity-15 pointer-events-none">
-            <img
-              src="/hero_sanitary.jpg"
-              alt=""
-              className="w-full h-full object-cover filter blur-sm"
-              loading="eager"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-gray-50/90" />
+          {/* Desktop Background Layer with Synchronized Crossfade */}
+          <div className="hidden lg:block absolute inset-0 z-0 opacity-20 pointer-events-none overflow-hidden">
+            {HERO_EDITORIAL_LOOKS.map((look, index) => {
+              const isActive = index === activeLookIndex;
+              return (
+                <div
+                  key={look.id}
+                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                    isActive ? 'opacity-100' : 'opacity-0'
+                  }`}
+                >
+                  <img
+                    src={look.image}
+                    alt=""
+                    className="w-full h-full object-cover filter blur-xs"
+                    loading="lazy"
+                  />
+                </div>
+              );
+            })}
+            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-blue-50/70" />
           </div>
 
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
+          <div className="relative z-30 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
             <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
               <div className="text-center lg:text-left space-y-6 sm:space-y-8">
-                {/* Natural, unboxed typography with high readability */}
                 <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-widest backdrop-blur-sm">
                     <Sparkles className="h-3.5 w-3.5" />
-                    <span>Bathrooms For A Better Tomorrow</span>
+                    <span>TRYVOAL STUDIO • SS26 DROP 01</span>
                   </div>
                   <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 leading-tight">
-                    Elevate Your Bathroom with Premium Sanitary Collections
+                    Modern Luxury Streetwear & Heavyweight Apparel
                   </h1>
-                  <p className="text-gray-600 text-sm sm:text-base lg:text-lg max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                    Precision brass faucets, rainfall showers, designer basins, and luxury accessories engineered for enduring performance and timeless elegance.
+                  <p className="text-gray-700 text-sm sm:text-base lg:text-lg max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium">
+                    Cut from 240+ GSM combed organic cotton, French terry, and breezy European linen. Designed with relaxed drop-shoulder tailoring, timeless earth tones, and enduring presence.
                   </p>
                 </div>
 
@@ -127,36 +198,89 @@ export const Home: React.FC = () => {
                   </button>
                   <button
                     onClick={() => navigate('/shop')}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-gray-700 border border-gray-300 bg-white hover:border-primary hover:text-primary shadow-xs hover:shadow-sm transition-all active:scale-[0.99]"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl font-bold text-gray-700 border border-gray-300 bg-white/90 backdrop-blur-sm hover:border-primary hover:text-primary shadow-xs hover:shadow-sm transition-all active:scale-[0.99]"
                   >
                     <Sparkles className="h-5 w-5 text-primary" />
-                    Browse Categories
+                    Explore Catalog
                   </button>
                 </div>
 
                 <ul className="space-y-3 pt-3 sm:pt-4 border-t border-gray-200">
                   {trustPoints.map(({ icon: Icon, label }) => (
-                    <li key={label} className="flex items-center gap-3 text-xs sm:text-sm text-gray-600 font-medium justify-center lg:justify-start">
+                    <li key={label} className="flex items-center gap-3 text-xs sm:text-sm text-gray-700 font-semibold justify-center lg:justify-start">
                       <Icon className="h-4 w-4 text-primary flex-shrink-0" />
                       <span>{label}</span>
                     </li>
                   ))}
                 </ul>
+
+                {/* Mobile Editorial Slideshow Indicators */}
+                <div className="flex lg:hidden items-center justify-center gap-2 pt-2">
+                  {HERO_EDITORIAL_LOOKS.map((look, i) => (
+                    <button
+                      key={look.id}
+                      type="button"
+                      onClick={() => setActiveLookIndex(i)}
+                      className={`h-1.5 rounded-full transition-all duration-500 ${
+                        i === activeLookIndex ? 'w-7 bg-primary' : 'w-2 bg-gray-300'
+                      }`}
+                      aria-label={`View editorial look ${i + 1}`}
+                    />
+                  ))}
+                  <span className="text-[11px] font-mono text-gray-500 font-semibold ml-1">
+                    0{activeLookIndex + 1} / 0{HERO_EDITORIAL_LOOKS.length}
+                  </span>
+                </div>
               </div>
 
+              {/* Desktop Synchronized Lookbook Showcase */}
               <div className="hidden lg:flex items-center justify-center">
-                <div className="relative w-full max-w-lg aspect-[16/10] rounded-3xl overflow-hidden shadow-2xl border-4 border-white group">
-                  <img
-                    src="/hero_sanitary.jpg"
-                    alt="Elite Bath Collections luxury bathroom setting"
-                    className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${heroImageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                    loading="eager"
-                    onLoad={() => setHeroImageLoaded(true)}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                  <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Modern Architecture</span>
-                    <p className="text-sm font-bold">Curated Sanitaryware & Fittings</p>
+                <div className="relative w-full max-w-lg aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-white group">
+                  {HERO_EDITORIAL_LOOKS.map((look, index) => {
+                    const isActive = index === activeLookIndex;
+                    return (
+                      <div
+                        key={look.id}
+                        className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                          isActive ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                        }`}
+                      >
+                        <img
+                          src={look.image}
+                          alt={look.title}
+                          className="w-full h-full object-cover transition-transform duration-[6000ms] ease-out scale-105"
+                          loading={index === 0 ? 'eager' : 'lazy'}
+                        />
+                      </div>
+                    );
+                  })}
+                  <div className="absolute inset-0 z-20 bg-gradient-to-t from-gray-950/80 via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute bottom-5 left-5 right-5 z-30 text-white flex items-end justify-between">
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-widest text-blue-300">
+                        {HERO_EDITORIAL_LOOKS[activeLookIndex].tag}
+                      </span>
+                      <p className="text-base font-extrabold mt-0.5">
+                        {HERO_EDITORIAL_LOOKS[activeLookIndex].title}
+                      </p>
+                      <p className="text-xs text-gray-300">
+                        {HERO_EDITORIAL_LOOKS[activeLookIndex].subtitle}
+                      </p>
+                    </div>
+                    {/* Interactive dots */}
+                    <div className="flex items-center gap-1.5 pb-1">
+                      {HERO_EDITORIAL_LOOKS.map((look, i) => (
+                        <button
+                          key={look.id}
+                          type="button"
+                          onClick={() => setActiveLookIndex(i)}
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            i === activeLookIndex ? 'w-5 bg-white' : 'w-1.5 bg-white/40'
+                          }`}
+                          aria-label={`Slide ${i + 1}`}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

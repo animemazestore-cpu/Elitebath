@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
 import { useCatalogStore } from './store/useCatalogStore';
-import { useServiceStore } from './store/useServiceStore';
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
 import { AppDownloadPopup } from './components/common/AppDownloadPopup';
@@ -20,7 +19,6 @@ import { Dashboard } from './pages/Dashboard';
 import { Contact } from './pages/Contact';
 import { Admin } from './pages/Admin';
 import { TrackOrder } from './pages/TrackOrder';
-import { Services } from './pages/Services';
 
 // Import Static Pages
 import { AboutUs } from './pages/static/AboutUs';
@@ -42,14 +40,12 @@ const ScrollToTop: React.FC = () => {
 export const App: React.FC = () => {
   const checkSession = useAuthStore((state) => state.checkSession);
   const initializeCatalog = useCatalogStore((state) => state.initializeCatalog);
-  const initializeServices = useServiceStore((state) => state.initializeServices);
 
-  // Initialize session state and preload catalog and services on startup
+  // Initialize session state and preload catalog on startup
   useEffect(() => {
     checkSession();
     void initializeCatalog();
-    void initializeServices();
-  }, [checkSession, initializeCatalog, initializeServices]);
+  }, [checkSession, initializeCatalog]);
 
   return (
     <Router>
@@ -74,7 +70,6 @@ export const App: React.FC = () => {
             <Route path="/admin" element={<Admin />} />
             <Route path="/track" element={<TrackOrder />} />
             <Route path="/track-order" element={<TrackOrder />} />
-            <Route path="/services" element={<Services />} />
 
             {/* Static pages routes */}
             <Route path="/about" element={<AboutUs />} />

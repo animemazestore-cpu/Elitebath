@@ -153,7 +153,7 @@ export const Dashboard: React.FC = () => {
             items: (lo.items || []).map((it: any) => ({
               ...it,
               product: it.product || {
-                name: it.product_name || 'Sanitaryware Item',
+                name: it.product_name || 'Apparel Item',
                 main_image_url: it.image_url || '/placeholder.jpg',
                 sku: it.sku || null,
                 price: Number(it.price || 0),
@@ -179,7 +179,7 @@ export const Dashboard: React.FC = () => {
                   quantity: 1,
                   selected_variant: iv.selected_variant,
                   product: {
-                    name: 'Sanitaryware Fixture',
+                    name: 'Apparel Item',
                     main_image_url: '/placeholder.jpg',
                     price: 0,
                   },
@@ -205,7 +205,7 @@ export const Dashboard: React.FC = () => {
                         item.product.main_image_url || item.image_url || '/placeholder.jpg',
                     }
                   : {
-                      name: item.product_name || 'Sanitaryware Product',
+                      name: item.product_name || 'Apparel Item',
                       main_image_url: item.image_url || '/placeholder.jpg',
                       price: Number(item.price || 0),
                     },
@@ -553,7 +553,7 @@ export const Dashboard: React.FC = () => {
                                       <img src={item.product?.main_image_url} alt="" className="w-full h-full object-cover" />
                                     </div>
                                     <div>
-                                      <p className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-1">{item.product?.name || 'Sanitary Product'}</p>
+                                      <p className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-1">{item.product?.name || 'Apparel Item'}</p>
                                       <div className="flex flex-wrap items-center gap-2 text-[10px] text-gray-500">
                                         <span>Qty: {item.quantity} x ₹{item.price}</span>
                                         {(item as any).selected_variant && (

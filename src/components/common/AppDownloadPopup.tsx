@@ -7,7 +7,7 @@ export const AppDownloadPopup: React.FC = () => {
 
   // Check if previously dismissed
   useEffect(() => {
-    const dismissed = localStorage.getItem('elitebath_brochure_dismissed');
+    const dismissed = localStorage.getItem('tryvoal_lookbook_dismissed');
     if (!dismissed) {
       // Show once after 10s for new visitors
       const timer = setTimeout(() => {
@@ -18,12 +18,12 @@ export const AppDownloadPopup: React.FC = () => {
   }, []);
 
   const handleClose = () => {
-    localStorage.setItem('elitebath_brochure_dismissed', 'true');
+    localStorage.setItem('tryvoal_lookbook_dismissed', 'true');
     setIsOpen(false);
   };
 
   const handleDownload = () => {
-    alert("The 2026 Elite Bath Collections digital catalog will be available shortly. Browse our online shop for current models.");
+    alert("The 2026 TRYVOAL Studio Lookbook will be available shortly. Browse our online shop for current collections.");
     handleClose();
   };
 
@@ -69,11 +69,11 @@ export const AppDownloadPopup: React.FC = () => {
               </div>
 
               <h2 className="text-2xl font-extrabold text-center text-gray-900 mb-2">
-                Elite Bath Collections
+                TRYVOAL STUDIO
               </h2>
 
               <p className="text-center text-gray-600 text-sm mb-6 leading-relaxed">
-                Explore our full architectural catalog featuring luxury sanitaryware, rain showers, precision faucets, and bathroom accessories.
+                Explore our seasonal lookbook featuring heavyweight organic streetwear, linen tailoring, and curated accessories.
               </p>
 
               <div className="space-y-3">
@@ -82,7 +82,7 @@ export const AppDownloadPopup: React.FC = () => {
                   className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3.5 px-6 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Download Digital Catalog</span>
+                  <span>Download Season Lookbook</span>
                 </button>
 
                 <button

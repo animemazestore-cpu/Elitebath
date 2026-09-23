@@ -5,7 +5,7 @@ export const FloatingConcierge: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const defaultMsg = encodeURIComponent(
-    'Hi Elite Bath Collections! I would like assistance with bathroom fittings, product dimensions, or ordering.'
+    'Hi TRYVOAL! I would like assistance with apparel sizing, fabric details, or placing an order.'
   );
 
   return (
@@ -25,12 +25,12 @@ export const FloatingConcierge: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping" />
               <span className="text-[11px] uppercase tracking-wider font-extrabold text-emerald-300">
-                Live Sanitary Concierge
+                Live Styling Concierge
               </span>
             </div>
-            <h3 className="text-base font-extrabold mt-1 text-white">Elite Bath Collections</h3>
+            <h3 className="text-base font-extrabold mt-1 text-white">TRYVOAL Studio</h3>
             <p className="text-xs text-white/80 mt-0.5">
-              Direct assistance with luxury fittings, finishes & express delivery.
+              Direct styling assistance, sizing guidance & express shipping.
             </p>
           </div>
 
@@ -119,7 +119,7 @@ export const FloatingConcierge: React.FC = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="group flex items-center gap-2.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 border-2 border-white"
-        aria-label="Open luxury sanitary concierge chat"
+        aria-label="Open luxury styling concierge chat"
       >
         <div className="relative">
           <MessageCircle className="h-5 w-5 fill-current" />

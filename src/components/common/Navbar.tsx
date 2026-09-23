@@ -62,10 +62,10 @@ export const Navbar: React.FC = () => {
     };
   }, []);
 
-  const DEFAULT_ANNOUNCEMENT = '✨ Exclusive Offer: Use code ELITE10 for 10% discount! 🚚 FREE Shipping on sanitaryware above ₹999!';
+  const DEFAULT_ANNOUNCEMENT = '✨ Launch Offer: Use code TRYVOAL10 for 10% off! 🚚 FREE Express Shipping across India!';
 
   const [announcement, setAnnouncement] = useState(() => {
-    return localStorage.getItem('elitebath_announcement') || localStorage.getItem('animemaze_announcement') || DEFAULT_ANNOUNCEMENT;
+    return localStorage.getItem('tryvoal_announcement') || localStorage.getItem('elitebath_announcement') || DEFAULT_ANNOUNCEMENT;
   });
 
   // Fetch announcement from DB on mount — DB is source of truth
@@ -142,15 +142,15 @@ export const Navbar: React.FC = () => {
             <Link to="/" className="flex items-center space-x-3 group">
               <img
                 src="/logo.png"
-                alt="Elite Bath Collections"
-                className="h-11 w-11 object-contain rounded-full border border-gray-200 shadow-sm group-hover:scale-105 transition-transform"
+                alt="TRYVOAL"
+                className="h-11 w-11 object-contain rounded-xl border border-blue-200/60 shadow-sm group-hover:scale-105 transition-transform"
               />
               <div className="flex flex-col">
                 <span className="text-lg sm:text-xl font-extrabold tracking-tight text-gray-900 leading-none group-hover:text-primary transition-colors">
-                  Elite Bath
+                  TRYVOAL
                 </span>
                 <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-primary leading-none mt-0.5">
-                  Collections
+                  STUDIO
                 </span>
               </div>
             </Link>
@@ -159,8 +159,7 @@ export const Navbar: React.FC = () => {
           {/* Navigation Links */}
           <div className="hidden md:flex space-x-8">
             <Link to="/shop" className="text-gray-600 hover:text-primary font-medium transition-colors">Shop</Link>
-            <Link to="/services" className="text-gray-600 hover:text-primary font-medium transition-colors">Services</Link>
-            <Link to="/track-order" className="text-gray-600 hover:text-primary font-medium transition-colors">Track Order</Link>
+                        <Link to="/track-order" className="text-gray-600 hover:text-primary font-medium transition-colors">Track Order</Link>
             <Link to="/contact" className="text-gray-600 hover:text-primary font-medium transition-colors">Contact</Link>
             <Link to="/faq" className="text-gray-600 hover:text-primary font-medium transition-colors">FAQ</Link>
             <Link to="/about" className="text-gray-600 hover:text-primary font-medium transition-colors">About Us</Link>
@@ -171,7 +170,7 @@ export const Navbar: React.FC = () => {
             <form onSubmit={handleSearchSubmit} className="flex items-center relative w-full">
               <input
                 type="text"
-                placeholder="Search faucets, showers, basins..."
+                placeholder="Search t-shirts, shirts, accessories..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -213,7 +212,7 @@ export const Navbar: React.FC = () => {
                           <div className="flex-grow min-w-0">
                             <div className="flex items-center gap-1.5">
                               <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
-                                {product.finish || product.category?.name || 'Sanitary'}
+                                {product.finish || product.category?.name || 'Apparel'}
                               </span>
                               {product.stock <= 5 && product.stock > 0 && (
                                 <span className="text-[10px] font-semibold text-amber-600">
@@ -407,7 +406,7 @@ export const Navbar: React.FC = () => {
             <form onSubmit={handleSearchSubmit} className="flex items-center relative w-full">
               <input
                 type="text"
-                placeholder="Search faucets, showers, basins..."
+                placeholder="Search t-shirts, shirts, accessories..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -490,13 +489,7 @@ export const Navbar: React.FC = () => {
           >
             Shop
           </Link>
-          <Link
-            to="/services"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="block text-gray-700 hover:text-primary text-base font-semibold py-2"
-          >
-            Services
-          </Link>
+
           <Link
             to="/track-order"
             onClick={() => setIsMobileMenuOpen(false)}

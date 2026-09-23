@@ -10,7 +10,7 @@ const PolicyPage: React.FC<{ title: string; children: React.ReactNode }> = ({ ti
           <span>Legal Agreement</span>
         </div>
         <h1 className="text-3xl font-extrabold text-gray-900">{title}</h1>
-        <p className="text-xs text-gray-500 mt-2">Effective Date: June 20, 2026 • Elite Bath Collections Pvt. Ltd.</p>
+        <p className="text-xs text-gray-500 mt-2">Effective Date: June 20, 2026 • TRYVOAL Studio Pvt. Ltd.</p>
       </div>
       <div className="space-y-8 text-sm text-gray-600 leading-relaxed">
         {children}
@@ -32,12 +32,12 @@ const Section: React.FC<{ title: string; icon?: React.ReactNode; children: React
 export const TermsConditions: React.FC = () => (
   <PolicyPage title="Terms & Conditions of Sale">
     <p>
-      Welcome to <strong>Elite Bath Collections</strong>. These Terms & Conditions govern your access to, use of, and purchases made through our online store, digital catalog, and architectural concierge services. By placing an order, you agree to be bound by these legal terms.
+      Welcome to <strong>TRYVOAL</strong>. These Terms & Conditions govern your access to, use of, and purchases made through our online store, digital catalog, and architectural concierge services. By placing an order, you agree to be bound by these legal terms.
     </p>
 
     <Section title="1. Product Specifications & Artisan Variations" icon={<CheckCircle2 className="h-4 w-4 text-primary" />}>
       <p>
-        Elite Bath Collections engineers architectural sanitaryware, brassware fittings, and ceramic fixtures. Due to high-temperature ceramic firing processes (1280°C) and advanced PVD metallic surface deposition:
+        TRYVOAL manufactures luxury apparel and crafted accessories using heavyweight ring-spun organic cotton, European flax linen, and artisanal dying processes:
       </p>
       <ul className="list-disc pl-5 space-y-1">
         <li>Vitreous china ceramic washbasins and commodes carry a standard dimensional tolerance of ±2mm to ±3mm.</li>
@@ -61,38 +61,38 @@ export const TermsConditions: React.FC = () => (
       </p>
     </Section>
 
-    <Section title="4. Professional Installation & Plumbing Requirements" icon={<AlertCircle className="h-4 w-4 text-primary" />}>
+    <Section title="4. Garment Care & Washing Guidelines" icon={<AlertCircle className="h-4 w-4 text-primary" />}>
       <p>
-        To ensure optimal performance and maintain warranty coverage:
+        To maintain fabric weight, hand-feel, and longevity of your TRYVOAL apparel:
       </p>
       <ul className="list-disc pl-5 space-y-1">
-        <li>All faucets, thermostatic mixers, and concealed valves must be installed by a certified licensed plumber following supplied technical specifications.</li>
-        <li>Plumbing supply lines must be flushed prior to cartridge installation to eliminate sand, cement slurry, or debris from supply pipes.</li>
-        <li>Operating water pressure must be maintained between 1.5 bar and 3.5 bar. Excessive pressure requires certified pressure-reducing valves (PRVs).</li>
-        <li><strong>Cleaning Notice:</strong> Use only mild soap and soft microfiber cloths. The use of abrasive scrubbers, hydrochloric acid, bleach, or aggressive bathroom descalers voids finish warranties.</li>
+        <li>Machine wash cold (30°C or below) on a gentle cycle with like colors, inside out.</li>
+        <li>Do not use chlorine bleach, harsh chemical detergents, or aggressive fabric softeners.</li>
+        <li>Air dry flat or tumble dry on low heat. Avoid excessive direct sunlight during line drying.</li>
+        <li><strong>Ironing Notice:</strong> Warm iron on reverse side; never iron directly over printed graphics or heat-sealed monograms.</li>
       </ul>
     </Section>
 
-    <Section title="5. Comprehensive Warranty Coverage" icon={<Award className="h-4 w-4 text-primary" />}>
+    <Section title="5. Quality Guarantee & 7-Day Doorstep Exchanges" icon={<Award className="h-4 w-4 text-primary" />}>
       <p>
-        Our products are backed by the Elite Bath Collections Quality Assurance Guarantee:
+        Our garments are backed by the TRYVOAL Craft & Longevity Guarantee:
       </p>
       <ul className="list-disc pl-5 space-y-1">
-        <li><strong>10-Year Warranty:</strong> Solid brass faucet bodies, internal ceramic disc cartridges, and ceramic glaze durability.</li>
-        <li><strong>5-Year Warranty:</strong> Thermostatic valves, shower diverters, and PVD surface finishes against peeling or flaking.</li>
-        <li><strong>Exclusions:</strong> Damage resulting from improper installation, external physical impact, acidic chemical exposure, or unauthorized dismantling is excluded from warranty remedies.</li>
+        <li><strong>Pre-Shrunk Guarantee:</strong> Ring-spun combed cotton is bio-washed to eliminate post-wash shrinkage when washed as instructed.</li>
+        <li><strong>7-Day Doorstep Exchange:</strong> Complimentary size exchanges arranged directly from your doorstep for unwashed, unworn garments with original tags intact.</li>
+        <li><strong>Craftsmanship Warranty:</strong> 6-month coverage against seam unraveling, collar rib distortion, and dye bleeding defects.</li>
       </ul>
     </Section>
 
-    <Section title="6. Commercial & Architectural Trade Projects">
+    <Section title="6. Studio Capsules & Wholesale Distribution">
       <p>
-        Orders placed through our Architectural & Trade program for residential complexes, villas, or hotels are subject to agreed delivery schedules and project milestone timelines specified in customized trade quotations.
+        Orders placed through our Studio & Wholesale program for retail boutiques, styling agencies, or corporate capsules are subject to agreed delivery schedules and production milestone timelines specified in customized quotations.
       </p>
     </Section>
 
     <Section title="7. Intellectual Property & Governing Jurisdiction">
       <p>
-        All trademarks, logos, catalog layouts, product photography, and digital assets are the proprietary property of Elite Bath Collections Pvt. Ltd. Any unauthorized reproduction is prohibited. These terms are governed by the laws of India, and any disputes shall be subject to the exclusive jurisdiction of the courts in Gurugram, Haryana.
+        All trademarks, logos, catalog layouts, product photography, and digital assets are the proprietary property of TRYVOAL Studio Pvt. Ltd. Any unauthorized reproduction is prohibited. These terms are governed by the laws of India, and any disputes shall be subject to the exclusive jurisdiction of the courts in Gurugram, Haryana.
       </p>
     </Section>
   </PolicyPage>

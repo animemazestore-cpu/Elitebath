@@ -113,7 +113,7 @@ export const Auth: React.FC = () => {
       setIsLogin(true);
       setMessage({
         type: 'success',
-        text: '🎉 Email verified successfully! You can now log into your Elite Bath Collections account.',
+        text: '🎉 Email verified successfully! You can now log into your TRYVOAL account.',
       });
     }
   }, [searchParams]);
@@ -501,14 +501,14 @@ export const Auth: React.FC = () => {
               {isForgotPassword
                 ? 'Recover Your Account'
                 : isLogin
-                ? 'Welcome to Elite Bath'
+                ? 'Welcome to TRYVOAL'
                 : 'Create Your Account'}
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-gray-600">
               {isForgotPassword
                 ? 'Enter your registered email to receive a secure password reset link'
                 : isLogin
-                ? 'Sign in to access order tracking, invoices, and saved sanitary fittings'
+                ? 'Sign in to access order tracking, invoices, and saved apparel wishlist'
                 : 'Sign up to access your luxury account'}
             </p>
           </div>
@@ -533,7 +533,7 @@ export const Auth: React.FC = () => {
                 {verificationPendingEmail}
               </p>
               <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed pt-1">
-                You must verify your email before accessing your Elite Bath Collections account.
+                You must verify your email before accessing your TRYVOAL account.
               </p>
             </div>
 
@@ -618,7 +618,7 @@ export const Auth: React.FC = () => {
               </div>
               <h3 className="text-xl font-bold text-gray-900">Set New Password</h3>
               <p className="text-xs text-gray-500">
-                Choose a strong password to secure your Elite Bath Collections account.
+                Choose a strong password to secure your TRYVOAL account.
               </p>
             </div>
 

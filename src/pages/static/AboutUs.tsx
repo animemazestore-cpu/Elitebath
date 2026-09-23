@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Heart, Sparkles, Truck, Droplets } from 'lucide-react';
+import { ShieldCheck, Heart, Sparkles, Truck, Shirt } from 'lucide-react';
 
 export const AboutUs: React.FC = () => {
   return (
@@ -10,10 +10,10 @@ export const AboutUs: React.FC = () => {
           <span>About Our Brand</span>
         </div>
         <h1 className="text-4xl font-extrabold tracking-tight text-gray-900">
-          About Elite Bath Collections
+          About TRYVOAL
         </h1>
         <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-          Bathrooms for a better tomorrow. Engineering elegance, durability, and innovation to elevate modern living spaces.
+          Modern luxury streetwear & premium apparel. Defined by relaxed drop-shoulder tailoring, heavyweight organic textiles, and timeless presence.
         </p>
       </div>
 
@@ -21,23 +21,23 @@ export const AboutUs: React.FC = () => {
         <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
           <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
             <Heart className="h-6 w-6 text-primary" />
-            <span>Our Mission</span>
+            <span>Our Philosophy</span>
           </h2>
           <p className="text-gray-600 leading-relaxed">
-            At Elite Bath Collections, our mission is to deliver premium, architect-grade sanitaryware, faucets, and bathroom fittings directly to homeowners, architects, and interior designers. We believe luxury should be accessible, durable, and uncompromising in quality. Every fitting in our catalog is engineered to withstand daily domestic and commercial use while maintaining a timeless visual aesthetic.
+            At TRYVOAL, our mission is to redefine modern luxury everyday apparel. We merge contemporary streetwear silhouettes with heritage-grade textiles—utilizing 240+ GSM ring-spun combed organic cotton, French terry, breezy European linen, and full-grain leather. We believe true luxury lies in fabric density, tactile drape, and clean timeless lines that age gracefully.
           </p>
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">Why Elite Bath Collections?</h2>
+          <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">Why TRYVOAL?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm text-center">
               <div className="mx-auto w-12 h-12 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center mb-4">
                 <Sparkles className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-bold text-gray-900 mb-2">Architectural Grade</h3>
+              <h3 className="font-bold text-gray-900 mb-2">Heavyweight Textiles</h3>
               <p className="text-xs text-gray-600">
-                Precision cartridges, lead-free brass cores, and flawless PVD and electroplated finishes.
+                240+ GSM ring-spun combed cotton, pre-shrunk and bio-washed for lasting structure and zero pilling.
               </p>
             </div>
 
@@ -45,9 +45,9 @@ export const AboutUs: React.FC = () => {
               <div className="mx-auto w-12 h-12 bg-success/10 border border-success/20 rounded-full flex items-center justify-center mb-4">
                 <ShieldCheck className="h-6 w-6 text-success" />
               </div>
-              <h3 className="font-bold text-gray-900 mb-2">Tested Quality</h3>
+              <h3 className="font-bold text-gray-900 mb-2">Precision Tailoring</h3>
               <p className="text-xs text-gray-600">
-                100% water-pressure tested valves and corrosion-tested multi-layer coatings.
+                Relaxed drop-shoulder silhouettes, reinforced double-needle seams, and shape-retaining dense collar ribs.
               </p>
             </div>
 
@@ -55,9 +55,9 @@ export const AboutUs: React.FC = () => {
               <div className="mx-auto w-12 h-12 bg-primary/10 border border-primary/20 rounded-full flex items-center justify-center mb-4">
                 <Truck className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="font-bold text-gray-900 mb-2">Safe Transport</h3>
+              <h3 className="font-bold text-gray-900 mb-2">Doorstep Exchanges</h3>
               <p className="text-xs text-gray-600">
-                Reinforced cushioning ensures sensitive ceramics and fixtures reach your doorstep safely.
+                Insured express delivery across India with 7-day complimentary doorstep size exchange coverage.
               </p>
             </div>
           </div>
@@ -65,36 +65,36 @@ export const AboutUs: React.FC = () => {
 
         <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
           <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Droplets className="h-6 w-6 text-primary" />
-            <span>Our Product Range</span>
+            <Shirt className="h-6 w-6 text-primary" />
+            <span>Curated Apparel Categories</span>
           </h2>
           <p className="text-gray-600 leading-relaxed mb-4">
-            We feature a curated catalog of bathroom fittings and sanitary solutions, including:
+            Our seasonal catalog focuses on refined wardrobe staples and artisanal accessories:
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm text-gray-700 font-medium">
             <div className="flex items-center space-x-2">
               <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
-              <span>Luxury Basin & Sink Faucets</span>
+              <span>Heavyweight Boxy T-Shirts</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
-              <span>Thermostatic Shower Panels</span>
+              <span>Vintage Acid-Washed Tees</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
-              <span>Designer Ceramic Wash Basins</span>
+              <span>Peruvian Pima Crewnecks</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
-              <span>Wall-Hung & One-Piece Commodes</span>
+              <span>Pure Riviera Linen Shirts</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
-              <span>Anti-Odor Drains & Floor Traps</span>
+              <span>Oxford Button-Down Shirts</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
-              <span>Solid Brass Bath Accessories</span>
+              <span>Full-Grain Leather & Canvas Accessories</span>
             </div>
           </div>
         </div>

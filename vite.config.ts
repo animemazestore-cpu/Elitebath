@@ -23,17 +23,16 @@ function razorpayDevApiPlugin(): Plugin {
               }
               let discount = 0;
               const coupon = (data.couponCode || '').toUpperCase();
-              if (coupon === 'ELITE10') discount = Math.round((subtotal * 10) / 100);
+              if (coupon === 'TRYVOAL10' || coupon === 'ELITE10') discount = Math.round((subtotal * 10) / 100);
               else if (coupon === 'LUXURY20' && subtotal >= 5000) discount = Math.round((subtotal * 20) / 100);
-              else if (coupon === 'BATH500' && subtotal >= 2500) discount = 500;
+              else if (coupon === 'TRY500' && subtotal >= 2500) discount = 500;
 
               let shipping = 0;
               for (const it of items) {
                 const fee = Number(it.product?.shipping_fee || 0);
                 shipping += fee * Math.max(1, Number(it.quantity ?? 1));
               }
-              const serviceFee = Number(data.serviceFee || 0);
-              const total = Math.max(0, subtotal - discount) + shipping + serviceFee;
+              const total = Math.max(0, subtotal - discount) + shipping;
               const deliveryDate = new Date();
               deliveryDate.setDate(deliveryDate.getDate() + 5);
 
@@ -43,11 +42,10 @@ function razorpayDevApiPlugin(): Plugin {
                 razorpayOrderId: `order_dev_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
                 amount: Math.round(total * 100),
                 currency: 'INR',
-                keyId: process.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_elitebath',
+                keyId: process.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_tryvoal',
                 subtotal,
                 discountAmount: discount,
                 shippingCharge: shipping,
-                serviceFee,
                 total,
                 estimatedDeliveryDate: deliveryDate.toISOString(),
               };

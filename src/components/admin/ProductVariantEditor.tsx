@@ -42,13 +42,13 @@ interface ProductVariantEditorProps {
 
 const PRESET_COLORS = [
   { label: 'Matte Black', hex: '#18181b' },
-  { label: 'Brushed Gold', hex: '#d4af37' },
-  { label: 'Polished Chrome', hex: '#cbd5e1' },
+  { label: 'Sapphire Navy', hex: '#d4af37' },
+  { label: 'Polished Onyx Black', hex: '#cbd5e1' },
   { label: 'Alpine White', hex: '#ffffff' },
   { label: 'Brushed Nickel', hex: '#94a3b8' },
-  { label: 'Rose Gold', hex: '#b76e79' },
+  { label: 'Slate Grey', hex: '#b76e79' },
   { label: 'Emerald Sage', hex: '#065f46' },
-  { label: 'Gunmetal Grey', hex: '#374151' },
+  { label: 'Desert Sand Grey', hex: '#374151' },
 ];
 
 export const ProductVariantEditor: React.FC<ProductVariantEditorProps> = ({
@@ -259,7 +259,7 @@ export const ProductVariantEditor: React.FC<ProductVariantEditorProps> = ({
                 {/* Preset quick colors */}
                 <div>
                   <span className="text-[11px] font-semibold text-gray-500 block mb-1.5">
-                    Quick-Add Sanitaryware Colors:
+                    Quick-Add Apparel Colors:
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {PRESET_COLORS.map((preset) => (

@@ -584,10 +584,60 @@ Persistent memory file for all AI agents and developers working on the Elite Bat
   - Ensured numeric cast `price: Number(item.price)` and attribute preservation (`is_checkout_addon`).
 - **Build & Git Status**: Verified with `tsc -b && vite build` (0 errors).
 
+---
 
+## Chunk 10: Complete Rebranding to "TRYVOAL" Luxury Apparel & Services System Elimination (COMPLETED)
+- **Brand & Theme Shift**:
+  - Rebranded the platform from "Elite Bath Collections" to **TRYVOAL** (`TRYVOAL STUDIO`), a modern luxury streetwear and heavyweight apparel brand.
+  - UI Color Palette overhaul: Switched from green & white to **premium blue & white** (`tailwind.config.js`):
+    - Sapphire Navy (`#1e3a8a`, `#172554`)
+    - Royal Blue (`#2563eb`, `#1d4ed8`)
+    - Ice tint background & soft highlights (`#eff6ff`, `#dbeafe`)
+    - Crisp white surfaces (`#ffffff`) and clean slate borders (`#e2e8f0`)
+  - Created a geometric luxury monogram SVG favicon (`public/favicon.svg`).
+  - Updated SEO metadata in `index.html`: Title, description, keywords, OpenGraph tags, theme-color (`#1e3a8a`), and favicon.
 
+- **Categories & Apparel Product System**:
+  - Replaced all sanitary categories with:
+    1. **T-Shirts**
+    2. **Shirts**
+    3. **Accessories**
+  - Updated `src/lib/catalogQueries.ts` with 9 realistic TRYVOAL products:
+    - Heavyweight Boxy T-Shirt (240 GSM, Drop Shoulder, Sizes: S, M, L, XL, XXL)
+    - Peruvian Pima Crewneck (200 GSM, Ultra-Soft Silk Finish, Sizes: S, M, L, XL)
+    - Vintage Acid-Washed Oversized Tee (260 GSM, Mineral Wash, Sizes: S, M, L, XL)
+    - Riviera Relaxed Linen Shirt (100% Pure European Flax Linen, Sizes: S, M, L, XL, XXL)
+    - Oxford Button-Down Classic Shirt (180 GSM Combed Cotton Oxford, Sizes: S, M, L, XL)
+    - Resort Camp-Collar Printed Shirt (Tencel-Linen Blend, Sizes: S, M, L, XL)
+    - Full-Grain Vegetable-Tanned Cardholder (Italian Cowhide, 6 Card Slots)
+    - Heavyweight Canvas Studio Tote (16 oz Organic Cotton Canvas, Laptop Sleeve)
+    - Monogram Low-Profile Dad Cap (100% Cotton Chino Twill, Antique Brass Buckle)
 
+- **Authentic Editorial Streetwear Animated Background**:
+  - Replaced generic stock visuals and artificial orbs with an **animated cinematic editorial streetwear lookbook** in `src/pages/Home.tsx`.
+  - Cycles smoothly across 4 authentic high-fashion streetwear editorial photos (heavyweight boxy tee, mineral wash textured drape, relaxed European linen, and architectural studio capsule).
+  - Employs smooth 1000ms cross-dissolve transitions combined with continuous cinematic Ken-Burns pan and zoom motion (`scale-100` to `scale-110`, 6000ms ease-out).
+  - Synchronized mobile pagination indicator (`01 / 04`) with interactive click-to-switch capability.
+  - Calibrated translucent gradient overlay (`from-white/70 via-white/50 to-white/92`) ensuring vivid photography visibility and sharp typographic readability.
 
+- **Complete Removal of the Services System**:
+  - Removed `/services` route and `initializeServices` from `src/App.tsx`.
+  - Deleted `src/pages/Services.tsx`, `src/store/useServiceStore.ts`, and `src/types/services.ts`.
+  - Cleaned `src/pages/Cart.tsx`: Removed service checkboxes and services line item in order summary.
+  - Cleaned `src/pages/Checkout.tsx`: Removed all service selection, WhatsApp service countdown/redirect from Step 4, and service fee from Razorpay order creation.
+  - Cleaned `api/razorpay-create-order.ts`: Removed `serviceFee` and `servicesTotal` from order amount calculation.
+  - Cleaned `src/pages/Admin.tsx`: Removed the Services tab, services state, and service modal.
+  - Removed "Services" and "Fitting & Expert Services" links from `Navbar.tsx` and `Footer.tsx`.
 
+- **Comprehensive Content & Static Pages Update**:
+  - Rebranded `AboutUs.tsx` to the TRYVOAL luxury apparel brand story.
+  - Rewrote `FAQ.tsx` to cover fabric GSM, sizing & fit, garment care, and 7-day doorstep size exchanges.
+  - Updated `Contact.tsx`, `ProductDetail.tsx`, `FloatingConcierge.tsx`, `AppDownloadPopup.tsx`, `TrackOrder.tsx`, `Dashboard.tsx`, and legal policy pages (`PrivacyPolicy.tsx`, `ShippingPolicy.tsx`, `TermsConditions.tsx`, `RefundPolicy.tsx`).
 
+- **Preservation of Core Backend & Checkout Functionality**:
+  - Supabase authentication (Gmail SMTP verification, forgot password flow, rate-limiting) preserved intact.
+  - Normal product checkout, 0-payment checkout flow (vouchers/coupons), and Razorpay payment integration preserved.
+  - Admin panel order management, inventory, variants, coupons, and announcements preserved.
+  - Deployed user-provided soaring bird / swallow luxury logo asset to `public/logo.png`, `public/favicon.png`, `public/favicon.svg`, Navbar, Footer, and `index.html`.
+  - Verified cleanly with `tsc -b && vite build` (0 errors).
 

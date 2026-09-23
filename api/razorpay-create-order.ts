@@ -27,7 +27,7 @@ export default async function handler(req: Request) {
 
   try {
     const body = await req.json();
-    const { items, shippingAddress, couponCode, user_id, serviceFee, services } = body;
+    const { items, shippingAddress, couponCode, user_id } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return new Response(
@@ -39,7 +39,7 @@ export default async function handler(req: Request) {
       );
     }
 
-    // 1. Server-side subtotal calculation (Product prices remain strictly unchanged)
+    // 1. Server-side subtotal calculation
     let subtotal = 0;
     for (const item of items) {
       const unitPrice = Number(item.variantPrice ?? item.product?.price ?? 0);
@@ -60,11 +60,11 @@ export default async function handler(req: Request) {
     let discountAmount = 0;
     if (couponCode) {
       const code = String(couponCode).trim().toUpperCase();
-      if (code === 'ELITE10') {
+      if (code === 'TRYVOAL10' || code === 'ELITE10') {
         discountAmount = Math.round((subtotal * 10) / 100);
       } else if (code === 'LUXURY20' && subtotal >= 5000) {
         discountAmount = Math.round((subtotal * 20) / 100);
-      } else if (code === 'BATH500' && subtotal >= 2500) {
+      } else if ((code === 'BATH500' || code === 'TRY500') && subtotal >= 2500) {
         discountAmount = 500;
       } else if (code === 'FREESHIP') {
         discountAmount = 0; // Handled in shipping
@@ -78,24 +78,15 @@ export default async function handler(req: Request) {
       shippingCharge += fee * Math.max(1, Number(item.quantity ?? 1));
     }
 
-    // 4. Additional Services fee (Fitting Service, Service Agent)
-    let servicesTotal = 0;
-    if (typeof serviceFee === 'number' && serviceFee >= 0) {
-      servicesTotal = serviceFee;
-    } else if (Array.isArray(services)) {
-      servicesTotal = services.reduce((sum: number, s: any) => sum + (Number(s.price) || 0), 0);
-    }
-
-    // 5. Final total in rupees and paise (product price remains unchanged)
-    const finalTotal = Math.max(0, subtotal - discountAmount) + shippingCharge + servicesTotal;
+    // 4. Final total in rupees and paise
+    const finalTotal = Math.max(0, subtotal - discountAmount) + shippingCharge;
     const amountInPaise = Math.round(finalTotal * 100);
 
     // 5. Razorpay Key Configuration
-    // In Edge/Vercel: process.env or global env
     const keyId =
       (typeof process !== 'undefined' && process.env?.RAZORPAY_KEY_ID) ||
       (typeof process !== 'undefined' && process.env?.VITE_RAZORPAY_KEY_ID) ||
-      'rzp_test_demo_elitebath';
+      'rzp_test_demo_tryvoal';
     const keySecret =
       typeof process !== 'undefined' ? process.env?.RAZORPAY_KEY_SECRET : null;
 
@@ -174,7 +165,6 @@ export default async function handler(req: Request) {
         subtotal,
         discountAmount,
         shippingCharge,
-        serviceFee: servicesTotal,
         total: finalTotal,
         estimatedDeliveryDate: estimatedDeliveryDate.toISOString(),
       }),

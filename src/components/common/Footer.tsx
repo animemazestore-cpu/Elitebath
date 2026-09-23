@@ -12,27 +12,27 @@ export const Footer: React.FC = () => {
             <Link to="/" className="flex items-center space-x-3 group">
               <img
                 src="/logo.png"
-                alt="Elite Bath Collections"
-                className="h-12 w-12 object-contain rounded-full border border-gray-200 shadow-sm"
+                alt="TRYVOAL"
+                className="h-12 w-12 object-contain rounded-xl border border-blue-200/60 shadow-sm"
               />
               <div className="flex flex-col">
                 <span className="text-xl font-extrabold tracking-tight text-gray-900 leading-none">
-                  Elite Bath
+                  TRYVOAL
                 </span>
                 <span className="text-xs font-semibold uppercase tracking-widest text-primary leading-none mt-1">
-                  Collections
+                  STUDIO
                 </span>
               </div>
             </Link>
             <p className="text-gray-600 text-sm leading-relaxed max-w-sm">
-              Bathrooms for a better tomorrow. Engineering elegance, reliability, and precision into luxury faucets, rainfall showers, sanitaryware, and curated bathroom accessories.
+              Modern luxury streetwear & heavyweight apparel. Engineered from 240+ GSM combed organic cotton, French terry, and breezy linen with relaxed silhouettes.
             </p>
             <p className="text-xs text-gray-500">
               📍 Under pass flyover, Buxar, Distt. Hapur, Uttar Pradesh
             </p>
             <div className="flex items-center gap-2 pt-1 text-xs font-semibold text-primary">
               <Sparkles className="h-4 w-4" />
-              <span>Architectural & Sanitary Solutions</span>
+              <span>Modern Luxury & Streetwear Apparel</span>
             </div>
           </div>
 
@@ -41,11 +41,9 @@ export const Footer: React.FC = () => {
             <h3 className="text-sm font-bold uppercase tracking-wider text-gray-900 mb-4">Categories</h3>
             <ul className="space-y-2 text-sm text-gray-600">
               <li><Link to="/shop" className="hover:text-primary transition-colors">All Collections</Link></li>
-              <li><Link to="/shop?category=Faucets+%26+Taps" className="hover:text-primary transition-colors">Faucets & Taps</Link></li>
-              <li><Link to="/shop?category=Showers" className="hover:text-primary transition-colors">Shower Systems</Link></li>
-              <li><Link to="/shop?category=Wash+Basins" className="hover:text-primary transition-colors">Wash Basins</Link></li>
-              <li><Link to="/shop?category=Toilets+%26+Commodes" className="hover:text-primary transition-colors">Toilets & Commodes</Link></li>
-              <li><Link to="/shop?category=Bathroom+Accessories" className="hover:text-primary transition-colors">Bathroom Accessories</Link></li>
+              <li><Link to="/shop?category=T-Shirts" className="hover:text-primary transition-colors">T-Shirts</Link></li>
+              <li><Link to="/shop?category=Shirts" className="hover:text-primary transition-colors">Shirts</Link></li>
+              <li><Link to="/shop?category=Accessories" className="hover:text-primary transition-colors">Accessories</Link></li>
             </ul>
           </div>
 
@@ -54,10 +52,9 @@ export const Footer: React.FC = () => {
             <h3 className="text-sm font-bold uppercase tracking-wider text-gray-900 mb-4">Customer Care</h3>
             <ul className="space-y-2 text-sm text-gray-600">
               <li><Link to="/about" className="hover:text-primary transition-colors">About Us</Link></li>
-              <li><Link to="/services" className="hover:text-primary transition-colors">Fitting & Expert Services</Link></li>
               <li><Link to="/contact" className="hover:text-primary transition-colors">Contact Support</Link></li>
               <li><Link to="/track-order" className="hover:text-primary transition-colors">Track Order</Link></li>
-              <li><Link to="/faq" className="hover:text-primary transition-colors">FAQ & Installation</Link></li>
+              <li><Link to="/faq" className="hover:text-primary transition-colors">FAQ & Size Guide</Link></li>
               <li><Link to="/shipping-policy" className="hover:text-primary transition-colors">Shipping & Delivery</Link></li>
               <li><Link to="/refund-policy" className="hover:text-primary transition-colors">Returns & Replacements</Link></li>
             </ul>
@@ -95,7 +92,7 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4">
-          <p>© 2026 Elite Bath Collections. All rights reserved. Bathrooms for a better tomorrow.</p>
+          <p>© 2026 TRYVOAL. All rights reserved. Modern luxury streetwear & apparel.</p>
           <div className="flex items-center space-x-2">
             <ShieldCheck className="h-4 w-4 text-success" />
             <span>Secure 256-Bit SSL Encrypted Checkout</span>

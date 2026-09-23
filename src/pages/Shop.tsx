@@ -20,24 +20,24 @@ import { Button } from '../components/common/Button';
 import { ProductCard } from '../components/product/ProductCard';
 import { ProductCardSkeleton } from '../components/product/ProductCardSkeleton';
 
-// Curated Sanitaryware Facets
+// Curated Apparel Facets
 const FINISH_FACETS = [
   'All',
-  'Chrome',
-  'Matte Black',
-  'Brushed Gold',
-  'Rose Gold',
-  'Brushed Nickel',
-  'Gunmetal',
-  'Stainless Steel',
+  'Onyx Black',
+  'Off-White',
+  'Slate Grey',
+  'Sapphire Navy',
+  'Vintage Washed',
+  'Desert Sand',
+  'French Blue',
 ];
 
 const MATERIAL_FACETS = [
   'All',
-  'Solid Brass',
-  'SUS304 Stainless Steel',
-  'Ceramic',
-  'Cast Acrylic',
+  '100% Combed Cotton',
+  'SUS304 French Blue',
+  'Pure French Linen',
+  'Canvas & Leather',
 ];
 
 const PRICE_BRACKETS = [
@@ -188,7 +188,7 @@ export const Shop: React.FC = () => {
         // Has Variants filter
         if (variantsOnly && !prod.has_variants) return false;
 
-        // Search text matching across all relevant sanitary fields
+        // Search text matching across all relevant apparel fields
         if (search.trim()) {
           const q = search.toLowerCase().trim();
           const matchesName = prod.name.toLowerCase().includes(q);
@@ -428,12 +428,11 @@ export const Shop: React.FC = () => {
           <div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight">
               {selectedCategory === 'All'
-                ? 'Sanitary & Bathroom Collections'
+                ? 'TRYVOAL Apparel Collections'
                 : selectedCategory}
             </h1>
             <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl">
-              Architectural luxury sanitaryware, solid brass fittings, rainfall
-              showers, and designer bath systems curated for enduring elegance.
+              Heavyweight combed cotton t-shirts, tailored linen shirts, and handcrafted accessories engineered for effortless luxury.
             </p>
           </div>
           <div className="text-xs sm:text-sm text-gray-500 font-medium whitespace-nowrap">
@@ -1102,7 +1101,7 @@ export const Shop: React.FC = () => {
                   No luxury collections match your criteria
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-500 mb-6 max-w-md mx-auto leading-relaxed">
-                  We couldn&apos;t find any sanitary products matching your active filters. Try broadening your price range, searching for another finish, or clearing filters.
+                  We couldn&apos;t find any apparel matching your active filters. Try broadening your price range, selecting another shade, or clearing filters.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <Button onClick={handleClearAllFilters} className="px-6">
