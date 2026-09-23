@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, CreditCard, Sparkles } from 'lucide-react';
+import { ShieldCheck, CreditCard, Sparkles, Send } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -91,21 +91,28 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4">
-          <p>© 2026 TRYVOAL. All rights reserved. Modern luxury streetwear & apparel.</p>
-          <p className="flex items-center gap-1.5 font-medium text-gray-600">
-            <span>Made with</span>
-            <span className="text-red-500 text-sm" role="img" aria-label="love">❤️</span>
-            <span>by</span>
-            <a
-              href="https://t.me/lennoxislive"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary font-bold hover:underline transition-colors"
-            >
+        {/* Prominent Developer Attribution Bar */}
+        <div className="border-t border-gray-200 py-6 flex justify-center items-center">
+          <a
+            href="https://t.me/lennoxislive"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-3 px-7 py-3.5 rounded-full bg-slate-900 hover:bg-primary text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 text-base sm:text-lg font-bold"
+          >
+            <span className="text-gray-200">Made with</span>
+            <span className="text-red-500 text-xl inline-block" role="img" aria-label="love">❤️</span>
+            <span className="text-gray-200">by</span>
+            <span className="text-blue-300 group-hover:text-white underline decoration-2 underline-offset-4 decoration-primary group-hover:decoration-white font-extrabold tracking-wide">
               lennoxislive
-            </a>
-          </p>
+            </span>
+            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-500/20 group-hover:bg-white/20 text-blue-300 group-hover:text-white transition-colors ml-1">
+              <Send className="w-4 h-4 -rotate-45 ml-0.5" />
+            </span>
+          </a>
+        </div>
+
+        <div className="border-t border-gray-200 pt-6 pb-2 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4">
+          <p>© 2026 TRYVOAL. All rights reserved. Modern luxury streetwear & apparel.</p>
           <div className="flex items-center space-x-2">
             <ShieldCheck className="h-4 w-4 text-success" />
             <span>Secure 256-Bit SSL Encrypted Checkout</span>
