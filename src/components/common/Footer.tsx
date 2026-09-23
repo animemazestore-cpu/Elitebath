@@ -93,6 +93,19 @@ export const Footer: React.FC = () => {
 
         <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4">
           <p>© 2026 TRYVOAL. All rights reserved. Modern luxury streetwear & apparel.</p>
+          <p className="flex items-center gap-1.5 font-medium text-gray-600">
+            <span>Made with</span>
+            <span className="text-red-500 text-sm" role="img" aria-label="love">❤️</span>
+            <span>by</span>
+            <a
+              href="https://t.me/lennoxislive"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary font-bold hover:underline transition-colors"
+            >
+              lennoxislive
+            </a>
+          </p>
           <div className="flex items-center space-x-2">
             <ShieldCheck className="h-4 w-4 text-success" />
             <span>Secure 256-Bit SSL Encrypted Checkout</span>

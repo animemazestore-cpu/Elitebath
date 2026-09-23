@@ -6,7 +6,6 @@ import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
 import { AppDownloadPopup } from './components/common/AppDownloadPopup';
 import { FloatingConcierge } from './components/common/FloatingConcierge';
-import { TelegramAdBanner } from './components/common/TelegramAdBanner';
 
 // Import Pages
 import { Home } from './pages/Home';
@@ -53,8 +52,6 @@ export const App: React.FC = () => {
       <div className="flex flex-col min-h-screen bg-white text-gray-900">
         <Navbar />
         
-        {/* Dedicated Separate Ad Space (Non-overlapping, Collapsible) */}
-        <TelegramAdBanner />
 
         {/* Main Content Area */}
         <main className="flex-grow">
