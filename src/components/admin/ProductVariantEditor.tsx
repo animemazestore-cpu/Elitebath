@@ -666,14 +666,29 @@ export const ProductVariantEditor: React.FC<ProductVariantEditorProps> = ({
                   <Sparkles className="h-3.5 w-3.5 mr-1 text-primary" /> Generate Combinations
                 </Button>
                 {variants.length > 0 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onVariantsChange([])}
-                  >
-                    Clear
-                  </Button>
+                  <>
+                    {basePrice > 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          onVariantsChange(variants.map(v => ({ ...v, price: basePrice })));
+                        }}
+                        title={`Set all variant prices to ₹${basePrice}`}
+                      >
+                        Sync All to ₹{basePrice}
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onVariantsChange([])}
+                    >
+                      Clear
+                    </Button>
+                  </>
                 )}
               </div>
             </div>

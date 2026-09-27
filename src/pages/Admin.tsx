@@ -624,35 +624,75 @@ export const Admin: React.FC = () => {
       let finalStock = Number(productForm.stock);
       if (shouldHaveVariants) {
         const activeOnly = activeVariants.filter(v => v.active);
+        // If admin changed base price in the form, sync variants that matched the old price
+        if (editingProduct && Number(productForm.price) !== editingProduct.price && Number(productForm.price) > 0) {
+          const newPrice = Number(productForm.price);
+          const allWereOldPrice = activeOnly.every(v => v.price === editingProduct.price || v.price === 0);
+          if (allWereOldPrice) {
+            activeVariants.forEach(v => { v.price = newPrice; });
+          }
+        }
         if (activeOnly.length > 0) {
           finalPrice = Math.min(...activeOnly.map(v => v.price));
           finalStock = activeOnly.reduce((sum, v) => sum + v.stock, 0);
         }
       }
 
-      // Ensure category_id is a valid UUID or match by category name
+      // Ensure category_id is a valid UUID that actually exists in Supabase categories table
       let validCategoryId: string | null = null;
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      if (productForm.category_id && uuidRegex.test(productForm.category_id)) {
-        validCategoryId = productForm.category_id;
-      } else if (productForm.category_id) {
-        const matched = categories.find((c) => c.id === productForm.category_id);
-        const nameToFind = matched?.name || productForm.category_id;
-        try {
-          const { data: dbCat } = await supabase
-            .from('categories')
-            .select('id')
-            .ilike('name', nameToFind)
-            .maybeSingle();
-          if (dbCat?.id && uuidRegex.test(dbCat.id)) {
-            validCategoryId = dbCat.id;
+
+      if (productForm.category_id) {
+        // 1. If it's a UUID, check if it actually exists in Supabase
+        if (uuidRegex.test(productForm.category_id)) {
+          try {
+            const { data: catById } = await supabase
+              .from('categories')
+              .select('id')
+              .eq('id', productForm.category_id)
+              .maybeSingle();
+            if (catById?.id) {
+              validCategoryId = catById.id;
+            }
+          } catch {
+            validCategoryId = null;
           }
-        } catch {
-          // fallback to null if not resolved
+        }
+
+        // 2. If not found by ID, try finding or creating by category name
+        if (!validCategoryId) {
+          const matched = categories.find((c) => c.id === productForm.category_id);
+          const nameToFind = matched?.name || productForm.category_id;
+          try {
+            const { data: dbCat } = await supabase
+              .from('categories')
+              .select('id')
+              .ilike('name', nameToFind)
+              .maybeSingle();
+            if (dbCat?.id) {
+              validCategoryId = dbCat.id;
+            } else if (matched?.name) {
+              // Auto-create category in Supabase so FK constraint passes
+              const { data: newCat } = await supabase
+                .from('categories')
+                .insert([{
+                  name: matched.name,
+                  image_url: matched.image_url || '',
+                  size_enabled: Boolean(matched.size_enabled)
+                }])
+                .select('id')
+                .maybeSingle();
+              if (newCat?.id) {
+                validCategoryId = newCat.id;
+              }
+            }
+          } catch {
+            validCategoryId = null;
+          }
         }
       }
 
-      const payload = {
+      const payload: any = {
         name: productForm.name.trim(),
         slug: finalSlug,
         description: productForm.description.trim(),
@@ -679,19 +719,43 @@ export const Admin: React.FC = () => {
 
       try {
         if (editingProduct) {
-          const { error } = await supabase
+          let { error } = await supabase
             .from('products')
             .update(payload)
             .eq('id', editingProduct.id);
           
+          // If FK constraint fails on category_id, auto-retry with null category_id to ensure price and core product data always save!
+          if (error && (error.message?.includes('products_category_id_fkey') || (error as any).code === '23503')) {
+            console.warn('Retrying product update with category_id = null due to FK constraint:', error.message);
+            payload.category_id = null;
+            const retryRes = await supabase
+              .from('products')
+              .update(payload)
+              .eq('id', editingProduct.id);
+            error = retryRes.error;
+          }
+
           if (error) throw error;
         } else {
-          const { data: newProd, error } = await supabase
+          let { data: newProd, error } = await supabase
             .from('products')
             .insert(payload)
             .select('id')
             .single();
           
+          // If FK constraint fails on category_id, auto-retry with null category_id
+          if (error && (error.message?.includes('products_category_id_fkey') || (error as any).code === '23503')) {
+            console.warn('Retrying product insert with category_id = null due to FK constraint:', error.message);
+            payload.category_id = null;
+            const retryRes = await supabase
+              .from('products')
+              .insert(payload)
+              .select('id')
+              .single();
+            newProd = retryRes.data;
+            error = retryRes.error;
+          }
+
           if (error) throw error;
           targetId = newProd?.id || '';
         }

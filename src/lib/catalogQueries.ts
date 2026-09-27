@@ -120,23 +120,27 @@ export function findProductBySlug(products: Product[], slug: string): Product | 
 // Fallback Luxury Apparel Catalog (TRYVOAL - Zero-downtime render)
 // ============================================================================
 
+export const CATEGORY_TSHIRTS_ID = 'f09925b1-9b67-4065-b982-49acc3488931';
+export const CATEGORY_SHIRTS_ID = 'b7fd3cc1-3088-43e1-ad2c-b6cdee8d1325';
+export const CATEGORY_ACCESSORIES_ID = 'e2905f6f-69a2-4fb0-956f-837e236236bc';
+
 export const FALLBACK_CATEGORIES: Category[] = [
   {
-    id: 'cat-tshirts',
+    id: CATEGORY_TSHIRTS_ID,
     name: 'T-Shirts',
     image_url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=600',
     size_enabled: true,
     created_at: '2026-01-01T00:00:00Z',
   },
   {
-    id: 'cat-shirts',
+    id: CATEGORY_SHIRTS_ID,
     name: 'Shirts',
     image_url: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80&w=600',
     size_enabled: true,
     created_at: '2026-01-01T00:00:00Z',
   },
   {
-    id: 'cat-accessories',
+    id: CATEGORY_ACCESSORIES_ID,
     name: 'Accessories',
     image_url: 'https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&q=80&w=600',
     size_enabled: false,
@@ -151,7 +155,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     slug: 'heavyweight-boxy-oversized-tee',
     description:
       'Engineered from ultra-dense 240 GSM organic combed cotton. Features dropped shoulders, a structured boxy cut, ribbed double-needle collar, and anti-shrink reactive dyeing.',
-    category_id: 'cat-tshirts',
+    category_id: CATEGORY_TSHIRTS_ID,
     category: FALLBACK_CATEGORIES[0],
     price: 1499,
     stock: 85,
@@ -251,7 +255,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     slug: 'peruvian-pima-luxury-crewneck-tee',
     description:
       'Crafted from silky extra-long staple Peruvian Pima cotton. Extremely soft on the skin with subtle luster, tailored shoulder seams, and tonal TRYVOAL embroidery.',
-    category_id: 'cat-tshirts',
+    category_id: CATEGORY_TSHIRTS_ID,
     category: FALLBACK_CATEGORIES[0],
     price: 1299,
     stock: 60,
@@ -319,7 +323,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     slug: 'vintage-washed-drop-shoulder-tee',
     description:
       'Artisan enzyme acid-washed heavy jersey tee with raw hand-feel and subtle vintage fade. Generous relaxed drape built for everyday luxury streetwear.',
-    category_id: 'cat-tshirts',
+    category_id: CATEGORY_TSHIRTS_ID,
     category: FALLBACK_CATEGORIES[0],
     price: 1699,
     stock: 45,
@@ -376,7 +380,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     slug: 'riviera-relaxed-french-linen-shirt',
     description:
       'Woven from 100% pure Normandy flax linen. Features genuine mother-of-pearl buttons, a convertible camp collar, and a modern relaxed cut perfect for warm evenings.',
-    category_id: 'cat-shirts',
+    category_id: CATEGORY_SHIRTS_ID,
     category: FALLBACK_CATEGORIES[1],
     price: 2799,
     stock: 40,
@@ -444,7 +448,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     slug: 'modern-oxford-tailored-button-down',
     description:
       'Substantial 80s two-ply pinpoint Oxford cotton shirt. Styled with a crisp button-down collar, rear box pleat, reinforced gussets, and clean French seams.',
-    category_id: 'cat-shirts',
+    category_id: CATEGORY_SHIRTS_ID,
     category: FALLBACK_CATEGORIES[1],
     price: 2499,
     stock: 50,
@@ -512,7 +516,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     slug: 'camp-collar-silk-touch-resort-shirt',
     description:
       'Ultra-breathable premium Tencel Lyocell in a vintage Cuban resort silhouette with subtle tonal jacquard weave and relaxed straight hem.',
-    category_id: 'cat-shirts',
+    category_id: CATEGORY_SHIRTS_ID,
     category: FALLBACK_CATEGORIES[1],
     price: 2299,
     stock: 35,
@@ -569,7 +573,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     slug: 'full-grain-italian-leather-cardholder',
     description:
       'Hand-crafted vegetable-tanned full grain Tuscan leather. Features 6 card slots, a central cash pocket, hand-painted edges, and blind embossed TRYVOAL insignia.',
-    category_id: 'cat-accessories',
+    category_id: CATEGORY_ACCESSORIES_ID,
     category: FALLBACK_CATEGORIES[2],
     price: 999,
     stock: 50,
@@ -630,7 +634,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     slug: 'architectural-heavy-canvas-tote',
     description:
       'Engineered from heavy 16oz cotton duck canvas with reinforced cross-box stitched handles, internal zippered compartment, and water-repellent coating.',
-    category_id: 'cat-accessories',
+    category_id: CATEGORY_ACCESSORIES_ID,
     category: FALLBACK_CATEGORIES[2],
     price: 1199,
     stock: 40,
@@ -680,7 +684,7 @@ export const FALLBACK_PRODUCTS: Product[] = [
     slug: 'embroidered-monogram-dad-cap',
     description:
       'Classic 6-panel unstructured low-profile baseball cap made from washed cotton chino twill. Featuring antique brass tri-glide buckle and high-density TRYVOAL embroidery.',
-    category_id: 'cat-accessories',
+    category_id: CATEGORY_ACCESSORIES_ID,
     category: FALLBACK_CATEGORIES[2],
     price: 799,
     stock: 60,
