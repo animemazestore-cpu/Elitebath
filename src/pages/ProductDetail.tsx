@@ -959,7 +959,11 @@ export const ProductDetail: React.FC = () => {
                       variantStock: currentStock,
                     });
 
-                    navigate('/checkout');
+                    if (!user) {
+                      navigate('/auth?redirect=/checkout');
+                    } else {
+                      navigate('/checkout');
+                    }
                   }}
                   className="flex-1 py-3.5"
                 >

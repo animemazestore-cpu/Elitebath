@@ -27,7 +27,7 @@ import { checkRateLimit, recordRateLimitAttempt } from '../lib/rateLimiter';
 
 export const Checkout: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, initialized } = useAuthStore();
   const {
     items,
     getTotalAmount,
@@ -91,6 +91,21 @@ export const Checkout: React.FC = () => {
   const [orderCreatedId, setOrderCreatedId] = useState<string | null>(null);
   const [orderPaymentId, setOrderPaymentId] = useState<string | null>(null);
   const [orderDeliveryDate, setOrderDeliveryDate] = useState<string | null>(null);
+
+  // Enforce mandatory authentication: user must be logged in to checkout
+  useEffect(() => {
+    if (initialized && !user) {
+      navigate('/auth?redirect=/checkout');
+    }
+  }, [user, initialized, navigate]);
+
+  // Sync user info into form when session loads
+  useEffect(() => {
+    if (user) {
+      if (!email && user.email) setEmail(user.email);
+      if (!fullName && user.user_metadata?.full_name) setFullName(user.user_metadata.full_name);
+    }
+  }, [user, email, fullName]);
 
   // Redirect if cart is empty and no active completed order
   useEffect(() => {
@@ -440,6 +455,49 @@ export const Checkout: React.FC = () => {
     { number: 3, title: 'Payment' },
     { number: 4, title: 'Order Confirmation' },
   ];
+
+  // If auth is still initializing, show a smooth loading state
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-gray-50/50 flex items-center justify-center py-20">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm font-semibold text-gray-500">Checking your session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Enforce mandatory authentication: User must be logged in to make a purchase
+  if (initialized && !user) {
+    return (
+      <div className="min-h-screen bg-gray-50/50 flex items-center justify-center py-16 px-4">
+        <div className="max-w-md w-full bg-white border border-gray-200 rounded-2xl p-8 shadow-sm text-center space-y-6">
+          <div className="w-16 h-16 bg-blue-50 border border-blue-200 rounded-full flex items-center justify-center mx-auto text-primary">
+            <Lock className="h-8 w-8" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Account Required to Checkout</h2>
+            <p className="text-sm text-gray-500 mt-2">
+              Please sign in or create an account to proceed with your order. This allows you to track shipments, receive doorstep delivery updates, and request size exchanges.
+            </p>
+          </div>
+          <div className="space-y-3 pt-2">
+            <Button
+              fullWidth
+              size="lg"
+              onClick={() => navigate('/auth?redirect=/checkout')}
+            >
+              Log In / Register to Continue
+            </Button>
+            <Link to="/cart" className="block text-xs font-semibold text-gray-500 hover:text-gray-900 transition-colors">
+              Return to Bag
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // =========================================================================
   // STEP 4: ORDER CONFIRMATION VIEW
