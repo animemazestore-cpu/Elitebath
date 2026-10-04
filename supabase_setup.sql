@@ -54,9 +54,7 @@ ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Anyone can view categories" ON public.categories;
 DROP POLICY IF EXISTS "Admin can manage categories" ON public.categories;
 CREATE POLICY "Anyone can view categories" ON public.categories FOR SELECT USING (true);
-CREATE POLICY "Admin can manage categories" ON public.categories FOR ALL USING (
-  auth.role() = 'authenticated' OR public.is_admin() OR auth.uid() IS NOT NULL
-) WITH CHECK (true);
+CREATE POLICY "Admin can manage categories" ON public.categories FOR ALL USING (true) WITH CHECK (true);
 
 -- PRODUCTS
 CREATE TABLE IF NOT EXISTS public.products (

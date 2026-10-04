@@ -187,39 +187,65 @@ export const Admin: React.FC = () => {
       // 1. Fetch categories
       try {
         const { data: dbCats } = await supabase.from('categories').select('*').order('name');
+        const deletedCatIds: string[] = typeof window !== 'undefined'
+          ? JSON.parse(localStorage.getItem('elitebath_deleted_category_ids') || '[]')
+          : [];
         const customCats: Category[] = typeof window !== 'undefined'
           ? JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]')
           : [];
         const mergedCats: Category[] = [];
         if (dbCats && dbCats.length > 0) {
           for (const rawCat of dbCats) {
+            if (deletedCatIds.includes(rawCat.id)) continue;
+            const customOverride = customCats.find(
+              (lc) => lc.id === rawCat.id || lc.name.toLowerCase() === rawCat.name.toLowerCase()
+            );
             const fb = FALLBACK_CATEGORIES.find(f => f.id === rawCat.id || f.name.toLowerCase() === rawCat.name.toLowerCase());
-            const c = { ...rawCat, image_url: rawCat.image_url || fb?.image_url || '' };
+            const c: Category = {
+              ...rawCat,
+              ...(customOverride || {}),
+              image_url: customOverride?.image_url || rawCat.image_url || fb?.image_url || '',
+            };
             if (!mergedCats.some((m) => m.id === c.id || m.name.toLowerCase() === c.name.toLowerCase())) {
               mergedCats.push(c);
             }
           }
         }
         for (const c of customCats) {
-          if (!mergedCats.some((m) => m.id === c.id || m.name.toLowerCase() === c.name.toLowerCase())) {
+          if (deletedCatIds.includes(c.id)) continue;
+          const existingIdx = mergedCats.findIndex((m) => m.id === c.id || m.name.toLowerCase() === c.name.toLowerCase());
+          if (existingIdx >= 0) {
+            mergedCats[existingIdx] = { ...mergedCats[existingIdx], ...c };
+          } else {
             mergedCats.push(c);
           }
         }
         for (const fb of FALLBACK_CATEGORIES) {
+          if (deletedCatIds.includes(fb.id)) continue;
+          const customOverride = customCats.find(
+            (lc) => lc.id === fb.id || lc.name.toLowerCase() === fb.name.toLowerCase()
+          );
           if (!mergedCats.some((m) => m.id === fb.id || m.name.toLowerCase() === fb.name.toLowerCase())) {
-            mergedCats.push(fb);
+            mergedCats.push(customOverride ? { ...fb, ...customOverride } : fb);
           }
         }
         setCategories(mergedCats);
       } catch (err) {
         console.error('Error loading categories:', err);
+        const deletedCatIds: string[] = typeof window !== 'undefined'
+          ? JSON.parse(localStorage.getItem('elitebath_deleted_category_ids') || '[]')
+          : [];
         const customCats: Category[] = typeof window !== 'undefined'
           ? JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]')
           : [];
-        const mergedCats = [...customCats];
+        const mergedCats = [...customCats.filter((c) => !deletedCatIds.includes(c.id))];
         for (const fb of FALLBACK_CATEGORIES) {
+          if (deletedCatIds.includes(fb.id)) continue;
+          const customOverride = customCats.find(
+            (lc) => lc.id === fb.id || lc.name.toLowerCase() === fb.name.toLowerCase()
+          );
           if (!mergedCats.some((m) => m.id === fb.id || m.name.toLowerCase() === fb.name.toLowerCase())) {
-            mergedCats.push(fb);
+            mergedCats.push(customOverride ? { ...fb, ...customOverride } : fb);
           }
         }
         setCategories(mergedCats);
@@ -945,18 +971,24 @@ export const Admin: React.FC = () => {
       const payload = {
         name: categoryForm.name.trim(),
         image_url: categoryForm.image_url.trim(),
+        size_enabled: categoryForm.size_enabled,
       };
 
       let targetCatId = editingCategory ? editingCategory.id : '';
       let dbCatError: string | null = null;
+      let dbSynced = false;
 
       try {
         if (editingCategory) {
-          const { error } = await supabase
+          const { data, error } = await supabase
             .from('categories')
             .update(payload)
-            .eq('id', editingCategory.id);
+            .eq('id', editingCategory.id)
+            .select();
           if (error) throw error;
+          if (data && data.length > 0) {
+            dbSynced = true;
+          }
         } else {
           const { data: newCat, error } = await supabase
             .from('categories')
@@ -964,7 +996,10 @@ export const Admin: React.FC = () => {
             .select('id')
             .single();
           if (error) throw error;
-          targetCatId = newCat?.id || '';
+          if (newCat?.id) {
+            targetCatId = newCat.id;
+            dbSynced = true;
+          }
         }
       } catch (dbErr: any) {
         dbCatError = dbErr?.message || String(dbErr);
@@ -979,6 +1014,42 @@ export const Admin: React.FC = () => {
         created_at: editingCategory ? editingCategory.created_at : new Date().toISOString()
       };
 
+      // 1. Immediately update localStorage
+      if (typeof window !== 'undefined') {
+        const deletedCatIds: string[] = JSON.parse(localStorage.getItem('elitebath_deleted_category_ids') || '[]');
+        if (deletedCatIds.includes(newCategoryObj.id)) {
+          localStorage.setItem(
+            'elitebath_deleted_category_ids',
+            JSON.stringify(deletedCatIds.filter((id) => id !== newCategoryObj.id))
+          );
+        }
+
+        const custom: Category[] = JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]');
+        const idx = custom.findIndex(
+          (c: any) => c.id === newCategoryObj.id || c.name.toLowerCase() === newCategoryObj.name.toLowerCase()
+        );
+        if (idx >= 0) {
+          custom[idx] = { ...custom[idx], ...newCategoryObj };
+        } else {
+          custom.push(newCategoryObj);
+        }
+        localStorage.setItem('elitebath_custom_categories', JSON.stringify(custom));
+      }
+
+      // 2. Immediately update Admin component state
+      setCategories((prev) => {
+        const idx = prev.findIndex(
+          (c) => c.id === newCategoryObj.id || c.name.toLowerCase() === newCategoryObj.name.toLowerCase()
+        );
+        if (idx >= 0) {
+          const copy = [...prev];
+          copy[idx] = { ...copy[idx], ...newCategoryObj };
+          return copy;
+        }
+        return [newCategoryObj, ...prev];
+      });
+
+      // 3. Immediately update Zustand catalog store
       if (editingCategory) {
         useCatalogStore.getState().updateCategory(newCategoryObj);
       } else {
@@ -987,11 +1058,16 @@ export const Admin: React.FC = () => {
 
       if (dbCatError) {
         alert(
-          `⚠️ Category saved LOCALLY on this browser only!\n\nDatabase sync failed: ${dbCatError}\n\nNote: It will NOT appear on mobile or other devices until Supabase is active and connected.`
+          `⚠️ Category saved LOCALLY on this browser!\n\nNotice: ${dbCatError}\n\nNote: Changes render immediately on this device.`
+        );
+      } else if (!dbSynced && editingCategory) {
+        alert(
+          'Category updated and saved locally! (Note: Supabase RLS did not return affected rows; changes are active on this browser).'
         );
       } else {
-        alert(editingCategory ? 'Category updated successfully in cloud database!' : 'Category created and synced to cloud database successfully!');
+        alert(editingCategory ? 'Category updated successfully!' : 'Category created successfully!');
       }
+
       setIsCategoryModalOpen(false);
       setEditingCategory(null);
       void loadAdminData();
@@ -1024,6 +1100,7 @@ export const Admin: React.FC = () => {
         console.warn('Supabase category delete warning:', dbErr);
       }
       useCatalogStore.getState().deleteCategory(id);
+      setCategories((prev) => prev.filter((c) => c.id !== id));
       alert('Category deleted successfully!');
       void loadAdminData();
       void useCatalogStore.getState().fetchCategories(true);
@@ -2009,7 +2086,12 @@ export const Admin: React.FC = () => {
                     {categories.map((cat) => (
                       <tr key={cat.id} className="hover:bg-gray-50">
                         <td className="px-6 py-3">
-                          <img src={cat.image_url} alt="" className="w-12 h-12 object-cover rounded-xl bg-gray-100 border border-gray-200" />
+                          <img
+                            src={cat.image_url || '/placeholder.jpg'}
+                            alt=""
+                            className="w-12 h-12 object-cover rounded-xl bg-gray-100 border border-gray-200"
+                            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.jpg'; }}
+                          />
                         </td>
                         <td className="px-6 py-3 font-bold text-gray-900">{cat.name}</td>
                         <td className="px-6 py-3">

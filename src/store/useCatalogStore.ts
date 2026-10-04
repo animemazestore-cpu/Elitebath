@@ -55,36 +55,61 @@ function isFresh(_fetchedAt: number | null): boolean {
 }
 
 async function fetchCategoriesFromNetwork(): Promise<Category[]> {
+  const deletedCatIds: string[] =
+    typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('elitebath_deleted_category_ids') || '[]')
+      : [];
+
   try {
     const { data, error } = await withTimeout(
       supabase.from('categories').select(CATEGORY_FIELDS).order('name')
     );
     if (error) throw error;
-    const dbCats = data && data.length > 0 ? (data as Category[]).map((c) => {
-      if (!c.image_url) {
-        const fb = FALLBACK_CATEGORIES.find(
-          (f) => f.id === c.id || f.name.toLowerCase() === c.name.toLowerCase()
-        );
-        return { ...c, image_url: fb?.image_url || '' };
-      }
-      return c;
-    }) : [];
-
     const localCustomCats: Category[] =
       typeof window !== 'undefined'
         ? JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]')
         : [];
 
-    // Database is authoritative
+    const dbCats = data && data.length > 0 ? (data as Category[])
+      .filter((c) => !deletedCatIds.includes(c.id))
+      .map((c) => {
+        const customOverride = localCustomCats.find(
+          (lc) => lc.id === c.id || lc.name.toLowerCase() === c.name.toLowerCase()
+        );
+        if (customOverride) {
+          return {
+            ...c,
+            ...customOverride,
+            image_url: customOverride.image_url || c.image_url || '',
+          };
+        }
+        if (!c.image_url) {
+          const fb = FALLBACK_CATEGORIES.find(
+            (f) => f.id === c.id || f.name.toLowerCase() === c.name.toLowerCase()
+          );
+          return { ...c, image_url: fb?.image_url || '' };
+        }
+        return c;
+      }) : [];
+
+    // Database + custom override merged
     const merged: Category[] = [...dbCats];
     for (const c of localCustomCats) {
-      if (!merged.some((m) => m.id === c.id || m.name.toLowerCase() === c.name.toLowerCase())) {
+      if (deletedCatIds.includes(c.id)) continue;
+      const existingIdx = merged.findIndex((m) => m.id === c.id || m.name.toLowerCase() === c.name.toLowerCase());
+      if (existingIdx >= 0) {
+        merged[existingIdx] = { ...merged[existingIdx], ...c };
+      } else {
         merged.push(c);
       }
     }
     for (const fb of FALLBACK_CATEGORIES) {
+      if (deletedCatIds.includes(fb.id)) continue;
+      const customOverride = localCustomCats.find(
+        (lc) => lc.id === fb.id || lc.name.toLowerCase() === fb.name.toLowerCase()
+      );
       if (!merged.some((m) => m.id === fb.id || m.name.toLowerCase() === fb.name.toLowerCase())) {
-        merged.push(fb);
+        merged.push(customOverride ? { ...fb, ...customOverride } : fb);
       }
     }
     return merged;
@@ -94,10 +119,14 @@ async function fetchCategoriesFromNetwork(): Promise<Category[]> {
       typeof window !== 'undefined'
         ? JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]')
         : [];
-    const merged = [...localCustomCats];
+    const merged = [...localCustomCats.filter((c) => !deletedCatIds.includes(c.id))];
     for (const fb of FALLBACK_CATEGORIES) {
+      if (deletedCatIds.includes(fb.id)) continue;
+      const customOverride = localCustomCats.find(
+        (lc) => lc.id === fb.id || lc.name.toLowerCase() === fb.name.toLowerCase()
+      );
       if (!merged.some((m) => m.id === fb.id || m.name.toLowerCase() === fb.name.toLowerCase())) {
-        merged.push(fb);
+        merged.push(customOverride ? { ...fb, ...customOverride } : fb);
       }
     }
     return merged;
@@ -443,33 +472,66 @@ export const useCatalogStore = create<CatalogState>()(
 
       addCategory: (newCat: Category) => {
         if (typeof window !== 'undefined') {
-          const custom = JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]');
-          const updated = [newCat, ...custom.filter((c: any) => c.id !== newCat.id)];
+          const deletedCatIds: string[] = JSON.parse(localStorage.getItem('elitebath_deleted_category_ids') || '[]');
+          if (deletedCatIds.includes(newCat.id)) {
+            localStorage.setItem(
+              'elitebath_deleted_category_ids',
+              JSON.stringify(deletedCatIds.filter((id) => id !== newCat.id))
+            );
+          }
+
+          const custom: Category[] = JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]');
+          const updated = [
+            newCat,
+            ...custom.filter((c: any) => c.id !== newCat.id && c.name.toLowerCase() !== newCat.name.toLowerCase())
+          ];
           localStorage.setItem('elitebath_custom_categories', JSON.stringify(updated));
         }
         set((state) => ({
-          categories: [newCat, ...state.categories.filter((c) => c.id !== newCat.id)],
+          categories: [
+            newCat,
+            ...state.categories.filter((c) => c.id !== newCat.id && c.name.toLowerCase() !== newCat.name.toLowerCase())
+          ],
           categoriesFetchedAt: Date.now(),
         }));
       },
 
       updateCategory: (updatedCat: Category) => {
         if (typeof window !== 'undefined') {
-          const custom = JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]');
-          const updated = custom.map((c: any) => (c.id === updatedCat.id ? updatedCat : c));
-          localStorage.setItem('elitebath_custom_categories', JSON.stringify(updated));
+          const deletedCatIds: string[] = JSON.parse(localStorage.getItem('elitebath_deleted_category_ids') || '[]');
+          if (deletedCatIds.includes(updatedCat.id)) {
+            localStorage.setItem(
+              'elitebath_deleted_category_ids',
+              JSON.stringify(deletedCatIds.filter((id) => id !== updatedCat.id))
+            );
+          }
+
+          const custom: Category[] = JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]');
+          const idx = custom.findIndex((c: any) => c.id === updatedCat.id || c.name.toLowerCase() === updatedCat.name.toLowerCase());
+          if (idx >= 0) {
+            custom[idx] = { ...custom[idx], ...updatedCat };
+          } else {
+            custom.push(updatedCat);
+          }
+          localStorage.setItem('elitebath_custom_categories', JSON.stringify(custom));
         }
         set((state) => ({
-          categories: state.categories.map((c) => (c.id === updatedCat.id ? updatedCat : c)),
+          categories: state.categories.map((c) => (c.id === updatedCat.id || c.name.toLowerCase() === updatedCat.name.toLowerCase() ? { ...c, ...updatedCat } : c)),
           categoriesFetchedAt: Date.now(),
         }));
       },
 
       deleteCategory: (id: string) => {
         if (typeof window !== 'undefined') {
-          const custom = JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]');
+          const custom: Category[] = JSON.parse(localStorage.getItem('elitebath_custom_categories') || '[]');
           const updated = custom.filter((c: any) => c.id !== id);
           localStorage.setItem('elitebath_custom_categories', JSON.stringify(updated));
+
+          const deletedCatIds: string[] = JSON.parse(localStorage.getItem('elitebath_deleted_category_ids') || '[]');
+          if (!deletedCatIds.includes(id)) {
+            deletedCatIds.push(id);
+            localStorage.setItem('elitebath_deleted_category_ids', JSON.stringify(deletedCatIds));
+          }
         }
         set((state) => ({
           categories: state.categories.filter((c) => c.id !== id),
