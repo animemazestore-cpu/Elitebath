@@ -192,7 +192,9 @@ export const Admin: React.FC = () => {
           : [];
         const mergedCats: Category[] = [];
         if (dbCats && dbCats.length > 0) {
-          for (const c of dbCats) {
+          for (const rawCat of dbCats) {
+            const fb = FALLBACK_CATEGORIES.find(f => f.id === rawCat.id || f.name.toLowerCase() === rawCat.name.toLowerCase());
+            const c = { ...rawCat, image_url: rawCat.image_url || fb?.image_url || '' };
             if (!mergedCats.some((m) => m.id === c.id || m.name.toLowerCase() === c.name.toLowerCase())) {
               mergedCats.push(c);
             }

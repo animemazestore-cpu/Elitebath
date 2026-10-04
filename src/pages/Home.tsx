@@ -10,6 +10,7 @@ import { ProductCardSkeleton } from '../components/product/ProductCardSkeleton';
 import { CategoryCardSkeleton } from '../components/product/CategoryCardSkeleton';
 import { HeroSkeleton } from '../components/skeleton/HeroSkeleton';
 import { ProductImage } from '../components/product/ProductImage';
+import { FALLBACK_CATEGORIES } from '../lib/catalogQueries';
 
 
 const HERO_EDITORIAL_LOOKS = [
@@ -319,7 +320,7 @@ export const Home: React.FC = () => {
                 >
                   <div className="aspect-square w-full overflow-hidden bg-gray-100">
                     <ProductImage
-                      src={cat.image_url}
+                      src={cat.image_url || FALLBACK_CATEGORIES.find((f) => f.id === cat.id || f.name.toLowerCase() === cat.name.toLowerCase())?.image_url || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=600'}
                       alt={cat.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />

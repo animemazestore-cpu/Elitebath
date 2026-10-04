@@ -60,7 +60,15 @@ async function fetchCategoriesFromNetwork(): Promise<Category[]> {
       supabase.from('categories').select(CATEGORY_FIELDS).order('name')
     );
     if (error) throw error;
-    const dbCats = data && data.length > 0 ? (data as Category[]) : [];
+    const dbCats = data && data.length > 0 ? (data as Category[]).map((c) => {
+      if (!c.image_url) {
+        const fb = FALLBACK_CATEGORIES.find(
+          (f) => f.id === c.id || f.name.toLowerCase() === c.name.toLowerCase()
+        );
+        return { ...c, image_url: fb?.image_url || '' };
+      }
+      return c;
+    }) : [];
 
     const localCustomCats: Category[] =
       typeof window !== 'undefined'
