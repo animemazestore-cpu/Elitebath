@@ -718,7 +718,7 @@ export const Auth: React.FC = () => {
                     <p className="text-[11px] text-emerald-800">
                       Check your email inbox or spam folder. Click the link in your email to reset your password.
                     </p>
-                    <div className="pt-2 space-y-2">
+                    <div className="pt-1">
                       <div className="flex items-center gap-2 text-[11px]">
                         <a
                           href="https://mail.google.com"
@@ -732,19 +732,6 @@ export const Auth: React.FC = () => {
                         <span className="text-gray-300">•</span>
                         <span className="text-gray-500">Check Spam & Junk folders</span>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsForgotPassword(false);
-                          setIsResetMode(true);
-                          setMessage(null);
-                        }}
-                        className="w-full py-2.5 px-3 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-bold shadow transition-all flex items-center justify-center gap-1.5"
-                      >
-                        <Lock className="h-3.5 w-3.5" />
-                        <span>Reset Password Directly Now</span>
-                      </button>
                     </div>
                   </div>
                 )}
