@@ -4,6 +4,42 @@ export const config = {
   runtime: 'edge',
 };
 
+/**
+ * Standardizes Qikink endpoint URLs to ensure compatibility with both
+ * "https://sandbox.qikink.com" and "https://sandbox.qikink.com/api" styles.
+ */
+function buildQikinkUrl(baseUrl: string, endpointPath: string): string {
+  const cleanBase = (baseUrl || '').trim().replace(/\/+$/, '');
+  const cleanPath = endpointPath.startsWith('/') ? endpointPath : `/${endpointPath}`;
+
+  if (cleanBase.endsWith('/api') && cleanPath.startsWith('/api/')) {
+    return `${cleanBase}${cleanPath.slice(4)}`;
+  }
+  if (!cleanBase.endsWith('/api') && !cleanPath.startsWith('/api/')) {
+    return `${cleanBase}/api${cleanPath}`;
+  }
+  return `${cleanBase}${cleanPath}`;
+}
+
+/**
+ * Generates the complete header set required by Qikink Open API gateways.
+ * Supports ClientId/ClientSecret, AccessToken, and Bearer schemes.
+ */
+function getQikinkHeaders(clientId: string, clientSecret: string): Record<string, string> {
+  const token = clientSecret || clientId;
+  return {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'ClientId': clientId,
+    'ClientSecret': clientSecret,
+    'AccessToken': token,
+    'client_id': clientId,
+    'client_secret': clientSecret,
+    'access_token': token,
+    'Authorization': `Bearer ${token}`,
+  };
+}
+
 export default async function handler(req: Request) {
   // CORS Headers
   const corsHeaders = {
@@ -37,7 +73,7 @@ export default async function handler(req: Request) {
     const baseUrl =
       process.env.QIKINK_BASE_URL ||
       clientConfig?.baseUrl ||
-      (isSandbox ? 'https://sandbox.qikink.com/api' : 'https://api.qikink.com/api');
+      (isSandbox ? 'https://sandbox.qikink.com' : 'https://api.qikink.com');
 
     // 1. ACTION: Test Connection
     if (action === 'test') {
@@ -46,7 +82,9 @@ export default async function handler(req: Request) {
           return new Response(
             JSON.stringify({
               success: true,
-              message: 'Sandbox simulation ready. For live testing, provide Client ID and Secret.',
+              is_simulation: true,
+              message:
+                '🧪 Sandbox Mode Active: Mock dispatches, simulated carrier AWB generation, and delivery updates are ready. When you obtain live keys from dashboard.qikink.com, enter them to connect directly.',
             }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
@@ -58,36 +96,88 @@ export default async function handler(req: Request) {
       }
 
       try {
-        const testRes = await fetch(`${baseUrl}/account/status`, {
-          method: 'GET',
-          headers: {
-            'ClientId': clientId,
-            'ClientSecret': clientSecret,
-            'Accept': 'application/json',
-          },
+        const pingUrl = buildQikinkUrl(baseUrl, '/order/create');
+        const testRes = await fetch(pingUrl, {
+          method: 'POST',
+          headers: getQikinkHeaders(clientId, clientSecret),
+          body: JSON.stringify({ test_ping: true }),
         });
 
+        let testData: any = null;
+        try {
+          testData = await testRes.json();
+        } catch (_) {}
+
+        // 1. HTTP 200/201: Successfully connected and authorized
         if (testRes.ok) {
           return new Response(
-            JSON.stringify({ success: true, message: `Successfully authenticated with Qikink ${env.toUpperCase()} API!` }),
+            JSON.stringify({
+              success: true,
+              message: `✅ Successfully authenticated with Qikink ${env.toUpperCase()} API!`,
+            }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
 
+        // 2. HTTP 400/422: Handshake reached the backend; validation message indicates valid auth credentials
+        if (testRes.status === 400 || testRes.status === 422) {
+          const detail = (testData?.message || testData?.error || '').toLowerCase();
+          const isAuthError = detail.includes('client') || detail.includes('token') || detail.includes('unauthor') || detail.includes('secret');
+          if (!isAuthError) {
+            return new Response(
+              JSON.stringify({
+                success: true,
+                message: `✅ Connected and authenticated with Qikink ${env.toUpperCase()} API! Handshake verified.`,
+              }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
+
+        // 3. HTTP 401/403: Invalid credentials
         if (testRes.status === 401 || testRes.status === 403) {
+          const errMsg = testData?.error || testData?.message || 'Invalid AccessToken or Client Id';
           return new Response(
-            JSON.stringify({ success: false, message: 'Authentication failed: Invalid Client ID or Client Secret' }),
-            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            JSON.stringify({
+              success: false,
+              message: `❌ Authentication Failed (HTTP ${testRes.status}): ${errMsg}. Please check your Client ID & Client Secret from dashboard.qikink.com > Integrations.`,
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
 
+        // 4. HTTP 404: Endpoint not found
+        if (testRes.status === 404) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              message: `❌ Endpoint Not Found (HTTP 404) at ${pingUrl}. Please check your Base URL (expected: https://sandbox.qikink.com or https://api.qikink.com).`,
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // 5. Any other HTTP status
         return new Response(
-          JSON.stringify({ success: true, message: `Connected to Qikink endpoint (Status: HTTP ${testRes.status})` }),
+          JSON.stringify({
+            success: false,
+            message: `Qikink responded with HTTP ${testRes.status}: ${testData?.message || testData?.error || 'Unknown error'}`,
+          }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } catch (err: any) {
+        if (isSandbox) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              is_simulation: true,
+              message: `🧪 Sandbox Simulation Active. (Network ping notice: ${err.message}). Test dispatches and tracking remain operational.`,
+            }),
+            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
         return new Response(
-          JSON.stringify({ success: isSandbox, message: `Qikink ping: ${err.message}` }),
+          JSON.stringify({ success: false, message: `Connection error: ${err.message || 'Network error'}` }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -130,18 +220,14 @@ export default async function handler(req: Request) {
       }
 
       // Live Production Qikink Dispatch
-      const qikinkRes = await fetch(`${baseUrl}/order/create`, {
+      const createUrl = buildQikinkUrl(baseUrl, '/order/create');
+      const qikinkRes = await fetch(createUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'ClientId': clientId,
-          'ClientSecret': clientSecret,
-          'Accept': 'application/json',
-        },
+        headers: getQikinkHeaders(clientId, clientSecret),
         body: JSON.stringify(order),
       });
 
-      const qikinkData = await qikinkRes.json();
+      const qikinkData = await qikinkRes.json().catch(() => ({}));
 
       if (!qikinkRes.ok || (qikinkData.status && qikinkData.status !== 'success' && qikinkData.status !== 200)) {
         return new Response(
@@ -188,16 +274,13 @@ export default async function handler(req: Request) {
         );
       }
 
-      const qikinkRes = await fetch(`${baseUrl}/order/status?order_id=${encodeURIComponent(order_id || order_number)}`, {
+      const statusUrl = buildQikinkUrl(baseUrl, `/order/status?order_id=${encodeURIComponent(order_id || order_number)}`);
+      const qikinkRes = await fetch(statusUrl, {
         method: 'GET',
-        headers: {
-          'ClientId': clientId,
-          'ClientSecret': clientSecret,
-          'Accept': 'application/json',
-        },
+        headers: getQikinkHeaders(clientId, clientSecret),
       });
 
-      const qikinkData = await qikinkRes.json();
+      const qikinkData = await qikinkRes.json().catch(() => ({}));
       return new Response(
         JSON.stringify({
           success: qikinkRes.ok,
@@ -219,17 +302,14 @@ export default async function handler(req: Request) {
         );
       }
 
-      const qikinkRes = await fetch(`${baseUrl}/order/cancel`, {
+      const cancelUrl = buildQikinkUrl(baseUrl, '/order/cancel');
+      const qikinkRes = await fetch(cancelUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'ClientId': clientId,
-          'ClientSecret': clientSecret,
-        },
+        headers: getQikinkHeaders(clientId, clientSecret),
         body: JSON.stringify({ order_id }),
       });
 
-      const qikinkData = await qikinkRes.json();
+      const qikinkData = await qikinkRes.json().catch(() => ({}));
       return new Response(
         JSON.stringify({
           success: qikinkRes.ok,

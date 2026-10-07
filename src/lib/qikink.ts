@@ -64,6 +64,41 @@ export interface QikinkOrderResult {
 export const STORAGE_KEY_QIKINK_CONFIG = 'tryvoal_qikink_config';
 
 /**
+ * Standardizes Qikink endpoint URLs to ensure compatibility with both
+ * "https://sandbox.qikink.com" and "https://sandbox.qikink.com/api" formats.
+ */
+export function buildQikinkUrl(baseUrl: string, endpointPath: string): string {
+  const cleanBase = (baseUrl || '').trim().replace(/\/+$/, '');
+  const cleanPath = endpointPath.startsWith('/') ? endpointPath : `/${endpointPath}`;
+
+  if (cleanBase.endsWith('/api') && cleanPath.startsWith('/api/')) {
+    return `${cleanBase}${cleanPath.slice(4)}`;
+  }
+  if (!cleanBase.endsWith('/api') && !cleanPath.startsWith('/api/')) {
+    return `${cleanBase}/api${cleanPath}`;
+  }
+  return `${cleanBase}${cleanPath}`;
+}
+
+/**
+ * Prepares standard authentication headers for Qikink Open API.
+ */
+export function getQikinkHeaders(clientId: string, clientSecret: string): Record<string, string> {
+  const token = clientSecret || clientId;
+  return {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'ClientId': clientId,
+    'ClientSecret': clientSecret,
+    'AccessToken': token,
+    'client_id': clientId,
+    'client_secret': clientSecret,
+    'access_token': token,
+    'Authorization': `Bearer ${token}`,
+  };
+}
+
+/**
  * Loads Qikink configuration from localStorage or falls back to Vite env variables.
  */
 export const getQikinkConfig = (): QikinkConfig => {
@@ -75,7 +110,7 @@ export const getQikinkConfig = (): QikinkConfig => {
         clientId: parsed.clientId || '',
         clientSecret: parsed.clientSecret || '',
         environment: parsed.environment === 'production' ? 'production' : 'sandbox',
-        baseUrl: parsed.baseUrl || (parsed.environment === 'production' ? 'https://api.qikink.com/api' : 'https://sandbox.qikink.com/api'),
+        baseUrl: parsed.baseUrl || (parsed.environment === 'production' ? 'https://api.qikink.com' : 'https://sandbox.qikink.com'),
         autoSyncOnPaid: Boolean(parsed.autoSyncOnPaid),
       };
     }
@@ -88,8 +123,8 @@ export const getQikinkConfig = (): QikinkConfig => {
     : 'sandbox';
 
   const defaultBaseUrl = env === 'production'
-    ? 'https://api.qikink.com/api'
-    : 'https://sandbox.qikink.com/api';
+    ? 'https://api.qikink.com'
+    : 'https://sandbox.qikink.com';
 
   return {
     clientId: import.meta.env.VITE_QIKINK_CLIENT_ID || '',
@@ -109,7 +144,7 @@ export const saveQikinkConfig = (cfg: Partial<QikinkConfig>): QikinkConfig => {
     ...current,
     ...cfg,
     environment: cfg.environment === 'production' ? 'production' : 'sandbox',
-    baseUrl: cfg.baseUrl || (cfg.environment === 'production' ? 'https://api.qikink.com/api' : 'https://sandbox.qikink.com/api'),
+    baseUrl: cfg.baseUrl || (cfg.environment === 'production' ? 'https://api.qikink.com' : 'https://sandbox.qikink.com'),
   };
   localStorage.setItem(STORAGE_KEY_QIKINK_CONFIG, JSON.stringify(updated));
   return updated;
@@ -180,7 +215,7 @@ export const formatOrderForQikink = (order: Order): QikinkOrderPayload => {
 /**
  * Tests connection to Qikink Open API.
  */
-export const testQikinkConnection = async (testConfig?: Partial<QikinkConfig>): Promise<{ success: boolean; message: string }> => {
+export const testQikinkConnection = async (testConfig?: Partial<QikinkConfig>): Promise<{ success: boolean; is_simulation?: boolean; message: string }> => {
   const config = { ...getQikinkConfig(), ...(testConfig || {}) };
 
   // 1. Try serverless edge proxy to bypass browser CORS
@@ -192,17 +227,23 @@ export const testQikinkConnection = async (testConfig?: Partial<QikinkConfig>): 
     });
     if (proxyRes.ok) {
       const data = await proxyRes.json();
-      return { success: Boolean(data.success), message: data.message || 'Connection verified successfully.' };
+      return {
+        success: Boolean(data.success),
+        is_simulation: Boolean(data.is_simulation),
+        message: data.message || (data.success ? 'Connection verified successfully.' : 'Connection test failed.'),
+      };
     }
   } catch (_) {
-    // If running in local standalone dev environment without serverless runner, continue to direct check
+    // Continue to fallback check
   }
 
+  // 2. Direct browser check fallback
   if (!config.clientId || !config.clientSecret) {
     if (config.environment === 'sandbox') {
       return {
         success: true,
-        message: 'Sandbox Mode Active. Simulation ready (you can also enter real sandbox credentials from dashboard.qikink.com).',
+        is_simulation: true,
+        message: '🧪 Sandbox Mode: Simulation engine active. Mock order dispatches and courier tracking work out of the box. Enter keys from dashboard.qikink.com when ready.',
       };
     }
     return {
@@ -212,38 +253,61 @@ export const testQikinkConnection = async (testConfig?: Partial<QikinkConfig>): 
   }
 
   try {
-    const response = await fetch(`${config.baseUrl}/account/status`, {
-      method: 'GET',
-      headers: {
-        'ClientId': config.clientId,
-        'ClientSecret': config.clientSecret,
-        'Accept': 'application/json',
-      },
+    const pingUrl = buildQikinkUrl(config.baseUrl, '/order/create');
+    const response = await fetch(pingUrl, {
+      method: 'POST',
+      headers: getQikinkHeaders(config.clientId, config.clientSecret),
+      body: JSON.stringify({ test_ping: true }),
     });
+
+    let data: any = null;
+    try {
+      data = await response.json();
+    } catch (_) {}
 
     if (response.ok) {
       return {
         success: true,
-        message: `Successfully authenticated with Qikink ${config.environment.toUpperCase()} API!`,
+        message: `✅ Successfully authenticated with Qikink ${config.environment.toUpperCase()} API!`,
       };
     }
 
+    if (response.status === 400 || response.status === 422) {
+      const detail = (data?.message || data?.error || '').toLowerCase();
+      const isAuthError = detail.includes('client') || detail.includes('token') || detail.includes('unauthor') || detail.includes('secret');
+      if (!isAuthError) {
+        return {
+          success: true,
+          message: `✅ Connected and authenticated with Qikink ${config.environment.toUpperCase()}! (API Handshake verified)`,
+        };
+      }
+    }
+
     if (response.status === 401 || response.status === 403) {
+      const errMsg = data?.error || data?.message || 'Invalid AccessToken or Client Id';
       return {
         success: false,
-        message: `Authentication failed (HTTP ${response.status}). Please verify your Client ID and Client Secret.`,
+        message: `❌ Authentication failed (HTTP ${response.status}): ${errMsg}. Verify Client ID & Secret in dashboard.qikink.com > Integrations.`,
+      };
+    }
+
+    if (response.status === 404) {
+      return {
+        success: false,
+        message: `❌ Endpoint Not Found (HTTP 404) at ${pingUrl}. Check Base URL (expected: https://sandbox.qikink.com or https://api.qikink.com).`,
       };
     }
 
     return {
-      success: true,
-      message: `Connected to Qikink ${config.environment.toUpperCase()} endpoint (Status: HTTP ${response.status}).`,
+      success: false,
+      message: `Qikink responded with HTTP ${response.status}: ${data?.message || data?.error || 'Unknown response'}.`,
     };
   } catch (err: any) {
     if (config.environment === 'sandbox') {
       return {
         success: true,
-        message: `Credentials configured for Sandbox. Direct browser ping encountered network/CORS check: ${err.message}. Ready for sandbox order processing.`,
+        is_simulation: true,
+        message: `🧪 Sandbox Simulation Active. (Direct browser ping returned: ${err.message || 'CORS'}). Sandbox order simulation and local fulfillment remain fully operational.`,
       };
     }
     return {
@@ -305,18 +369,14 @@ export const dispatchOrderToQikink = async (order: Order): Promise<QikinkOrderRe
 
   // Direct Production API dispatch fallback
   try {
-    const response = await fetch(`${config.baseUrl}/order/create`, {
+    const createUrl = buildQikinkUrl(config.baseUrl, '/order/create');
+    const response = await fetch(createUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'ClientId': config.clientId,
-        'ClientSecret': config.clientSecret,
-        'Accept': 'application/json',
-      },
+      headers: getQikinkHeaders(config.clientId, config.clientSecret),
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
 
     if (!response.ok || (data.status && data.status !== 'success' && data.status !== 200)) {
       return {
@@ -382,16 +442,13 @@ export const checkQikinkOrderStatus = async (orderNumber: string, qikinkOrderId?
   }
 
   try {
-    const response = await fetch(`${config.baseUrl}/order/status?order_id=${encodeURIComponent(qikinkOrderId || orderNumber)}`, {
+    const statusUrl = buildQikinkUrl(config.baseUrl, `/order/status?order_id=${encodeURIComponent(qikinkOrderId || orderNumber)}`);
+    const response = await fetch(statusUrl, {
       method: 'GET',
-      headers: {
-        'ClientId': config.clientId,
-        'ClientSecret': config.clientSecret,
-        'Accept': 'application/json',
-      },
+      headers: getQikinkHeaders(config.clientId, config.clientSecret),
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       return {
         success: false,
@@ -433,5 +490,19 @@ export const cancelQikinkOrder = async (orderNumber: string, qikinkOrderId?: str
     }
   } catch (_) {}
 
-  return { success: true, message: 'Order marked cancelled in store.' };
+  try {
+    const cancelUrl = buildQikinkUrl(config.baseUrl, '/order/cancel');
+    const response = await fetch(cancelUrl, {
+      method: 'POST',
+      headers: getQikinkHeaders(config.clientId, config.clientSecret),
+      body: JSON.stringify({ order_id: qikinkOrderId || orderNumber }),
+    });
+    const data = await response.json().catch(() => ({}));
+    return {
+      success: response.ok,
+      message: data.message || (response.ok ? 'Order cancelled on Qikink' : 'Cancellation request failed'),
+    };
+  } catch (_) {
+    return { success: true, message: 'Order marked cancelled in store.' };
+  }
 };
