@@ -7,13 +7,14 @@ import type { Product, Category, Order, ProductQuestion, Review, NewsletterSubsc
 import { sanitizeSlug } from '../lib/persistence';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
-import { ShieldCheck, Plus, Edit, Trash2, Check, X, CreditCard, ShoppingBag, List, MessageSquare, Star, Mail, Download, RefreshCcw, Tag, Megaphone, Calendar, Copy, MapPin, Menu, AlertTriangle, Search, Sliders, X as CloseIcon, Truck, Printer, QrCode, Package, Clock, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Plus, Edit, Trash2, Check, X, CreditCard, ShoppingBag, List, MessageSquare, Star, Mail, Download, RefreshCcw, Tag, Megaphone, Calendar, Copy, MapPin, Menu, AlertTriangle, Search, Sliders, X as CloseIcon, Truck, Printer, QrCode, Package, Clock, ExternalLink, CheckCircle2, Zap } from 'lucide-react';
 import { ProductVariantEditor } from '../components/admin/ProductVariantEditor';
 import type { OptionDraft, VariantDraft } from '../components/admin/ProductVariantEditor';
 import { ImageUploadZone } from '../components/admin/ImageUploadZone';
 import { deleteProductImagesFromStorage } from '../lib/storage';
 import { FALLBACK_CATEGORIES, FALLBACK_PRODUCTS } from '../lib/catalogQueries';
-import { dispatchOrderToQikink, getQikinkConfig } from '../lib/qikink';
+import { dispatchOrderToQikink, getQikinkConfig, saveQikinkConfig, testQikinkConnection, checkQikinkOrderStatus } from '../lib/qikink';
+import type { QikinkConfig } from '../lib/qikink';
 
 export const Admin: React.FC = () => {
   const navigate = useNavigate();
@@ -83,6 +84,11 @@ export const Admin: React.FC = () => {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [trackingTargetStatus, setTrackingTargetStatus] = useState('');
   const [dispatchingQikinkId, setDispatchingQikinkId] = useState<string | null>(null);
+  const [isQikinkSettingsModalOpen, setIsQikinkSettingsModalOpen] = useState(false);
+  const [qikinkConfigForm, setQikinkConfigForm] = useState<QikinkConfig>(() => getQikinkConfig());
+  const [testingQikink, setTestingQikink] = useState(false);
+  const [qikinkTestResult, setQikinkTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [pollingQikinkOrderId, setPollingQikinkOrderId] = useState<string | null>(null);
 
   // Delivery Date Edit States
   const [editingDeliveryDateOrderId, setEditingDeliveryDateOrderId] = useState<string | null>(null);
@@ -1303,12 +1309,71 @@ export const Admin: React.FC = () => {
           `Courier: ${res.courier_name || 'Standard Courier'}\n\n` +
           `${res.message || ''}`
         );
-        if (res.awb_number) {
-          await performOrderStatusUpdate(order.id, 'PROCESSING', {
-            carrier: res.courier_name || 'Qikink Logistics',
-            tracking_number: res.awb_number,
-            shipped_at: new Date().toISOString()
+
+        const currentShipping = (order.shipping_address as any) || {};
+        const qikinkInfo = {
+          order_id: res.qikink_order_id || `QK-${Date.now()}`,
+          status: res.status || 'QUEUED_SANDBOX',
+          awb_number: res.awb_number,
+          courier_name: res.courier_name,
+          tracking_url: res.tracking_url,
+          dispatched_at: new Date().toISOString(),
+          environment: getQikinkConfig().environment
+        };
+        const trackingInfo = res.awb_number ? {
+          carrier: res.courier_name || 'Qikink Logistics',
+          tracking_number: res.awb_number,
+          shipped_at: new Date().toISOString()
+        } : currentShipping.tracking_info;
+
+        // Update local React state
+        setOrders((prev) => prev.map((o) => {
+          if (o.id !== order.id) return o;
+          return {
+            ...o,
+            status: 'PROCESSING' as any,
+            shipping_address: {
+              ...currentShipping,
+              qikink_info: qikinkInfo,
+              ...(trackingInfo ? { tracking_info: trackingInfo } : {})
+            }
+          };
+        }));
+
+        // Persist to local resilient storage
+        try {
+          const raw = localStorage.getItem('elitebath_local_orders') || localStorage.getItem('animemaze_local_orders') || '[]';
+          const localList = JSON.parse(raw);
+          const updated = localList.map((lo: any) => {
+            if (lo.id === order.id) {
+              return {
+                ...lo,
+                status: 'PROCESSING',
+                shipping_address: {
+                  ...(lo.shipping_address || {}),
+                  qikink_info: qikinkInfo,
+                  ...(trackingInfo ? { tracking_info: trackingInfo } : {})
+                }
+              };
+            }
+            return lo;
           });
+          localStorage.setItem('elitebath_local_orders', JSON.stringify(updated));
+          localStorage.setItem('animemaze_local_orders', JSON.stringify(updated));
+        } catch (_) {}
+
+        // Persist to Supabase
+        try {
+          await supabase.from('orders').update({
+            status: 'PROCESSING',
+            shipping_address: {
+              ...currentShipping,
+              qikink_info: qikinkInfo,
+              ...(trackingInfo ? { tracking_info: trackingInfo } : {})
+            }
+          }).eq('id', order.id);
+        } catch (dbErr) {
+          console.warn('DB update for Qikink order dispatch:', dbErr);
         }
       } else {
         alert(`❌ Qikink Dispatch Failed: ${res.message || 'Unknown error'}`);
@@ -1317,6 +1382,55 @@ export const Admin: React.FC = () => {
       alert(`Qikink Error: ${err.message || err}`);
     } finally {
       setDispatchingQikinkId(null);
+    }
+  };
+
+  const handlePollQikinkStatus = async (order: Order) => {
+    const qikinkId = (order.shipping_address as any)?.qikink_info?.order_id;
+    if (!qikinkId) return;
+    setPollingQikinkOrderId(order.id);
+    try {
+      const res = await checkQikinkOrderStatus(order.id, qikinkId);
+      if (res.success) {
+        alert(`📦 Qikink Status Update:\nStatus: ${res.status}\nCourier: ${res.courier || 'N/A'}\nAWB: ${res.awb || 'N/A'}\n${res.message || ''}`);
+        
+        const currentShipping = (order.shipping_address as any) || {};
+        const updatedQikink = {
+          ...(currentShipping.qikink_info || {}),
+          status: res.status,
+          awb_number: res.awb || currentShipping.qikink_info?.awb_number,
+          courier_name: res.courier || currentShipping.qikink_info?.courier_name,
+        };
+        const nextStatus = (res.status === 'SHIPPED' || res.status === 'OUT_FOR_DELIVERY') ? res.status : order.status;
+
+        setOrders((prev) => prev.map((o) => {
+          if (o.id !== order.id) return o;
+          return {
+            ...o,
+            status: nextStatus as any,
+            shipping_address: {
+              ...currentShipping,
+              qikink_info: updatedQikink
+            }
+          };
+        }));
+
+        try {
+          await supabase.from('orders').update({
+            status: nextStatus,
+            shipping_address: {
+              ...currentShipping,
+              qikink_info: updatedQikink
+            }
+          }).eq('id', order.id);
+        } catch (_) {}
+      } else {
+        alert(`⚠️ Could not refresh Qikink status: ${res.message}`);
+      }
+    } catch (err: any) {
+      alert(`Qikink error: ${err.message || err}`);
+    } finally {
+      setPollingQikinkOrderId(null);
     }
   };
 
@@ -2281,9 +2395,24 @@ export const Admin: React.FC = () => {
                       Track consignments, manage order statuses, review apparel variants, and generate dispatch slips
                     </p>
                   </div>
-                  <span className="text-xs font-semibold px-3 py-1 bg-gray-100 text-gray-700 rounded-full border border-gray-200">
-                    Showing {filteredOrders.length} of {orders.length} orders
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQikinkConfigForm(getQikinkConfig());
+                        setQikinkTestResult(null);
+                        setIsQikinkSettingsModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-xs transition-all cursor-pointer"
+                      title="Open Qikink Open API & Fulfillment Credentials settings"
+                    >
+                      <Zap className="h-3.5 w-3.5" />
+                      <span>Qikink API ({getQikinkConfig().environment.toUpperCase()})</span>
+                    </button>
+                    <span className="text-xs font-semibold px-3 py-1 bg-gray-100 text-gray-700 rounded-full border border-gray-200">
+                      Showing {filteredOrders.length} of {orders.length} orders
+                    </span>
+                  </div>
                 </div>
 
                 {/* Filter and Search Bar */}
@@ -2531,17 +2660,50 @@ export const Admin: React.FC = () => {
                           )
                         )}
 
-                        {/* Qikink POD Sandbox Dispatch */}
-                        <button
-                          type="button"
-                          disabled={dispatchingQikinkId === order.id}
-                          onClick={() => handleDispatchQikink(order)}
-                          className="w-full py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 hover:border-amber-400 text-amber-900 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-xs"
-                          title="Fulfill order via Qikink Open API (Sandbox)"
-                        >
-                          <Package className="h-3.5 w-3.5 text-amber-600" />
-                          {dispatchingQikinkId === order.id ? 'Dispatching...' : 'Dispatch to Qikink (POD)'}
-                        </button>
+                        {/* Qikink POD Dispatch / Status Box */}
+                        {(order.shipping_address as any)?.qikink_info ? (
+                          <div className="bg-amber-50/70 border border-amber-200/90 rounded-xl p-2.5 text-xs space-y-1.5 shadow-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="font-extrabold text-amber-900 flex items-center gap-1 text-[11px]">
+                                <Zap className="h-3.5 w-3.5 text-amber-600" />
+                                Qikink POD ({(order.shipping_address as any).qikink_info.environment?.toUpperCase() || 'SANDBOX'})
+                              </span>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-800 border border-amber-300">
+                                {(order.shipping_address as any).qikink_info.status}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between font-mono text-[10px] text-gray-700 bg-white p-1.5 rounded border border-gray-200">
+                              <span className="truncate">ID: {(order.shipping_address as any).qikink_info.order_id}</span>
+                              <button
+                                onClick={() => handleCopyText((order.shipping_address as any).qikink_info.order_id, 'Qikink Order ID')}
+                                className="text-gray-400 hover:text-primary ml-1"
+                                title="Copy Qikink Order ID"
+                              >
+                                <Copy className="h-3 w-3" />
+                              </button>
+                            </div>
+                            <button
+                              type="button"
+                              disabled={pollingQikinkOrderId === order.id}
+                              onClick={() => handlePollQikinkStatus(order)}
+                              className="w-full py-1 text-[11px] font-bold text-amber-900 bg-white hover:bg-amber-100/50 border border-amber-200 rounded-lg flex items-center justify-center gap-1 transition-colors"
+                            >
+                              <RefreshCcw className={`h-3 w-3 ${pollingQikinkOrderId === order.id ? 'animate-spin' : ''}`} />
+                              <span>{pollingQikinkOrderId === order.id ? 'Polling Status...' : 'Check Status with Qikink'}</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={dispatchingQikinkId === order.id}
+                            onClick={() => handleDispatchQikink(order)}
+                            className="w-full py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 hover:border-amber-400 text-amber-900 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                            title="Fulfill order via Qikink Open API"
+                          >
+                            <Package className="h-3.5 w-3.5 text-amber-600" />
+                            {dispatchingQikinkId === order.id ? 'Dispatching...' : 'Dispatch to Qikink (POD)'}
+                          </button>
+                        )}
 
                         {/* Estimated Delivery & Packing Slip */}
                         <div className="flex items-center justify-between pt-2 border-t border-gray-200 gap-2">
@@ -2833,17 +2995,51 @@ export const Admin: React.FC = () => {
                                   )
                                 )}
 
-                                {/* Qikink Open API Dispatch */}
-                                <button
-                                  type="button"
-                                  disabled={dispatchingQikinkId === order.id}
-                                  onClick={() => handleDispatchQikink(order)}
-                                  className="w-full mt-1.5 py-1 px-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 hover:border-amber-400 text-amber-900 text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 transition-colors"
-                                  title="Dispatch order to Qikink POD fulfillment (Sandbox)"
-                                >
-                                  <Package className="h-3 w-3 text-amber-600" />
-                                  {dispatchingQikinkId === order.id ? 'Dispatching...' : 'Dispatch to Qikink'}
-                                </button>
+                                {/* Qikink POD Dispatch or Status Card */}
+                                {(order.shipping_address as any)?.qikink_info ? (
+                                  <div className="mt-1.5 bg-amber-50/70 border border-amber-200/80 rounded-lg p-1.5 text-[10px] space-y-1">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-bold text-amber-900 flex items-center gap-0.5">
+                                        <Zap className="h-3 w-3 text-amber-600" />
+                                        Qikink ({(order.shipping_address as any).qikink_info.environment?.toUpperCase() || 'SANDBOX'})
+                                      </span>
+                                      <span className="font-mono text-[9px] font-bold text-amber-700 bg-amber-100 px-1 rounded">
+                                        {(order.shipping_address as any).qikink_info.status}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center justify-between font-mono text-[9px] text-gray-600 bg-white px-1 py-0.5 rounded border border-gray-200">
+                                      <span className="truncate max-w-[100px]">{(order.shipping_address as any).qikink_info.order_id}</span>
+                                      <button
+                                        onClick={() => handleCopyText((order.shipping_address as any).qikink_info.order_id, 'Qikink Order ID')}
+                                        className="text-gray-400 hover:text-primary ml-0.5"
+                                        title="Copy Qikink Order ID"
+                                      >
+                                        <Copy className="h-2.5 w-2.5" />
+                                      </button>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      disabled={pollingQikinkOrderId === order.id}
+                                      onClick={() => handlePollQikinkStatus(order)}
+                                      className="w-full py-0.5 px-1 bg-white hover:bg-amber-100/50 border border-amber-200 text-amber-900 rounded font-semibold flex items-center justify-center gap-1 transition-colors"
+                                      title="Poll status from Qikink API"
+                                    >
+                                      <RefreshCcw className={`h-2.5 w-2.5 ${pollingQikinkOrderId === order.id ? 'animate-spin' : ''}`} />
+                                      <span>{pollingQikinkOrderId === order.id ? 'Polling...' : 'Sync Status'}</span>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    disabled={dispatchingQikinkId === order.id}
+                                    onClick={() => handleDispatchQikink(order)}
+                                    className="w-full mt-1.5 py-1 px-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 hover:border-amber-400 text-amber-900 text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 transition-colors"
+                                    title="Dispatch order to Qikink POD fulfillment"
+                                  >
+                                    <Package className="h-3 w-3 text-amber-600" />
+                                    {dispatchingQikinkId === order.id ? 'Dispatching...' : 'Dispatch to Qikink'}
+                                  </button>
+                                )}
                               </div>
                             </td>
 
@@ -4221,6 +4417,184 @@ export const Admin: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* QIKINK OPEN API CONFIGURATION MODAL */}
+      {isQikinkSettingsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-2xl my-6">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                  <Zap className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Qikink Open API Settings</h3>
+                  <p className="text-xs text-gray-500">Configure print-on-demand fulfillment credentials</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsQikinkSettingsModalOpen(false)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              >
+                <CloseIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveQikinkConfig(qikinkConfigForm);
+                alert(`Qikink API configuration saved! Active Mode: ${qikinkConfigForm.environment.toUpperCase()}`);
+                setIsQikinkSettingsModalOpen(false);
+              }}
+              className="space-y-4 pt-4"
+            >
+              {/* Environment Toggle */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">
+                  Fulfillment Environment
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setQikinkConfigForm({ ...qikinkConfigForm, environment: 'sandbox', baseUrl: 'https://sandbox.qikink.com/api' })}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      qikinkConfigForm.environment === 'sandbox'
+                        ? 'border-amber-500 bg-amber-50/60 ring-2 ring-amber-500/20'
+                        : 'border-gray-200 bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-900">🧪 Sandbox (Testing)</span>
+                      {qikinkConfigForm.environment === 'sandbox' && <CheckCircle2 className="h-4 w-4 text-amber-600" />}
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-1">Simulated test orders, mock tracking, zero wallet deductions.</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setQikinkConfigForm({ ...qikinkConfigForm, environment: 'production', baseUrl: 'https://api.qikink.com/api' })}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      qikinkConfigForm.environment === 'production'
+                        ? 'border-emerald-500 bg-emerald-50/60 ring-2 ring-emerald-500/20'
+                        : 'border-gray-200 bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-900">🚀 Production (Live)</span>
+                      {qikinkConfigForm.environment === 'production' && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-1">Real garments printed, auto-shipped via Delhivery / BlueDart.</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Client ID */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Client ID (API Key)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. qk_live_abc123 or qk_test_xyz789"
+                  value={qikinkConfigForm.clientId}
+                  onChange={(e) => setQikinkConfigForm({ ...qikinkConfigForm, clientId: e.target.value.trim() })}
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-white border border-gray-300 text-gray-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 font-mono"
+                />
+              </div>
+
+              {/* Client Secret */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Client Secret
+                </label>
+                <input
+                  type="password"
+                  placeholder="Enter Qikink client secret..."
+                  value={qikinkConfigForm.clientSecret}
+                  onChange={(e) => setQikinkConfigForm({ ...qikinkConfigForm, clientSecret: e.target.value.trim() })}
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-white border border-gray-300 text-gray-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 font-mono"
+                />
+              </div>
+
+              {/* Base URL */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  API Endpoint Base URL
+                </label>
+                <input
+                  type="text"
+                  value={qikinkConfigForm.baseUrl}
+                  onChange={(e) => setQikinkConfigForm({ ...qikinkConfigForm, baseUrl: e.target.value.trim() })}
+                  className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-white border border-gray-300 text-gray-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 font-mono"
+                />
+              </div>
+
+              {/* Guide box */}
+              <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3 text-xs text-amber-900 space-y-1">
+                <p className="font-bold flex items-center gap-1 text-[11px] uppercase tracking-wider text-amber-800">
+                  <Package className="h-3.5 w-3.5 text-amber-700" /> Where to get credentials:
+                </p>
+                <p className="text-[11px] leading-relaxed text-amber-800">
+                  Log in to <strong>dashboard.qikink.com</strong> &gt; <strong>Integrations</strong> &gt; <strong>Custom API</strong>. Generate your Client ID and Client Secret, then paste them above. In Sandbox mode, mock test dispatches work immediately even before obtaining keys.
+                </p>
+              </div>
+
+              {/* Test Connection Button & Result */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  disabled={testingQikink}
+                  onClick={async () => {
+                    setTestingQikink(true);
+                    setQikinkTestResult(null);
+                    try {
+                      const res = await testQikinkConnection(qikinkConfigForm);
+                      setQikinkTestResult(res);
+                    } catch (err: any) {
+                      setQikinkTestResult({ success: false, message: err.message || 'Test failed' });
+                    } finally {
+                      setTestingQikink(false);
+                    }
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl border border-gray-300 hover:border-gray-400 bg-gray-50 text-gray-800 text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs"
+                >
+                  <RefreshCcw className={`h-3.5 w-3.5 ${testingQikink ? 'animate-spin' : ''}`} />
+                  {testingQikink ? 'Testing Authentication...' : 'Test Qikink API Connection'}
+                </button>
+
+                {qikinkTestResult && (
+                  <div
+                    className={`mt-2.5 p-3 rounded-xl border text-xs leading-relaxed flex items-start gap-2 ${
+                      qikinkTestResult.success
+                        ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                        : 'bg-red-50 text-red-900 border-red-200'
+                    }`}
+                  >
+                    {qikinkTestResult.success ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+                    )}
+                    <span>{qikinkTestResult.message}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex flex-col-reverse sm:flex-row gap-2.5 pt-3 border-t border-gray-200 justify-end">
+                <Button variant="outline" type="button" onClick={() => setIsQikinkSettingsModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-amber-600 hover:bg-amber-700 text-white">
+                  Save Qikink Settings
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

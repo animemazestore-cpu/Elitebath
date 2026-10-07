@@ -110,6 +110,15 @@ export interface ShippingAddress {
     tracking_number: string;
     shipped_at: string;
   };
+  qikink_info?: {
+    order_id: string;
+    status: string;
+    awb_number?: string;
+    courier_name?: string;
+    tracking_url?: string;
+    dispatched_at: string;
+    environment: 'sandbox' | 'production';
+  };
   item_variants?: any[];
 }
 
