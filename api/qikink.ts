@@ -87,8 +87,8 @@ export default async function handler(req: Request) {
     // Resolve credentials (server env takes priority over clientConfig if set)
     const env = (process.env.QIKINK_ENV || clientConfig?.environment || 'sandbox').toLowerCase();
     const isSandbox = env === 'sandbox';
-    const clientId = process.env.QIKINK_CLIENT_ID || clientConfig?.clientId || '';
-    const clientSecret = process.env.QIKINK_CLIENT_SECRET || clientConfig?.clientSecret || '';
+    const clientId = process.env.QIKINK_CLIENT_ID || clientConfig?.clientId || '960194484867280';
+    const clientSecret = process.env.QIKINK_CLIENT_SECRET || clientConfig?.clientSecret || 'd2a534e5d0a4310a0bfae9f11f5bc2c95b709b9bb3633a0f722dbbd59205ad01';
     const baseUrl =
       process.env.QIKINK_BASE_URL ||
       clientConfig?.baseUrl ||

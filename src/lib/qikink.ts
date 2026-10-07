@@ -121,13 +121,23 @@ export async function getQikinkAccessToken(
  * Loads Qikink configuration from localStorage or falls back to Vite env variables.
  */
 export const getQikinkConfig = (): QikinkConfig => {
+  const defaultClientId = '960194484867280';
+  const defaultClientSecret = 'd2a534e5d0a4310a0bfae9f11f5bc2c95b709b9bb3633a0f722dbbd59205ad01';
+
   try {
     const raw = localStorage.getItem(STORAGE_KEY_QIKINK_CONFIG);
     if (raw) {
       const parsed = JSON.parse(raw);
+      // Migrate from old test credentials if present
+      if (parsed.clientId === '959810922393908' || !parsed.clientId) {
+        parsed.clientId = defaultClientId;
+        parsed.clientSecret = defaultClientSecret;
+        localStorage.setItem(STORAGE_KEY_QIKINK_CONFIG, JSON.stringify(parsed));
+      }
+
       return {
-        clientId: parsed.clientId || '',
-        clientSecret: parsed.clientSecret || '',
+        clientId: parsed.clientId || defaultClientId,
+        clientSecret: parsed.clientSecret || defaultClientSecret,
         environment: parsed.environment === 'production' ? 'production' : 'sandbox',
         baseUrl: parsed.baseUrl || (parsed.environment === 'production' ? 'https://api.qikink.com' : 'https://sandbox.qikink.com'),
         autoSyncOnPaid: Boolean(parsed.autoSyncOnPaid),
@@ -146,8 +156,8 @@ export const getQikinkConfig = (): QikinkConfig => {
     : 'https://sandbox.qikink.com';
 
   return {
-    clientId: import.meta.env.VITE_QIKINK_CLIENT_ID || '',
-    clientSecret: import.meta.env.VITE_QIKINK_CLIENT_SECRET || '',
+    clientId: import.meta.env.VITE_QIKINK_CLIENT_ID || defaultClientId,
+    clientSecret: import.meta.env.VITE_QIKINK_CLIENT_SECRET || defaultClientSecret,
     environment: env,
     baseUrl: import.meta.env.VITE_QIKINK_BASE_URL || defaultBaseUrl,
     autoSyncOnPaid: false,
