@@ -12,7 +12,7 @@ import { ProductVariantEditor } from '../components/admin/ProductVariantEditor';
 import type { OptionDraft, VariantDraft } from '../components/admin/ProductVariantEditor';
 import { ImageUploadZone } from '../components/admin/ImageUploadZone';
 import { deleteProductImagesFromStorage } from '../lib/storage';
-import { FALLBACK_CATEGORIES, FALLBACK_PRODUCTS } from '../lib/catalogQueries';
+import { FALLBACK_CATEGORIES } from '../lib/catalogQueries';
 import { dispatchOrderToQikink, getQikinkConfig, saveQikinkConfig, testQikinkConnection, checkQikinkOrderStatus } from '../lib/qikink';
 import type { QikinkConfig } from '../lib/qikink';
 
@@ -471,11 +471,6 @@ export const Admin: React.FC = () => {
             }
           }
         }
-        for (const fb of FALLBACK_PRODUCTS) {
-          if (!deletedProdIds.includes(fb.id) && !mergedProds.some((m) => m.id === fb.id || m.slug === fb.slug)) {
-            mergedProds.push(fb);
-          }
-        }
         setProducts(mergedProds);
       } catch (err: any) {
         console.error('Error loading products from Supabase:', err);
@@ -487,11 +482,6 @@ export const Admin: React.FC = () => {
           ? JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]')
           : [];
         const mergedProds: Product[] = customProds.filter((p) => !deletedProdIds.includes(p.id));
-        for (const fb of FALLBACK_PRODUCTS) {
-          if (!deletedProdIds.includes(fb.id) && !mergedProds.some((m) => m.id === fb.id || m.slug === fb.slug)) {
-            mergedProds.push(fb);
-          }
-        }
         setProducts(mergedProds);
       }
 

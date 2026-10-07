@@ -172,16 +172,6 @@ async function fetchProductsFromNetwork(): Promise<Product[]> {
       }
     }
 
-    // Include all showcase / placeholder catalog products that are not replaced by DB and not deleted
-    for (const fb of FALLBACK_PRODUCTS) {
-      if (
-        !deletedIds.includes(fb.id) &&
-        !merged.some((m) => m.id === fb.id || m.slug.toLowerCase() === fb.slug.toLowerCase())
-      ) {
-        merged.push(fb);
-      }
-    }
-
     return merged;
   } catch (err) {
     console.warn('Network product fetch error, falling back to local storage:', err);
@@ -190,11 +180,6 @@ async function fetchProductsFromNetwork(): Promise<Product[]> {
         ? JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]')
         : [];
     const merged = [...localCustomProds.filter((p) => !deletedIds.includes(p.id))];
-    for (const fb of FALLBACK_PRODUCTS) {
-      if (!deletedIds.includes(fb.id) && !merged.some((m) => m.id === fb.id || m.slug === fb.slug)) {
-        merged.push(fb);
-      }
-    }
     return merged;
   }
 }
@@ -273,7 +258,7 @@ export const useCatalogStore = create<CatalogState>()(
   persist(
     (set, get) => ({
       categories: FALLBACK_CATEGORIES,
-      products: FALLBACK_PRODUCTS,
+      products: [],
       categoriesFetchedAt: null,
       productsFetchedAt: null,
       categoriesLoading: false,
@@ -552,7 +537,7 @@ export const useCatalogStore = create<CatalogState>()(
 
 // Realtime synchronizer: instantly sync live prices & stock across all connected devices
 if (typeof window !== 'undefined') {
-  // Purge any legacy stale catalog from localStorage
+  // Purge any legacy stale catalog and mock products from localStorage
   try {
     const rawCatalog = localStorage.getItem('elite-bath-catalog');
     if (rawCatalog) {
@@ -562,6 +547,13 @@ if (typeof window !== 'undefined') {
         delete parsed.state.productDetailsBySlug;
         localStorage.setItem('elite-bath-catalog', JSON.stringify(parsed));
       }
+    }
+
+    const rawCustom = localStorage.getItem('elitebath_custom_products');
+    if (rawCustom) {
+      const parsedCustom: any[] = JSON.parse(rawCustom);
+      const filteredCustom = parsedCustom.filter((p) => !p.id?.startsWith('prod-'));
+      localStorage.setItem('elitebath_custom_products', JSON.stringify(filteredCustom));
     }
   } catch (_) {}
 
