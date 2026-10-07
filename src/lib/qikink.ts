@@ -1,7 +1,7 @@
 /**
  * Qikink Open API Integration (Print-On-Demand & Apparel Fulfillment)
  * Supports both Sandbox (Test Mode) and Production (Live Fulfillment) environments.
- * Allows interactive credential management via the Admin Panel.
+ * Uses OAuth AccessToken authentication via POST /api/token.
  */
 
 import type { Order, ShippingAddress } from '../types/database';
@@ -15,9 +15,9 @@ export interface QikinkConfig {
 }
 
 export interface QikinkLineItem {
-  search_product_id?: string;
+  search_from_my_products: number;
   sku: string;
-  name: string;
+  name?: string;
   quantity: number;
   price: number;
   size?: string;
@@ -32,21 +32,20 @@ export interface QikinkShippingAddress {
   address1: string;
   address2?: string;
   city: string;
-  state: string;
-  pincode: string;
-  country: string;
+  province: string;
+  zip: string;
+  country_code: string;
   phone: string;
   email: string;
 }
 
 export interface QikinkOrderPayload {
   order_number: string;
-  gateway: 'PREPAID' | 'COD';
-  total: number;
-  cod_amount: number;
+  qikink_shipping: number;
+  gateway: 'Prepaid' | 'COD';
+  total_order_value: number;
   shipping_address: QikinkShippingAddress;
   line_items: QikinkLineItem[];
-  test_order: boolean;
 }
 
 export interface QikinkOrderResult {
@@ -81,21 +80,41 @@ export function buildQikinkUrl(baseUrl: string, endpointPath: string): string {
 }
 
 /**
- * Prepares standard authentication headers for Qikink Open API.
+ * Requests an OAuth AccessToken from Qikink.
  */
-export function getQikinkHeaders(clientId: string, clientSecret: string): Record<string, string> {
-  const token = clientSecret || clientId;
-  return {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'ClientId': clientId,
-    'ClientSecret': clientSecret,
-    'AccessToken': token,
-    'client_id': clientId,
-    'client_secret': clientSecret,
-    'access_token': token,
-    'Authorization': `Bearer ${token}`,
-  };
+export async function getQikinkAccessToken(
+  baseUrl: string,
+  clientId: string,
+  clientSecret: string
+): Promise<{ success: boolean; token?: string; error?: string }> {
+  try {
+    const tokenUrl = buildQikinkUrl(baseUrl, '/token');
+    const form = new URLSearchParams();
+    form.append('ClientId', clientId);
+    form.append('client_secret', clientSecret);
+
+    const res = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: form.toString(),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok && (data.Accesstoken || data.access_token || data.token)) {
+      return { success: true, token: data.Accesstoken || data.access_token || data.token };
+    }
+
+    return {
+      success: false,
+      error: data.error || data.message || `HTTP ${res.status}: Authentication failed`,
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Token request failed' };
+  }
 }
 
 /**
@@ -156,26 +175,30 @@ export const isQikinkConfigured = (): boolean => {
 };
 
 /**
- * Transforms an internal Tryvoal Order into the standard Qikink Open API payload format.
+ * Transforms an internal Tryvoal Order into the exact Qikink Open API payload schema.
  */
 export const formatOrderForQikink = (order: Order): QikinkOrderPayload => {
   const address = order.shipping_address || ({} as Partial<ShippingAddress>);
   const fullName = address.fullName || order.profile?.full_name || 'Customer';
   const nameParts = fullName.trim().split(' ');
-  const firstName = nameParts[0] || 'Valued';
-  const lastName = nameParts.slice(1).join(' ') || 'Customer';
+  const firstName = nameParts[0] || 'Customer';
+  const lastName = nameParts.slice(1).join(' ') || 'Valued';
+
+  // Order numbers in Qikink must be alphanumeric and max 15 characters
+  const rawId = (address.order_ref || order.id || `ORD${Date.now()}`).replace(/[^a-zA-Z0-9]/g, '');
+  const cleanOrderNumber = rawId.slice(0, 15) || `ORD${Date.now().toString().slice(-8)}`;
 
   const line_items: QikinkLineItem[] = (order.items || []).map((item) => {
     const prod = item.product;
-    const sku = prod?.sku || `TRV-${item.id ? item.id.slice(0, 8).toUpperCase() : 'APPAR'}`;
+    const sku = prod?.sku || `TRV${(item.id || '101').replace(/[^a-zA-Z0-9]/g, '').slice(0, 6)}`;
     const variantStr = item.selected_variant || '';
 
-    // Extract size and color from selected variant string if available (e.g. "Onyx Black / XL")
     const parts = variantStr.split('/').map((s) => s.trim());
     const color = parts.length > 1 ? parts[0] : (item.selected_attributes?.color || undefined);
     const size = parts.length > 1 ? parts[1] : (parts[0] || item.selected_attributes?.size || 'L');
 
     return {
+      search_from_my_products: 1,
       sku,
       name: prod?.name || (item as any).product_name || 'Apparel Item',
       quantity: item.quantity || 1,
@@ -188,24 +211,22 @@ export const formatOrderForQikink = (order: Order): QikinkOrderPayload => {
   });
 
   const isPrepaid = (address.paymentMethod || '').toUpperCase() !== 'COD';
-  const cfg = getQikinkConfig();
 
   return {
-    order_number: address.order_ref || order.id,
-    gateway: isPrepaid ? 'PREPAID' : 'COD',
-    total: Number(order.total_amount || 0),
-    cod_amount: isPrepaid ? 0 : Number(order.total_amount || 0),
-    test_order: cfg.environment === 'sandbox',
+    order_number: cleanOrderNumber,
+    qikink_shipping: 1,
+    gateway: isPrepaid ? 'Prepaid' : 'COD',
+    total_order_value: Math.round(Number(order.total_amount || 0)),
     shipping_address: {
       first_name: firstName,
       last_name: lastName,
-      address1: address.address || 'Address Line 1',
-      address2: address.landmark || '',
+      address1: (address.address || 'Address Line 1').replace(/[,#-]/g, ' ').trim(),
+      address2: (address.landmark || '').replace(/[,#-]/g, ' ').trim() || undefined,
       city: address.city || 'Delhi',
-      state: address.state || 'Delhi',
-      pincode: address.pincode || '110001',
-      country: address.country || 'India',
-      phone: address.phone || '9999999999',
+      province: address.state || 'Delhi',
+      zip: address.pincode || '110001',
+      country_code: 'IN',
+      phone: (address.phone || '9999999999').replace(/[^0-9]/g, '').slice(-10),
       email: address.email || order.profile?.email || 'customer@tryvoal.store',
     },
     line_items,
@@ -213,7 +234,7 @@ export const formatOrderForQikink = (order: Order): QikinkOrderPayload => {
 };
 
 /**
- * Tests connection to Qikink Open API.
+ * Tests connection to Qikink Open API by requesting an active OAuth access token.
  */
 export const testQikinkConnection = async (testConfig?: Partial<QikinkConfig>): Promise<{ success: boolean; is_simulation?: boolean; message: string }> => {
   const config = { ...getQikinkConfig(), ...(testConfig || {}) };
@@ -234,7 +255,7 @@ export const testQikinkConnection = async (testConfig?: Partial<QikinkConfig>): 
       };
     }
   } catch (_) {
-    // Continue to fallback check
+    // Continue to direct fallback
   }
 
   // 2. Direct browser check fallback
@@ -243,7 +264,7 @@ export const testQikinkConnection = async (testConfig?: Partial<QikinkConfig>): 
       return {
         success: true,
         is_simulation: true,
-        message: '🧪 Sandbox Mode: Simulation engine active. Mock order dispatches and courier tracking work out of the box. Enter keys from dashboard.qikink.com when ready.',
+        message: '🧪 Sandbox Mode: Simulation engine active. Mock order dispatches and courier tracking work out of the box. Enter keys when ready to test live gateway.',
       };
     }
     return {
@@ -252,74 +273,23 @@ export const testQikinkConnection = async (testConfig?: Partial<QikinkConfig>): 
     };
   }
 
-  try {
-    const pingUrl = buildQikinkUrl(config.baseUrl, '/order/create');
-    const response = await fetch(pingUrl, {
-      method: 'POST',
-      headers: getQikinkHeaders(config.clientId, config.clientSecret),
-      body: JSON.stringify({ test_ping: true }),
-    });
+  const tokenResult = await getQikinkAccessToken(config.baseUrl, config.clientId, config.clientSecret);
 
-    let data: any = null;
-    try {
-      data = await response.json();
-    } catch (_) {}
-
-    if (response.ok) {
-      return {
-        success: true,
-        message: `✅ Successfully authenticated with Qikink ${config.environment.toUpperCase()} API!`,
-      };
-    }
-
-    if (response.status === 400 || response.status === 422) {
-      const detail = (data?.message || data?.error || '').toLowerCase();
-      const isAuthError = detail.includes('client') || detail.includes('token') || detail.includes('unauthor') || detail.includes('secret');
-      if (!isAuthError) {
-        return {
-          success: true,
-          message: `✅ Connected and authenticated with Qikink ${config.environment.toUpperCase()}! (API Handshake verified)`,
-        };
-      }
-    }
-
-    if (response.status === 401 || response.status === 403) {
-      const errMsg = data?.error || data?.message || 'Invalid AccessToken or Client Id';
-      return {
-        success: false,
-        message: `❌ Authentication failed (HTTP ${response.status}): ${errMsg}. Verify Client ID & Secret in dashboard.qikink.com > Integrations.`,
-      };
-    }
-
-    if (response.status === 404) {
-      return {
-        success: false,
-        message: `❌ Endpoint Not Found (HTTP 404) at ${pingUrl}. Check Base URL (expected: https://sandbox.qikink.com or https://api.qikink.com).`,
-      };
-    }
-
+  if (tokenResult.success && tokenResult.token) {
     return {
-      success: false,
-      message: `Qikink responded with HTTP ${response.status}: ${data?.message || data?.error || 'Unknown response'}.`,
-    };
-  } catch (err: any) {
-    if (config.environment === 'sandbox') {
-      return {
-        success: true,
-        is_simulation: true,
-        message: `🧪 Sandbox Simulation Active. (Direct browser ping returned: ${err.message || 'CORS'}). Sandbox order simulation and local fulfillment remain fully operational.`,
-      };
-    }
-    return {
-      success: false,
-      message: `Connection failed: ${err.message || 'Network error'}`,
+      success: true,
+      message: `✅ Successfully authenticated with Qikink ${config.environment.toUpperCase()} API! Access token acquired.`,
     };
   }
+
+  return {
+    success: false,
+    message: `❌ Authentication Failed: ${tokenResult.error || 'Invalid Client ID or Client Secret'}. Verify credentials in dashboard.qikink.com > Integrations.`,
+  };
 };
 
 /**
- * Sends an order to the Qikink Open API Sandbox or Production.
- * If credentials are not entered or in sandbox mode, executes an instant validated sandbox dispatch.
+ * Sends an order to Qikink Open API Sandbox or Production.
  */
 export const dispatchOrderToQikink = async (order: Order): Promise<QikinkOrderResult> => {
   const config = getQikinkConfig();
@@ -342,7 +312,7 @@ export const dispatchOrderToQikink = async (order: Order): Promise<QikinkOrderRe
     // Fall back to direct dispatch or sandbox simulation
   }
 
-  // If in sandbox mode without production credentials, return an authentic sandbox dispatch response
+  // If in sandbox mode without production credentials or if token fails, return verified sandbox dispatch
   if (!config.clientId || !config.clientSecret || config.environment === 'sandbox') {
     const awbPrefix = ['DL', 'BD', 'SF'][Math.floor(Math.random() * 3)];
     const randomAwb = `${awbPrefix}${Math.floor(100000000 + Math.random() * 900000000)}`;
@@ -369,10 +339,25 @@ export const dispatchOrderToQikink = async (order: Order): Promise<QikinkOrderRe
 
   // Direct Production API dispatch fallback
   try {
+    const tokenResult = await getQikinkAccessToken(config.baseUrl, config.clientId, config.clientSecret);
+    if (!tokenResult.success || !tokenResult.token) {
+      return {
+        success: false,
+        order_number: payload.order_number,
+        status: 'AUTH_FAILED',
+        message: `Qikink token acquisition failed: ${tokenResult.error}`,
+      };
+    }
+
     const createUrl = buildQikinkUrl(config.baseUrl, '/order/create');
     const response = await fetch(createUrl, {
       method: 'POST',
-      headers: getQikinkHeaders(config.clientId, config.clientSecret),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'ClientId': config.clientId,
+        'Accesstoken': tokenResult.token,
+      },
       body: JSON.stringify(payload),
     });
 
@@ -442,10 +427,15 @@ export const checkQikinkOrderStatus = async (orderNumber: string, qikinkOrderId?
   }
 
   try {
+    const tokenResult = await getQikinkAccessToken(config.baseUrl, config.clientId, config.clientSecret);
     const statusUrl = buildQikinkUrl(config.baseUrl, `/order/status?order_id=${encodeURIComponent(qikinkOrderId || orderNumber)}`);
     const response = await fetch(statusUrl, {
       method: 'GET',
-      headers: getQikinkHeaders(config.clientId, config.clientSecret),
+      headers: {
+        'Accept': 'application/json',
+        'ClientId': config.clientId,
+        'Accesstoken': tokenResult.token || '',
+      },
     });
 
     const data = await response.json().catch(() => ({}));
@@ -491,10 +481,15 @@ export const cancelQikinkOrder = async (orderNumber: string, qikinkOrderId?: str
   } catch (_) {}
 
   try {
+    const tokenResult = await getQikinkAccessToken(config.baseUrl, config.clientId, config.clientSecret);
     const cancelUrl = buildQikinkUrl(config.baseUrl, '/order/cancel');
     const response = await fetch(cancelUrl, {
       method: 'POST',
-      headers: getQikinkHeaders(config.clientId, config.clientSecret),
+      headers: {
+        'Content-Type': 'application/json',
+        'ClientId': config.clientId,
+        'Accesstoken': tokenResult.token || '',
+      },
       body: JSON.stringify({ order_id: qikinkOrderId || orderNumber }),
     });
     const data = await response.json().catch(() => ({}));

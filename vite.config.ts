@@ -123,19 +123,24 @@ function qikinkDevApiPlugin(): Plugin {
                 return `${cb}${cp}`;
               };
 
-              const getHeaders = (id: string, secret: string) => {
-                const token = secret || id;
-                return {
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json',
-                  'ClientId': id,
-                  'ClientSecret': secret,
-                  'AccessToken': token,
-                  'client_id': id,
-                  'client_secret': secret,
-                  'access_token': token,
-                  'Authorization': `Bearer ${token}`,
-                };
+              const getToken = async (bUrl: string, cId: string, cSecret: string) => {
+                const tokenUrl = buildUrl(bUrl, '/token');
+                const form = new URLSearchParams();
+                form.append('ClientId', cId);
+                form.append('client_secret', cSecret);
+                const tRes = await fetch(tokenUrl, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json',
+                  },
+                  body: form.toString(),
+                });
+                const tData = (await tRes.json().catch(() => ({}))) as any;
+                if (tRes.ok && (tData.Accesstoken || tData.access_token || tData.token)) {
+                  return { success: true, token: tData.Accesstoken || tData.access_token || tData.token };
+                }
+                return { success: false, error: tData.error || tData.message || `HTTP ${tRes.status}` };
               };
 
               res.setHeader('Content-Type', 'application/json');
@@ -158,85 +163,24 @@ function qikinkDevApiPlugin(): Plugin {
                   return;
                 }
 
-                try {
-                  const pingUrl = buildUrl(baseUrl, '/order/create');
-                  const testRes = await fetch(pingUrl, {
-                    method: 'POST',
-                    headers: getHeaders(clientId, clientSecret),
-                    body: JSON.stringify({ test_ping: true }),
-                  });
-
-                  let testData: any = null;
-                  try {
-                    testData = await testRes.json();
-                  } catch (_) {}
-
-                  if (testRes.ok) {
-                    res.end(
-                      JSON.stringify({
-                        success: true,
-                        message: `✅ Successfully authenticated with Qikink ${env.toUpperCase()} API!`,
-                      })
-                    );
-                    return;
-                  }
-
-                  if (testRes.status === 400 || testRes.status === 422) {
-                    const detail = (testData?.message || testData?.error || '').toLowerCase();
-                    const isAuthErr = detail.includes('client') || detail.includes('token') || detail.includes('unauthor') || detail.includes('secret');
-                    if (!isAuthErr) {
-                      res.end(
-                        JSON.stringify({
-                          success: true,
-                          message: `✅ Connected and authenticated with Qikink ${env.toUpperCase()} API! (Handshake verified)`,
-                        })
-                      );
-                      return;
-                    }
-                  }
-
-                  if (testRes.status === 401 || testRes.status === 403) {
-                    const errMsg = testData?.error || testData?.message || 'Invalid AccessToken or Client Id';
-                    res.end(
-                      JSON.stringify({
-                        success: false,
-                        message: `❌ Authentication Failed (HTTP ${testRes.status}): ${errMsg}. Please verify Client ID & Secret in dashboard.qikink.com > Integrations.`,
-                      })
-                    );
-                    return;
-                  }
-
-                  if (testRes.status === 404) {
-                    res.end(
-                      JSON.stringify({
-                        success: false,
-                        message: `❌ Endpoint Not Found (HTTP 404) at ${pingUrl}. Please check your Base URL (expected: https://sandbox.qikink.com or https://api.qikink.com).`,
-                      })
-                    );
-                    return;
-                  }
-
+                const tokenRes = await getToken(baseUrl, clientId, clientSecret);
+                if (tokenRes.success && tokenRes.token) {
                   res.end(
                     JSON.stringify({
-                      success: false,
-                      message: `Qikink responded with HTTP ${testRes.status}: ${testData?.message || testData?.error || 'Unknown error'}`,
+                      success: true,
+                      message: `✅ Successfully authenticated with Qikink ${env.toUpperCase()} API! Access token acquired.`,
                     })
                   );
                   return;
-                } catch (pingErr: any) {
-                  if (isSandbox) {
-                    res.end(
-                      JSON.stringify({
-                        success: true,
-                        is_simulation: true,
-                        message: `🧪 Sandbox Simulation Active. (Direct network notice: ${pingErr.message}). Test dispatches and tracking remain operational.`,
-                      })
-                    );
-                    return;
-                  }
-                  res.end(JSON.stringify({ success: false, message: `Connection error: ${pingErr.message || 'Network error'}` }));
-                  return;
                 }
+
+                res.end(
+                  JSON.stringify({
+                    success: false,
+                    message: `❌ Authentication Failed: ${tokenRes.error || 'Invalid credentials'}. Please verify Client ID & Secret in dashboard.qikink.com > Integrations.`,
+                  })
+                );
+                return;
               }
 
               // Create Order
@@ -246,7 +190,7 @@ function qikinkDevApiPlugin(): Plugin {
                   const randomAwb = awbs[Math.floor(Math.random() * awbs.length)];
                   const couriers = ['Delhivery Surface', 'BlueDart Express', 'Shadowfax Air'];
                   const courier = couriers[Math.floor(Math.random() * couriers.length)];
-                  const orderNum = order?.order_number || `ORD-${Date.now()}`;
+                  const orderNum = order?.order_number || `ORD${Date.now().toString().slice(-8)}`;
                   res.end(
                     JSON.stringify({
                       success: true,
@@ -262,10 +206,16 @@ function qikinkDevApiPlugin(): Plugin {
                   return;
                 }
 
+                const tokenRes = await getToken(baseUrl, clientId, clientSecret);
                 const createUrl = buildUrl(baseUrl, '/order/create');
                 const qRes = await fetch(createUrl, {
                   method: 'POST',
-                  headers: getHeaders(clientId, clientSecret),
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'ClientId': clientId,
+                    'Accesstoken': tokenRes.token || '',
+                  },
                   body: JSON.stringify(order),
                 });
                 const qData = await qRes.json().catch(() => ({}));
@@ -290,10 +240,15 @@ function qikinkDevApiPlugin(): Plugin {
                   return;
                 }
 
+                const tokenRes = await getToken(baseUrl, clientId, clientSecret);
                 const statusUrl = buildUrl(baseUrl, `/order/status?order_id=${encodeURIComponent(order_id || order_number)}`);
                 const qRes = await fetch(statusUrl, {
                   method: 'GET',
-                  headers: getHeaders(clientId, clientSecret),
+                  headers: {
+                    'Accept': 'application/json',
+                    'ClientId': clientId,
+                    'Accesstoken': tokenRes.token || '',
+                  },
                 });
                 const qData = await qRes.json().catch(() => ({}));
                 res.end(JSON.stringify(qData));
