@@ -9,7 +9,8 @@ import {
   ShoppingBag,
   Truck,
   Copy,
-  Check
+  Check,
+  ExternalLink
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/useAuthStore';
@@ -377,6 +378,33 @@ export const TrackOrder: React.FC = () => {
                 Status: {order.status?.replace('_', ' ')}
               </span>
             </div>
+
+            {/* Qikink Print-On-Demand Studio Status & Tracking */}
+            {(order.shipping_address as any)?.qikink_info && (
+              <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-xs">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-900">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span>Qikink Print-On-Demand Studio Fulfillment</span>
+                  </div>
+                  <p className="text-amber-800 text-[11px]">
+                    Current Stage: <strong className="uppercase">{(order.shipping_address as any).qikink_info.status}</strong>
+                    {(order.shipping_address as any).qikink_info.awb_number && ` • AWB: ${(order.shipping_address as any).qikink_info.awb_number}`}
+                  </p>
+                </div>
+                {(order.shipping_address as any).qikink_info.tracking_url && (
+                  <a
+                    href={(order.shipping_address as any).qikink_info.tracking_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition-colors whitespace-nowrap"
+                  >
+                    <span>Track on Courier Portal</span>
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                )}
+              </div>
+            )}
 
             <TrackingStepper
               status={order.status}

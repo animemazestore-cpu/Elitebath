@@ -24,6 +24,7 @@ import {
   verifyRazorpayPayment,
 } from '../lib/razorpay';
 import { checkRateLimit, recordRateLimitAttempt } from '../lib/rateLimiter';
+import { dispatchOrderToQikink, getQikinkConfig } from '../lib/qikink';
 
 export const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -228,6 +229,62 @@ export const Checkout: React.FC = () => {
       existingOrders.unshift(localOrder);
       localStorage.setItem('elitebath_local_orders', JSON.stringify(existingOrders));
       localStorage.setItem('animemaze_local_orders', JSON.stringify(existingOrders));
+
+      // 4. Automated Qikink POD fulfillment dispatch
+      try {
+        void dispatchOrderToQikink(localOrder as any).then(async (qRes) => {
+          if (qRes && qRes.success) {
+            console.info('[Qikink Auto-Fulfillment Successful]:', qRes);
+            const qikinkInfo = {
+              order_id: qRes.qikink_order_id || `QK-${Date.now()}`,
+              status: qRes.status || 'QUEUED',
+              awb_number: qRes.awb_number,
+              courier_name: qRes.courier_name,
+              tracking_url: qRes.tracking_url,
+              dispatched_at: new Date().toISOString(),
+              environment: getQikinkConfig().environment,
+            };
+            const trackingInfo = qRes.awb_number
+              ? {
+                  carrier: qRes.courier_name || 'Delhivery Express',
+                  tracking_number: qRes.awb_number,
+                  shipped_at: new Date().toISOString(),
+                }
+              : undefined;
+
+            try {
+              const currentOrders = JSON.parse(localStorage.getItem('elitebath_local_orders') || '[]');
+              const updated = currentOrders.map((o: any) =>
+                o.id === orderId
+                  ? {
+                      ...o,
+                      status: 'PROCESSING',
+                      shipping_address: {
+                        ...(o.shipping_address || {}),
+                        qikink_info: qikinkInfo,
+                        ...(trackingInfo ? { tracking_info: trackingInfo } : {}),
+                      },
+                    }
+                  : o
+              );
+              localStorage.setItem('elitebath_local_orders', JSON.stringify(updated));
+            } catch (_) {}
+
+            try {
+              await supabase.from('orders').update({
+                status: 'PROCESSING',
+                shipping_address: {
+                  ...shippingAddressJson,
+                  qikink_info: qikinkInfo,
+                  ...(trackingInfo ? { tracking_info: trackingInfo } : {})
+                }
+              }).eq('id', orderId);
+            } catch (_) {}
+          }
+        });
+      } catch (podErr) {
+        console.warn('Qikink automated fulfillment background dispatch error:', podErr);
+      }
     } catch (e) {
       console.error('Failed to write to local orders:', e);
     }
