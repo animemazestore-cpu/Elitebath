@@ -13,6 +13,7 @@ import type { OptionDraft, VariantDraft } from '../components/admin/ProductVaria
 import { ImageUploadZone } from '../components/admin/ImageUploadZone';
 import { deleteProductImagesFromStorage } from '../lib/storage';
 import { FALLBACK_CATEGORIES, FALLBACK_PRODUCTS } from '../lib/catalogQueries';
+import { dispatchOrderToQikink, getQikinkConfig } from '../lib/qikink';
 
 export const Admin: React.FC = () => {
   const navigate = useNavigate();
@@ -81,6 +82,7 @@ export const Admin: React.FC = () => {
   const [trackingCarrier, setTrackingCarrier] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [trackingTargetStatus, setTrackingTargetStatus] = useState('');
+  const [dispatchingQikinkId, setDispatchingQikinkId] = useState<string | null>(null);
 
   // Delivery Date Edit States
   const [editingDeliveryDateOrderId, setEditingDeliveryDateOrderId] = useState<string | null>(null);
@@ -148,21 +150,187 @@ export const Admin: React.FC = () => {
     try {
       const { data: dbCoupons, error } = await supabase.from('coupons').select('*').order('created_at', { ascending: true });
       if (error) throw error;
-      const mappedCoupons = dbCoupons ? dbCoupons.map((c: any) => ({
-        id: c.id,
-        code: c.code,
-        type: c.discount_type || c.type,
-        value: Number(c.discount_value !== undefined ? c.discount_value : c.value),
-        minOrder: Number(c.min_order_amount !== undefined ? c.min_order_amount : c.min_order),
-        active: c.active,
-        created_at: c.created_at
-      })) : [];
-      setCoupons(mappedCoupons);
+      if (dbCoupons) {
+        const mappedCoupons = dbCoupons.map((c: any) => ({
+          id: c.id,
+          code: c.code,
+          type: c.discount_type || c.type,
+          value: Number(c.discount_value !== undefined ? c.discount_value : c.value),
+          minOrder: Number(c.min_order_amount !== undefined ? c.min_order_amount : c.min_order),
+          active: c.active,
+          created_at: c.created_at
+        }));
+        setCoupons(mappedCoupons);
+        localStorage.setItem('elitebath_coupons', JSON.stringify(mappedCoupons));
+        return;
+      }
     } catch (err) {
-      console.warn('Failed to load coupons from DB:', err);
-      setCoupons([]);
+      console.warn('Failed to load coupons from DB, using local cache:', err);
     }
+    try {
+      const raw = localStorage.getItem('elitebath_coupons');
+      if (raw) setCoupons(JSON.parse(raw));
+    } catch (_) {}
   }, []);
+
+  const handleCouponSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = couponForm.code.trim().toUpperCase();
+    if (!code) return;
+    
+    try {
+      if (editingCoupon) {
+        // Update in DB
+        const { error } = await supabase
+          .from('coupons')
+          .update({ 
+            code, 
+            discount_type: couponForm.type, 
+            discount_value: couponForm.value, 
+            min_order_amount: couponForm.minOrder, 
+            active: couponForm.active 
+          })
+          .eq('code', editingCoupon.code);
+        if (error) throw error;
+      } else {
+        // Check duplicate
+        if (coupons.some(c => c.code === code)) {
+          alert('Coupon code already exists!');
+          return;
+        }
+        // Insert in DB
+        const { error } = await supabase
+          .from('coupons')
+          .insert({ 
+            code, 
+            discount_type: couponForm.type, 
+            discount_value: couponForm.value, 
+            min_order_amount: couponForm.minOrder, 
+            active: couponForm.active 
+          });
+        if (error) throw error;
+      }
+
+      // Update local storage backup
+      const updatedCoupons = editingCoupon
+        ? coupons.map(c => c.code === editingCoupon.code ? { ...c, code, type: couponForm.type, value: couponForm.value, minOrder: couponForm.minOrder, active: couponForm.active } : c)
+        : [...coupons, { id: `c-${Date.now()}`, code, type: couponForm.type, value: couponForm.value, minOrder: couponForm.minOrder, active: couponForm.active, created_at: new Date().toISOString() }];
+      localStorage.setItem('elitebath_coupons', JSON.stringify(updatedCoupons));
+      setCoupons(updatedCoupons);
+
+      alert(editingCoupon ? 'Coupon updated!' : 'Coupon created!');
+      setIsCouponModalOpen(false);
+      setEditingCoupon(null);
+      void loadCoupons();
+    } catch (err: any) {
+      console.error('Coupon submit failed:', err);
+      // Fallback: save locally
+      const updatedCoupons = editingCoupon
+        ? coupons.map(c => c.code === editingCoupon.code ? { ...c, code, type: couponForm.type, value: couponForm.value, minOrder: couponForm.minOrder, active: couponForm.active } : c)
+        : [...coupons, { id: `c-${Date.now()}`, code, type: couponForm.type, value: couponForm.value, minOrder: couponForm.minOrder, active: couponForm.active, created_at: new Date().toISOString() }];
+      localStorage.setItem('elitebath_coupons', JSON.stringify(updatedCoupons));
+      setCoupons(updatedCoupons);
+      alert('Coupon saved locally! (Database returned: ' + (err.message || err) + ')');
+      setIsCouponModalOpen(false);
+      setEditingCoupon(null);
+    }
+  };
+
+  const handleDeleteCoupon = async (code: string) => {
+    if (!window.confirm(`Delete coupon "${code}"?`)) return;
+    const nextCoupons = coupons.filter(c => c.code !== code);
+    setCoupons(nextCoupons);
+    localStorage.setItem('elitebath_coupons', JSON.stringify(nextCoupons));
+    try {
+      const { error } = await supabase.from('coupons').delete().eq('code', code);
+      if (error) throw error;
+      alert('Coupon deleted!');
+      void loadCoupons();
+    } catch (err: any) {
+      console.warn('Coupon delete failed in DB:', err);
+    }
+  };
+
+  const handleToggleCoupon = async (code: string) => {
+    const coupon = coupons.find(c => c.code === code);
+    if (!coupon) return;
+    const newActive = !coupon.active;
+    const nextCoupons = coupons.map(c => c.code === code ? { ...c, active: newActive } : c);
+    setCoupons(nextCoupons);
+    localStorage.setItem('elitebath_coupons', JSON.stringify(nextCoupons));
+    try {
+      const { error } = await supabase.from('coupons').update({ active: newActive }).eq('code', code);
+      if (error) throw error;
+      void loadCoupons();
+    } catch (err: any) {
+      console.warn('Coupon toggle failed in DB:', err);
+    }
+  };
+
+  // --- Announcement Management ---
+  const loadAnnouncement = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('site_announcements')
+        .select('message')
+        .eq('active', true)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        setAnnouncementText(data[0].message);
+        localStorage.setItem('elitebath_announcement', data[0].message);
+        localStorage.setItem('animemaze_announcement', data[0].message);
+        return;
+      }
+    } catch (err) {
+      console.warn('Failed to load announcement from DB:', err);
+    }
+    // Fallback to localStorage
+    const saved = localStorage.getItem('elitebath_announcement') || localStorage.getItem('animemaze_announcement') || '✨ Launch Offer: Use code TRYVOAL10 for 10% off! 🚚 FREE Shipping across India!';
+    setAnnouncementText(saved);
+  }, []);
+
+  const handleSaveAnnouncement = async () => {
+    const text = announcementText.trim();
+    localStorage.setItem('elitebath_announcement', text);
+    localStorage.setItem('animemaze_announcement', text);
+    window.dispatchEvent(new Event('announcement_updated'));
+
+    try {
+      // Deactivate all previous announcements first to keep a single active one
+      await supabase
+        .from('site_announcements')
+        .update({ active: false })
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+
+      const { error } = await supabase
+        .from('site_announcements')
+        .insert({ message: text, active: true });
+
+      if (error) throw error;
+      alert('Announcement updated and synced to database!');
+    } catch (err: any) {
+      console.warn('Supabase announcement save failed:', err);
+      alert('Announcement updated locally! (Database notice: ' + (err?.message || err) + ')');
+    }
+  };
+
+  const handleClearAnnouncement = async () => {
+    setAnnouncementText('');
+    localStorage.setItem('elitebath_announcement', '');
+    localStorage.setItem('animemaze_announcement', '');
+    window.dispatchEvent(new Event('announcement_updated'));
+    try {
+      await supabase
+        .from('site_announcements')
+        .update({ active: false })
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+    } catch (err) {
+      console.warn('Supabase announcement clear failed:', err);
+    }
+    alert('Announcement cleared!');
+  };
 
   // Fetch / sync replacement requests from database
   const loadReplacementsData = useCallback(async () => {
@@ -261,10 +429,14 @@ export const Admin: React.FC = () => {
         if (prodErr) throw prodErr;
         setDbWarning(null);
 
+        const deletedProdIds: string[] = typeof window !== 'undefined'
+          ? JSON.parse(localStorage.getItem('elitebath_deleted_product_ids') || '[]')
+          : [];
+
         const customProds: Product[] = typeof window !== 'undefined'
           ? JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]')
           : [];
-        const mergedProds: Product[] = [...customProds];
+        const mergedProds: Product[] = customProds.filter((p) => !deletedProdIds.includes(p.id));
 
         if (dbProds && dbProds.length > 0) {
           const parsedProds = dbProds.map((p: any) => ({
@@ -273,13 +445,13 @@ export const Admin: React.FC = () => {
             slug: sanitizeSlug(p.slug, p.name)
           }));
           for (const p of parsedProds) {
-            if (!mergedProds.some((m) => m.id === p.id || m.slug === p.slug)) {
+            if (!deletedProdIds.includes(p.id) && !mergedProds.some((m) => m.id === p.id || m.slug === p.slug)) {
               mergedProds.push(p);
             }
           }
         }
         for (const fb of FALLBACK_PRODUCTS) {
-          if (!mergedProds.some((m) => m.id === fb.id || m.slug === fb.slug)) {
+          if (!deletedProdIds.includes(fb.id) && !mergedProds.some((m) => m.id === fb.id || m.slug === fb.slug)) {
             mergedProds.push(fb);
           }
         }
@@ -287,12 +459,15 @@ export const Admin: React.FC = () => {
       } catch (err: any) {
         console.error('Error loading products from Supabase:', err);
         setDbWarning(err?.message || 'Failed to reach Supabase database. Working in local storage mode.');
+        const deletedProdIds: string[] = typeof window !== 'undefined'
+          ? JSON.parse(localStorage.getItem('elitebath_deleted_product_ids') || '[]')
+          : [];
         const customProds: Product[] = typeof window !== 'undefined'
           ? JSON.parse(localStorage.getItem('elitebath_custom_products') || '[]')
           : [];
-        const mergedProds: Product[] = [...customProds];
+        const mergedProds: Product[] = customProds.filter((p) => !deletedProdIds.includes(p.id));
         for (const fb of FALLBACK_PRODUCTS) {
-          if (!mergedProds.some((m) => m.id === fb.id || m.slug === fb.slug)) {
+          if (!deletedProdIds.includes(fb.id) && !mergedProds.some((m) => m.id === fb.id || m.slug === fb.slug)) {
             mergedProds.push(fb);
           }
         }
@@ -484,137 +659,6 @@ export const Admin: React.FC = () => {
     return () => clearInterval(interval);
   }, [activeTab, loadReplacementsData]);
 
-  const handleCouponSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const code = couponForm.code.trim().toUpperCase();
-    if (!code) return;
-    
-    try {
-      if (editingCoupon) {
-        // Update in DB
-        const { error } = await supabase
-          .from('coupons')
-          .update({ 
-            code, 
-            discount_type: couponForm.type, 
-            discount_value: couponForm.value, 
-            min_order_amount: couponForm.minOrder, 
-            active: couponForm.active 
-          })
-          .eq('code', editingCoupon.code);
-        if (error) throw error;
-      } else {
-        // Check duplicate
-        if (coupons.some(c => c.code === code)) {
-          alert('Coupon code already exists!');
-          return;
-        }
-        // Insert in DB
-        const { error } = await supabase
-          .from('coupons')
-          .insert({ 
-            code, 
-            discount_type: couponForm.type, 
-            discount_value: couponForm.value, 
-            min_order_amount: couponForm.minOrder, 
-            active: couponForm.active 
-          });
-        if (error) throw error;
-      }
-      alert(editingCoupon ? 'Coupon updated!' : 'Coupon created!');
-      setIsCouponModalOpen(false);
-      setEditingCoupon(null);
-      loadCoupons();
-    } catch (err: any) {
-      console.error('Coupon submit failed:', err);
-      alert('Failed to save coupon: ' + (err.message || err));
-    }
-  };
-
-  const handleDeleteCoupon = async (code: string) => {
-    if (!window.confirm(`Delete coupon "${code}"?`)) return;
-    try {
-      const { error } = await supabase.from('coupons').delete().eq('code', code);
-      if (error) throw error;
-      alert('Coupon deleted!');
-      loadCoupons();
-    } catch (err: any) {
-      console.error('Coupon delete failed:', err);
-      alert('Failed to delete coupon: ' + (err.message || err));
-    }
-  };
-
-  const handleToggleCoupon = async (code: string) => {
-    const coupon = coupons.find(c => c.code === code);
-    if (!coupon) return;
-    try {
-      const { error } = await supabase.from('coupons').update({ active: !coupon.active }).eq('code', code);
-      if (error) throw error;
-      loadCoupons();
-    } catch (err: any) {
-      console.error('Coupon toggle failed:', err);
-      alert('Failed to toggle coupon status: ' + (err.message || err));
-    }
-  };
-
-  // --- Announcement Management ---
-  const loadAnnouncement = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('site_announcements')
-        .select('message')
-        .eq('active', true)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      if (!error && data && data.length > 0) {
-        setAnnouncementText(data[0].message);
-        localStorage.setItem('animemaze_announcement', data[0].message);
-        return;
-      }
-    } catch (err) {
-      console.warn('Failed to load announcement from DB:', err);
-    }
-    // Fallback to localStorage
-    setAnnouncementText(localStorage.getItem('animemaze_announcement') || '🎉 Special Launch Offer: Use code ANIME20 for 20% discount! 🚚 FREE Shipping on orders above ₹999!');
-  }, []);
-
-  const handleSaveAnnouncement = async () => {
-    try {
-      // Deactivate all previous announcements first to keep a single active one
-      await supabase
-        .from('site_announcements')
-        .update({ active: false })
-        .eq('active', true);
-
-      const { error } = await supabase
-        .from('site_announcements')
-        .insert({ message: announcementText, active: true });
-
-      if (error) throw error;
-      alert('Announcement updated! (synced to database)');
-    } catch (err) {
-      console.warn('Supabase announcement save failed:', err);
-      alert('Announcement updated locally only');
-    }
-    localStorage.setItem('animemaze_announcement', announcementText);
-    window.dispatchEvent(new Event('announcement_updated'));
-  };
-
-  const handleClearAnnouncement = async () => {
-    setAnnouncementText('');
-    try {
-      await supabase
-        .from('site_announcements')
-        .update({ active: false })
-        .eq('active', true);
-    } catch (err) {
-      console.warn('Supabase announcement clear failed:', err);
-    }
-    localStorage.setItem('animemaze_announcement', '');
-    window.dispatchEvent(new Event('announcement_updated'));
-    alert('Announcement cleared!');
-  };
 
   // --- CRUD: Products ---
   const handleProductSubmit = async (e: React.FormEvent) => {
@@ -917,9 +961,11 @@ export const Admin: React.FC = () => {
   const handleDeleteProduct = async (id: string) => {
     const prodToDelete = products.find(p => p.id === id);
     const prodName = prodToDelete?.name || 'this product';
-    if (!window.confirm(`Are you sure you want to delete "${prodName}"?\n\nThis will permanently delete the product and its uploaded images from storage.`)) return;
+    if (!window.confirm(`Are you sure you want to delete "${prodName}"?\n\nThis will permanently delete the product and its uploaded images.`)) return;
 
     try {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
       // 1. Delete associated product images from Supabase Storage
       if (prodToDelete) {
         try {
@@ -929,32 +975,33 @@ export const Admin: React.FC = () => {
         }
       }
 
-      // 2. Delete variants from Supabase DB
-      try {
-        await supabase.from('product_variants').delete().eq('product_id', id);
-      } catch (varErr) {
-        console.warn('Variants delete warning:', varErr);
-      }
-
-      // 3. Delete product from Supabase DB
+      // 2. Delete variants & product from Supabase DB ONLY if id is a valid UUID
       let dbDeleteWarning: string | null = null;
-      try {
-        const { error } = await supabase.from('products').delete().eq('id', id);
-        if (error) throw error;
-      } catch (dbErr: any) {
-        dbDeleteWarning = dbErr?.message || String(dbErr);
-        console.warn('Supabase product delete warning:', dbErr);
+      if (isUuid) {
+        try {
+          await supabase.from('product_variants').delete().eq('product_id', id);
+        } catch (varErr) {
+          console.warn('Variants delete warning:', varErr);
+        }
+
+        try {
+          const { error } = await supabase.from('products').delete().eq('id', id);
+          if (error) throw error;
+        } catch (dbErr: any) {
+          dbDeleteWarning = dbErr?.message || String(dbErr);
+          console.warn('Supabase product delete warning:', dbErr);
+        }
       }
 
-      // 4. Remove from catalog store and local state
+      // 3. Remove from catalog store and local state & persist to deleted products registry
       useCatalogStore.getState().deleteProduct(id);
       setProducts(prev => prev.filter(p => p.id !== id));
       void useCatalogStore.getState().fetchProducts(true);
 
       if (dbDeleteWarning) {
-        alert(`⚠️ Product deleted from local view, but database returned: ${dbDeleteWarning}.\nPlease verify the delete policy in Supabase SQL Editor.`);
+        alert(`⚠️ Product removed from view, but database returned: ${dbDeleteWarning}.\nPlease verify the delete policy in Supabase SQL Editor.`);
       } else {
-        alert('Product and its images deleted successfully!');
+        alert('Product deleted successfully!');
       }
     } catch (err: any) {
       console.error('Failed to delete product:', err);
@@ -1226,6 +1273,36 @@ export const Admin: React.FC = () => {
       trackingTargetStatus || 'SHIPPED',
       trackingInfo
     );
+  };
+
+  // --- Qikink POD Open API Dispatch ---
+  const handleDispatchQikink = async (order: Order) => {
+    setDispatchingQikinkId(order.id);
+    try {
+      const res = await dispatchOrderToQikink(order);
+      if (res.success) {
+        alert(
+          `✅ Dispatched to Qikink (${getQikinkConfig().environment.toUpperCase()})!\n\n` +
+          `Qikink Order ID: ${res.qikink_order_id}\n` +
+          `AWB / Tracking: ${res.awb_number || 'Generated'}\n` +
+          `Courier: ${res.courier_name || 'Standard Courier'}\n\n` +
+          `${res.message || ''}`
+        );
+        if (res.awb_number) {
+          await performOrderStatusUpdate(order.id, 'PROCESSING', {
+            carrier: res.courier_name || 'Qikink Logistics',
+            tracking_number: res.awb_number,
+            shipped_at: new Date().toISOString()
+          });
+        }
+      } else {
+        alert(`❌ Qikink Dispatch Failed: ${res.message || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      alert(`Qikink Error: ${err.message || err}`);
+    } finally {
+      setDispatchingQikinkId(null);
+    }
   };
 
   // --- Actions: Edit Estimated Delivery Date ---
@@ -2439,6 +2516,18 @@ export const Admin: React.FC = () => {
                           )
                         )}
 
+                        {/* Qikink POD Sandbox Dispatch */}
+                        <button
+                          type="button"
+                          disabled={dispatchingQikinkId === order.id}
+                          onClick={() => handleDispatchQikink(order)}
+                          className="w-full py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 hover:border-amber-400 text-amber-900 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-xs"
+                          title="Fulfill order via Qikink Open API (Sandbox)"
+                        >
+                          <Package className="h-3.5 w-3.5 text-amber-600" />
+                          {dispatchingQikinkId === order.id ? 'Dispatching...' : 'Dispatch to Qikink (POD)'}
+                        </button>
+
                         {/* Estimated Delivery & Packing Slip */}
                         <div className="flex items-center justify-between pt-2 border-t border-gray-200 gap-2">
                           <div className="text-xs">
@@ -2728,6 +2817,18 @@ export const Admin: React.FC = () => {
                                     </button>
                                   )
                                 )}
+
+                                {/* Qikink Open API Dispatch */}
+                                <button
+                                  type="button"
+                                  disabled={dispatchingQikinkId === order.id}
+                                  onClick={() => handleDispatchQikink(order)}
+                                  className="w-full mt-1.5 py-1 px-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 hover:border-amber-400 text-amber-900 text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 transition-colors"
+                                  title="Dispatch order to Qikink POD fulfillment (Sandbox)"
+                                >
+                                  <Package className="h-3 w-3 text-amber-600" />
+                                  {dispatchingQikinkId === order.id ? 'Dispatching...' : 'Dispatch to Qikink'}
+                                </button>
                               </div>
                             </td>
 

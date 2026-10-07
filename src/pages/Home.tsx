@@ -18,7 +18,7 @@ const HERO_EDITORIAL_LOOKS = [
     id: 1,
     tag: 'LOOK 01 // HEAVYWEIGHT 240 GSM',
     title: 'Heavyweight Boxy Silhouette',
-    image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1400&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=1400&auto=format&fit=crop',
     subtitle: 'Jet black relaxed drop-shoulder tailoring',
   },
   {
@@ -32,14 +32,14 @@ const HERO_EDITORIAL_LOOKS = [
     id: 3,
     tag: 'LOOK 03 // RIVIERA RELAXED LINEN',
     title: 'Pure European Flax Shirt',
-    image: 'https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?q=80&w=1400&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=1400&auto=format&fit=crop',
     subtitle: 'Breezy camp-collar resort silhouette',
   },
   {
     id: 4,
     tag: 'LOOK 04 // STUDIO CAPSULE',
     title: 'Minimalist Architectural Form',
-    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1400&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?q=80&w=1400&auto=format&fit=crop',
     subtitle: 'Crafted apparel & full-grain accessories',
   },
 ];
@@ -386,9 +386,9 @@ export const Home: React.FC = () => {
                 <ShieldCheck className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Solid Core Craftsmanship</h3>
+                <h3 className="font-semibold text-gray-900">Heavyweight Combed Cotton</h3>
                 <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                  Crafted with heavy-grade brass, SUS304 stainless steel, and vitreous china for durability.
+                  Crafted with 240+ GSM ring-spun combed cotton and French terry for lasting drape and structure.
                 </p>
               </div>
             </div>
@@ -398,9 +398,9 @@ export const Home: React.FC = () => {
                 <Gift className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">Multi-Layer Protective Finish</h3>
+                <h3 className="font-semibold text-gray-900">Pre-Shrunk Bio-Washed</h3>
                 <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                  Corrosion-resistant plating engineered to withstand water spots, humidity, and daily wear.
+                  Precision enzyme bio-washed for ultimate hand-feel and zero unwanted shrinkage after wash.
                 </p>
               </div>
             </div>
@@ -412,7 +412,7 @@ export const Home: React.FC = () => {
               <div>
                 <h3 className="font-semibold text-gray-900">Verified Customer Reviews</h3>
                 <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                  Read genuine feedback and installation photos from verified buyers across India.
+                  Read genuine feedback and fit reviews from verified streetwear enthusiasts across India.
                 </p>
               </div>
             </div>
