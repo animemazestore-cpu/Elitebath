@@ -95,7 +95,10 @@ export const Admin: React.FC = () => {
   const [couponForm, setCouponForm] = useState({ code: '', type: 'PERCENT' as 'PERCENT' | 'FIXED', value: 0, minOrder: 0, active: true });
 
   // Announcement State
-  const [announcementText, setAnnouncementText] = useState('✨ Launch Offer: Use code TRYVOAL10 for 10% off! 🚚 FREE Express Shipping across India!');
+  const [announcementText, setAnnouncementText] = useState(() => {
+    const stored = localStorage.getItem('tryvoal_announcement') ?? localStorage.getItem('elitebath_announcement');
+    return stored !== null ? stored : '✨ Launch Offer: Use code TRYVOAL10 for 10% off! 🚚 FREE Express Shipping across India!';
+  });
 
   // Order Management Filter & Modal States
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
@@ -154,10 +157,10 @@ export const Admin: React.FC = () => {
         const mappedCoupons = dbCoupons.map((c: any) => ({
           id: c.id,
           code: c.code,
-          type: c.discount_type || c.type,
+          type: (c.discount_type === 'FIXED' || c.type === 'FIXED') ? 'FIXED' : 'PERCENT',
           value: Number(c.discount_value !== undefined ? c.discount_value : c.value),
           minOrder: Number(c.min_order_amount !== undefined ? c.min_order_amount : c.min_order),
-          active: c.active,
+          active: c.active !== false,
           created_at: c.created_at
         }));
         setCoupons(mappedCoupons);
@@ -178,18 +181,22 @@ export const Admin: React.FC = () => {
     const code = couponForm.code.trim().toUpperCase();
     if (!code) return;
     
+    // DB check constraint expects discount_type IN ('PERCENTAGE', 'FIXED')
+    const dbDiscountType = couponForm.type === 'FIXED' ? 'FIXED' : 'PERCENTAGE';
+    const dbPayload = { 
+      code, 
+      discount_type: dbDiscountType, 
+      discount_value: Number(couponForm.value) || 0, 
+      min_order_amount: Number(couponForm.minOrder) || 0, 
+      active: Boolean(couponForm.active) 
+    };
+
     try {
       if (editingCoupon) {
         // Update in DB
         const { error } = await supabase
           .from('coupons')
-          .update({ 
-            code, 
-            discount_type: couponForm.type, 
-            discount_value: couponForm.value, 
-            min_order_amount: couponForm.minOrder, 
-            active: couponForm.active 
-          })
+          .update(dbPayload)
           .eq('code', editingCoupon.code);
         if (error) throw error;
       } else {
@@ -201,13 +208,7 @@ export const Admin: React.FC = () => {
         // Insert in DB
         const { error } = await supabase
           .from('coupons')
-          .insert({ 
-            code, 
-            discount_type: couponForm.type, 
-            discount_value: couponForm.value, 
-            min_order_amount: couponForm.minOrder, 
-            active: couponForm.active 
-          });
+          .insert(dbPayload);
         if (error) throw error;
       }
 
@@ -218,19 +219,19 @@ export const Admin: React.FC = () => {
       localStorage.setItem('elitebath_coupons', JSON.stringify(updatedCoupons));
       setCoupons(updatedCoupons);
 
-      alert(editingCoupon ? 'Coupon updated!' : 'Coupon created!');
+      alert(editingCoupon ? 'Coupon updated and synced to database!' : 'Coupon created and synced to database!');
       setIsCouponModalOpen(false);
       setEditingCoupon(null);
       void loadCoupons();
     } catch (err: any) {
-      console.error('Coupon submit failed:', err);
+      console.error('Coupon submit failed in DB:', err);
       // Fallback: save locally
       const updatedCoupons = editingCoupon
         ? coupons.map(c => c.code === editingCoupon.code ? { ...c, code, type: couponForm.type, value: couponForm.value, minOrder: couponForm.minOrder, active: couponForm.active } : c)
         : [...coupons, { id: `c-${Date.now()}`, code, type: couponForm.type, value: couponForm.value, minOrder: couponForm.minOrder, active: couponForm.active, created_at: new Date().toISOString() }];
       localStorage.setItem('elitebath_coupons', JSON.stringify(updatedCoupons));
       setCoupons(updatedCoupons);
-      alert('Coupon saved locally! (Database returned: ' + (err.message || err) + ')');
+      alert('Coupon saved locally! (Database notice: ' + (err.message || err) + ')');
       setIsCouponModalOpen(false);
       setEditingCoupon(null);
     }
@@ -277,22 +278,31 @@ export const Admin: React.FC = () => {
         .order('created_at', { ascending: false })
         .limit(1);
 
-      if (!error && data && data.length > 0) {
-        setAnnouncementText(data[0].message);
-        localStorage.setItem('elitebath_announcement', data[0].message);
-        localStorage.setItem('animemaze_announcement', data[0].message);
-        return;
+      if (!error) {
+        if (data && data.length > 0 && data[0].message?.trim()) {
+          setAnnouncementText(data[0].message);
+          localStorage.setItem('tryvoal_announcement', data[0].message);
+          localStorage.setItem('elitebath_announcement', data[0].message);
+          return;
+        } else {
+          // Explicitly empty in DB
+          setAnnouncementText('');
+          localStorage.setItem('tryvoal_announcement', '');
+          localStorage.setItem('elitebath_announcement', '');
+          return;
+        }
       }
     } catch (err) {
       console.warn('Failed to load announcement from DB:', err);
     }
     // Fallback to localStorage
-    const saved = localStorage.getItem('elitebath_announcement') || localStorage.getItem('animemaze_announcement') || '✨ Launch Offer: Use code TRYVOAL10 for 10% off! 🚚 FREE Shipping across India!';
-    setAnnouncementText(saved);
+    const saved = localStorage.getItem('tryvoal_announcement') ?? localStorage.getItem('elitebath_announcement');
+    setAnnouncementText(saved ?? '');
   }, []);
 
   const handleSaveAnnouncement = async () => {
     const text = announcementText.trim();
+    localStorage.setItem('tryvoal_announcement', text);
     localStorage.setItem('elitebath_announcement', text);
     localStorage.setItem('animemaze_announcement', text);
     window.dispatchEvent(new Event('announcement_updated'));
@@ -304,12 +314,14 @@ export const Admin: React.FC = () => {
         .update({ active: false })
         .neq('id', '00000000-0000-0000-0000-000000000000');
 
-      const { error } = await supabase
-        .from('site_announcements')
-        .insert({ message: text, active: true });
+      if (text) {
+        const { error } = await supabase
+          .from('site_announcements')
+          .insert({ message: text, active: true });
 
-      if (error) throw error;
-      alert('Announcement updated and synced to database!');
+        if (error) throw error;
+      }
+      alert(text ? 'Announcement updated and synced to database!' : 'Announcement cleared and synced to database!');
     } catch (err: any) {
       console.warn('Supabase announcement save failed:', err);
       alert('Announcement updated locally! (Database notice: ' + (err?.message || err) + ')');
@@ -318,18 +330,21 @@ export const Admin: React.FC = () => {
 
   const handleClearAnnouncement = async () => {
     setAnnouncementText('');
+    localStorage.setItem('tryvoal_announcement', '');
     localStorage.setItem('elitebath_announcement', '');
     localStorage.setItem('animemaze_announcement', '');
     window.dispatchEvent(new Event('announcement_updated'));
     try {
-      await supabase
+      const { error } = await supabase
         .from('site_announcements')
         .update({ active: false })
         .neq('id', '00000000-0000-0000-0000-000000000000');
-    } catch (err) {
+      if (error) throw error;
+      alert('Announcement cleared and synced to database!');
+    } catch (err: any) {
       console.warn('Supabase announcement clear failed:', err);
+      alert('Announcement cleared locally! (Database notice: ' + (err?.message || err) + ')');
     }
-    alert('Announcement cleared!');
   };
 
   // Fetch / sync replacement requests from database

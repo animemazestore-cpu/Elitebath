@@ -253,7 +253,7 @@ CREATE POLICY "Admin can manage replacement requests" ON public.replacement_requ
 CREATE TABLE IF NOT EXISTS public.coupons (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   code TEXT NOT NULL UNIQUE,
-  discount_type TEXT NOT NULL DEFAULT 'PERCENTAGE' CHECK (discount_type IN ('PERCENTAGE','FIXED')),
+  discount_type TEXT NOT NULL DEFAULT 'PERCENTAGE' CHECK (discount_type IN ('PERCENTAGE', 'PERCENT', 'FIXED')),
   discount_value NUMERIC(10,2) NOT NULL DEFAULT 0,
   min_order_amount NUMERIC(10,2),
   max_uses INTEGER,
@@ -374,6 +374,8 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS estimated_delivery_date TIMES
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS order_ref TEXT;
 ALTER TABLE public.product_questions DROP CONSTRAINT IF EXISTS product_questions_product_id_fkey;
 ALTER TABLE public.product_questions ALTER COLUMN product_id TYPE TEXT;
+ALTER TABLE public.coupons DROP CONSTRAINT IF EXISTS coupons_discount_type_check;
+ALTER TABLE public.coupons ADD CONSTRAINT coupons_discount_type_check CHECK (discount_type IN ('PERCENTAGE', 'PERCENT', 'FIXED'));
 
 -- DONE! After running:
 -- 1. Go to Authentication > Users, create your admin account

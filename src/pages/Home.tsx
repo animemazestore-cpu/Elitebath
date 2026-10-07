@@ -18,7 +18,7 @@ const HERO_EDITORIAL_LOOKS = [
     id: 1,
     tag: 'LOOK 01 // HEAVYWEIGHT 240 GSM',
     title: 'Heavyweight Boxy Silhouette',
-    image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=1400&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?q=80&w=1400&auto=format&fit=crop',
     subtitle: 'Jet black relaxed drop-shoulder tailoring',
   },
   {
@@ -32,7 +32,7 @@ const HERO_EDITORIAL_LOOKS = [
     id: 3,
     tag: 'LOOK 03 // RIVIERA RELAXED LINEN',
     title: 'Pure European Flax Shirt',
-    image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?q=80&w=1400&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=1400&auto=format&fit=crop',
     subtitle: 'Breezy camp-collar resort silhouette',
   },
   {

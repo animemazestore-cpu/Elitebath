@@ -65,7 +65,9 @@ export const Navbar: React.FC = () => {
   const DEFAULT_ANNOUNCEMENT = '✨ Launch Offer: Use code TRYVOAL10 for 10% off! 🚚 FREE Express Shipping across India!';
 
   const [announcement, setAnnouncement] = useState(() => {
-    return localStorage.getItem('tryvoal_announcement') || localStorage.getItem('elitebath_announcement') || DEFAULT_ANNOUNCEMENT;
+    const stored = localStorage.getItem('tryvoal_announcement') ?? localStorage.getItem('elitebath_announcement');
+    if (stored !== null) return stored;
+    return DEFAULT_ANNOUNCEMENT;
   });
 
   // Fetch announcement from DB on mount — DB is source of truth
@@ -79,9 +81,17 @@ export const Navbar: React.FC = () => {
           .order('created_at', { ascending: false })
           .limit(1);
 
-        if (!error && data && data.length > 0) {
-          setAnnouncement(data[0].message);
-          localStorage.setItem('elitebath_announcement', data[0].message);
+        if (!error) {
+          if (data && data.length > 0 && data[0].message?.trim()) {
+            setAnnouncement(data[0].message);
+            localStorage.setItem('tryvoal_announcement', data[0].message);
+            localStorage.setItem('elitebath_announcement', data[0].message);
+          } else {
+            // DB has no active announcements (cleared by admin)
+            setAnnouncement('');
+            localStorage.setItem('tryvoal_announcement', '');
+            localStorage.setItem('elitebath_announcement', '');
+          }
         }
       } catch (err) {
         console.warn('Could not load announcement from DB, using fallback:', err);
@@ -90,10 +100,15 @@ export const Navbar: React.FC = () => {
     fetchAnnouncement();
   }, []);
 
-  // Listen for admin updates fired from the same tab
+  // Listen for admin updates fired from the same tab or other tabs
   useEffect(() => {
     const handleStorageChange = () => {
-      setAnnouncement(localStorage.getItem('elitebath_announcement') || localStorage.getItem('animemaze_announcement') || DEFAULT_ANNOUNCEMENT);
+      const stored = localStorage.getItem('tryvoal_announcement') ?? localStorage.getItem('elitebath_announcement');
+      if (stored !== null) {
+        setAnnouncement(stored);
+      } else {
+        setAnnouncement(DEFAULT_ANNOUNCEMENT);
+      }
     };
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('announcement_updated', handleStorageChange);
@@ -122,7 +137,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      {announcement && (
+      {Boolean(announcement && announcement.trim()) && (
         <div className="bg-primary text-white py-2 px-4 text-xs font-bold tracking-wider relative overflow-hidden shadow-sm z-50 flex items-center justify-center min-h-[36px]">
           <div className="max-w-7xl mx-auto w-full overflow-hidden flex items-center justify-center gap-2 relative">
             <div className="animate-pulse w-2 h-2 rounded-full bg-white flex-shrink-0 relative z-10"></div>

@@ -58,7 +58,7 @@ export const Checkout: React.FC = () => {
 
   let discountAmount = 0;
   if (isCouponValid) {
-    if (appliedCoupon.type === 'PERCENT') {
+    if (appliedCoupon.type === 'PERCENT' || appliedCoupon.type === 'PERCENTAGE') {
       discountAmount = Math.round((subtotal * appliedCoupon.value) / 100);
     } else if (appliedCoupon.type === 'FIXED') {
       discountAmount = Math.min(subtotal, appliedCoupon.value);

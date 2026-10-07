@@ -43,10 +43,10 @@ export const Cart: React.FC = () => {
         const mappedCoupons = coupons ? coupons.map((c: any) => ({
           id: c.id,
           code: c.code,
-          type: c.discount_type || c.type,
+          type: (c.discount_type === 'FIXED' || c.type === 'FIXED') ? 'FIXED' : 'PERCENT',
           value: Number(c.discount_value !== undefined ? c.discount_value : c.value),
           minOrder: Number(c.min_order_amount !== undefined ? c.min_order_amount : c.min_order),
-          active: c.active,
+          active: c.active !== false,
           created_at: c.created_at
         })) : [];
         
@@ -133,7 +133,7 @@ export const Cart: React.FC = () => {
 
   let discountAmount = 0;
   if (appliedCoupon && appliedCoupon.active !== false && (!appliedCoupon.minOrder || subtotal >= appliedCoupon.minOrder)) {
-    if (appliedCoupon.type === 'PERCENT') {
+    if (appliedCoupon.type === 'PERCENT' || appliedCoupon.type === 'PERCENTAGE') {
       discountAmount = Math.round((subtotal * appliedCoupon.value) / 100);
     } else if (appliedCoupon.type === 'FIXED') {
       discountAmount = Math.min(subtotal, appliedCoupon.value);
